@@ -12,9 +12,8 @@ let DAMAGE_HISTORY = {};
 let searchTimer = null;
 
 
-
 /* =========================
-   COLUMN MAP
+   COLUMNS
 ========================= */
 
 const COL = {
@@ -22,53 +21,38 @@ const COL = {
   SN: 0,
 
   WORKSHOP: 1,
-
   DIVISION: 2,
-
   SUBDIVISION: 3,
-
   SUBSTATION: 4,
-
   FEEDER: 5,
 
   DATE_DAMAGE: 6,
-
   PLACE_DAMAGE: 7,
-
   DID_NO: 8,
-
   CAPACITY: 9,
 
   COMPLAINT_NO: 10,
-
   COMPLAINT_DATE: 11,
 
   PR_NO: 12,
-
   PR_DATE: 13,
 
   JE_NAME: 14,
-
   JE_MOBILE: 15,
 
   ISSUED_TO_FIRM: 16,
-
   ISSUE_DATE: 17,
 
   DRIVER_NAME: 18,
-
   DRIVER_MOBILE: 19,
 
   REPLACEMENT_DATE: 20,
-
   TIME: 21,
 
   TX_RETURN_DATE: 22,
-
   OBSERVATION: 23
 
 };
-
 
 
 /* =========================
@@ -85,14 +69,8 @@ function clean(value) {
 function normalize(value) {
 
   return String(value ?? "")
-
     .toLowerCase()
-
-    .replace(
-      /[\s\-\/\\().,]/g,
-      ""
-    )
-
+    .replace(/[\s\-\/\\().,\[\]{}:;_]+/g, "")
     .trim();
 
 }
@@ -101,13 +79,18 @@ function normalize(value) {
 /*
   LOCATION NORMALIZATION
 
-  Example:
+  Numbers are ignored anywhere
+  in the location.
+
+  Examples:
 
   SISREDI
   SISREDI 1
-  SISREDI 2
   SISREDI 25
-  SISREDI-25
+  25 SISREDI
+  SISREDI (25)
+  (25) SISREDI
+  SISREDI [25]
 
   All become:
 
@@ -116,22 +99,251 @@ function normalize(value) {
 
 function normalizeLocation(value) {
 
-  return String(value ?? "")
+  let text =
+    String(value ?? "")
+      .toLowerCase();
 
-    .toLowerCase()
 
-    /* remove all numbers */
+  /*
+    Remove numbers
+  */
 
-    .replace(/[0-9]+/g, "")
+  text =
+    text.replace(
+      /[0-9]+/g,
+      " "
+    );
 
-    /* remove punctuation */
 
-    .replace(
-      /[\s\-\/\\().,]+/g,
+  /*
+    Remove bracket characters
+  */
+
+  text =
+    text.replace(
+      /[\(\)\[\]\{\}]/g,
+      " "
+    );
+
+
+  /*
+    Remove punctuation
+  */
+
+  text =
+    text.replace(
+      /[-_/\\.,:;]+/g,
+      " "
+    );
+
+
+  /*
+    Remove extra spaces
+  */
+
+  text =
+    text.replace(
+      /\s+/g,
       " "
     )
-
     .trim();
+
+
+  /*
+    Final compact comparison key
+  */
+
+  return normalize(text);
+
+}
+
+
+/*
+  Date parser
+
+  Supports:
+
+  02.10.2026
+  02/10/2026
+  02-10-2026
+  2026-10-02
+  Google date strings
+  Date objects
+*/
+
+function parseDate(value) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+
+  if (
+    Object.prototype.toString
+      .call(value) ===
+    "[object Date]"
+  ) {
+
+    if (
+      isNaN(value.getTime())
+    ) {
+      return null;
+    }
+
+    return value;
+
+  }
+
+
+  const text =
+    String(value).trim();
+
+
+  /*
+    Google visualization date:
+
+    Date(2026,9,2)
+  */
+
+  let match =
+    text.match(
+      /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
+    );
+
+
+  if (match) {
+
+    return new Date(
+      Number(match[1]),
+      Number(match[2]),
+      Number(match[3])
+    );
+
+  }
+
+
+  /*
+    yyyy-mm-dd
+  */
+
+  match =
+    text.match(
+      /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
+    );
+
+
+  if (match) {
+
+    return new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3])
+    );
+
+  }
+
+
+  /*
+    dd.mm.yyyy
+    dd/mm/yyyy
+    dd-mm-yyyy
+  */
+
+  match =
+    text.match(
+      /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
+    );
+
+
+  if (match) {
+
+    return new Date(
+      Number(match[3]),
+      Number(match[2]) - 1,
+      Number(match[1])
+    );
+
+  }
+
+
+  /*
+    Try normal JS date
+  */
+
+  const parsed =
+    new Date(text);
+
+
+  if (
+    !isNaN(parsed.getTime())
+  ) {
+
+    return parsed;
+
+  }
+
+
+  return null;
+
+}
+
+
+/*
+  Check whether date belongs
+  to current month/year
+*/
+
+function isCurrentMonth(value) {
+
+  const date =
+    parseDate(value);
+
+
+  if (!date) {
+
+    return false;
+
+  }
+
+
+  const now =
+    new Date();
+
+
+  return (
+
+    date.getFullYear() ===
+    now.getFullYear()
+
+    &&
+
+    date.getMonth() ===
+    now.getMonth()
+
+  );
+
+}
+
+
+/*
+  Month label
+*/
+
+function currentMonthLabel() {
+
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      month: "long",
+      year: "numeric"
+    }
+  ).format(
+    new Date()
+  );
 
 }
 
@@ -139,31 +351,11 @@ function normalizeLocation(value) {
 function escapeHTML(value) {
 
   return String(value ?? "")
-
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-
-    .replace(
-      /</g,
-      "&lt;"
-    )
-
-    .replace(
-      />/g,
-      "&gt;"
-    )
-
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
 
@@ -189,7 +381,6 @@ function setStatus(
 }
 
 
-
 /* =========================
    LOAD SHEET
 ========================= */
@@ -205,11 +396,8 @@ function loadSheet() {
   const callbackName =
 
     "TransformerTracking_" +
-
     Date.now() +
-
     "_" +
-
     Math.floor(
       Math.random() * 99999
     );
@@ -221,9 +409,17 @@ function loadSheet() {
     );
 
 
+  let completed = false;
+
+
   window[callbackName] =
 
     function(response) {
+
+      if (completed) return;
+
+      completed = true;
+
 
       try {
 
@@ -248,7 +444,6 @@ function loadSheet() {
         ALL_RECORDS =
 
           rows
-
             .map(
               function(
                 row,
@@ -306,10 +501,6 @@ function loadSheet() {
                 }
 
 
-                /*
-                  Ignore completely blank rows
-                */
-
                 const hasData =
                   record.some(
                     function(value) {
@@ -329,12 +520,20 @@ function loadSheet() {
                 }
 
 
+                /*
+                  Actual sheet row
+
+                  A3 is header
+
+                  A4 is first data row
+                */
+
                 record.__rowNumber =
                   index + 4;
 
 
                 /*
-                  Search index
+                  Complete search index
                 */
 
                 record.__search =
@@ -357,15 +556,21 @@ function loadSheet() {
             );
 
 
+        console.log(
+          "TOTAL RECORDS:",
+          ALL_RECORDS.length
+        );
+
+
         /*
-          Build repeated damage
+          Build repeated history
         */
 
         buildDamageHistory();
 
 
         /*
-          Build dashboard
+          Build CURRENT MONTH dashboard
         */
 
         buildDashboard();
@@ -387,15 +592,9 @@ function loadSheet() {
         );
 
 
-        console.log(
-          "Transformer records:",
-          ALL_RECORDS.length
-        );
-
-
         /*
-          If user already typed
-          something while loading
+          Search if user
+          typed while loading
         */
 
         const input =
@@ -425,11 +624,8 @@ function loadSheet() {
 
 
         setStatus(
-
           "Unable to process transformer data",
-
           "error"
-
         );
 
       }
@@ -438,7 +634,6 @@ function loadSheet() {
       cleanup();
 
     };
-
 
 
   const url =
@@ -472,11 +667,8 @@ function loadSheet() {
     "&tqx=" +
 
     encodeURIComponent(
-
       "out:json;responseHandler:" +
-
       callbackName
-
     );
 
 
@@ -492,16 +684,18 @@ function loadSheet() {
 
 
   script.onerror =
-
     function() {
 
+      if (completed) return;
+
+      completed = true;
+
+
       setStatus(
-
         "Google Sheet connection failed",
-
         "error"
-
       );
+
 
       cleanup();
 
@@ -513,34 +707,28 @@ function loadSheet() {
   );
 
 
-  /*
-    Timeout
-  */
-
   setTimeout(
-
     function() {
 
       if (
-        window[callbackName]
+        !completed
       ) {
 
+        completed = true;
+
+
         setStatus(
-
           "Loading timed out. Please refresh.",
-
           "error"
-
         );
+
 
         cleanup();
 
       }
 
     },
-
     45000
-
   );
 
 
@@ -553,7 +741,6 @@ function loadSheet() {
       ];
 
     }
-
     catch (e) {
 
       window[
@@ -576,9 +763,8 @@ function loadSheet() {
 }
 
 
-
 /* =========================
-   REPEATED DAMAGE HISTORY
+   REPEATED DAMAGE
 ========================= */
 
 function buildDamageHistory() {
@@ -591,33 +777,11 @@ function buildDamageHistory() {
     function(record) {
 
 
-      /*
-        Location without numbers
-      */
-
       const location =
-
         normalizeLocation(
-
           record[
             COL.PLACE_DAMAGE
           ]
-
-        );
-
-
-      /*
-        Capacity must also match
-      */
-
-      const capacity =
-
-        normalize(
-
-          record[
-            COL.CAPACITY
-          ]
-
         );
 
 
@@ -629,33 +793,83 @@ function buildDamageHistory() {
 
 
       /*
-        SAME LOCATION
-        +
-        SAME CAPACITY
+        IMPORTANT:
 
-        = SAME DAMAGE GROUP
+        Repeated damage is
+        LOCATION based.
+
+        Capacity is NOT used
+        to discard history.
+
+        Every actual occurrence
+        remains visible.
+
+        Capacity of each occurrence
+        is shown separately.
       */
 
-      const key =
-
-        location +
-
-        "||" +
-
-        capacity;
-
-
       if (
-        !DAMAGE_HISTORY[key]
+        !DAMAGE_HISTORY[location]
       ) {
 
-        DAMAGE_HISTORY[key] = [];
+        DAMAGE_HISTORY[location] = [];
 
       }
 
 
-      DAMAGE_HISTORY[key]
+      DAMAGE_HISTORY[location]
         .push(record);
+
+    }
+
+  );
+
+
+  /*
+    Sort every history by date
+    oldest to newest where possible
+  */
+
+  Object.keys(
+    DAMAGE_HISTORY
+  ).forEach(
+
+    function(key) {
+
+      DAMAGE_HISTORY[key].sort(
+        function(a, b) {
+
+          const da =
+            parseDate(
+              a[COL.PR_DATE]
+            ) ||
+            parseDate(
+              a[COL.DATE_DAMAGE]
+            );
+
+          const db =
+            parseDate(
+              b[COL.PR_DATE]
+            ) ||
+            parseDate(
+              b[COL.DATE_DAMAGE]
+            );
+
+
+          if (!da && !db)
+            return 0;
+
+          if (!da)
+            return 1;
+
+          if (!db)
+            return -1;
+
+
+          return da - db;
+
+        }
+      );
 
     }
 
@@ -664,9 +878,8 @@ function buildDamageHistory() {
 }
 
 
-
 /* =========================
-   DASHBOARD
+   CURRENT MONTH DASHBOARD
 ========================= */
 
 function buildDashboard() {
@@ -696,6 +909,12 @@ function buildDashboard() {
     );
 
 
+  const monthEl =
+    document.getElementById(
+      "dashboardMonth"
+    );
+
+
   if (
     !totalEl ||
     !issuedEl ||
@@ -703,7 +922,24 @@ function buildDashboard() {
     !container
   ) {
 
+    console.error(
+      "Dashboard elements missing"
+    );
+
     return;
+
+  }
+
+
+  /*
+    Show current month
+  */
+
+  if (monthEl) {
+
+    monthEl.textContent =
+      currentMonthLabel() +
+      " • Based on Date of Damage";
 
   }
 
@@ -719,7 +955,7 @@ function buildDashboard() {
 
 
   /*
-    Count actual records
+    ONLY CURRENT MONTH
   */
 
   ALL_RECORDS.forEach(
@@ -727,24 +963,33 @@ function buildDashboard() {
     function(record) {
 
 
+      const damageDate =
+        record[
+          COL.DATE_DAMAGE
+        ];
+
+
+      if (
+        !isCurrentMonth(
+          damageDate
+        )
+      ) {
+
+        return;
+
+      }
+
+
       total++;
 
 
       const issueDate =
-
         clean(
-
           record[
             COL.ISSUE_DATE
           ]
-
         );
 
-
-      /*
-        Issue Date available
-        = Issued
-      */
 
       if (issueDate) {
 
@@ -758,15 +1003,11 @@ function buildDashboard() {
 
 
         const workshop =
-
           clean(
-
             record[
               COL.WORKSHOP
             ]
-
           ) ||
-
           "Workshop Not Available";
 
 
@@ -790,12 +1031,11 @@ function buildDashboard() {
       }
 
     }
-
   );
 
 
   /*
-    Summary
+    Update summary
   */
 
   totalEl.textContent =
@@ -811,25 +1051,46 @@ function buildDashboard() {
 
 
   /*
-    Workshop list
+    No current month records
   */
+
+  if (total === 0) {
+
+    container.innerHTML =
+
+      `
+      <div class="dashboard-loading">
+
+        No transformer record found
+        for ${escapeHTML(
+          currentMonthLabel()
+        )}.
+
+      </div>
+      `;
+
+    return;
+
+  }
+
 
   const workshopList =
 
     Object.entries(
       workshopPending
     )
-
     .sort(
-
       function(a, b) {
 
         return b[1] - a[1];
 
       }
-
     );
 
+
+  /*
+    No pending
+  */
 
   if (
     !workshopList.length
@@ -839,7 +1100,13 @@ function buildDashboard() {
 
       `
       <div class="dashboard-loading">
-        No pending transformer to issue.
+
+        No pending transformer
+        to issue in
+        ${escapeHTML(
+          currentMonthLabel()
+        )}.
+
       </div>
       `;
 
@@ -899,7 +1166,6 @@ function buildDashboard() {
 
 
       const color =
-
         colors[
           index %
           colors.length
@@ -908,7 +1174,8 @@ function buildDashboard() {
 
       html += `
 
-        <div class="workshop-row">
+        <div
+          class="workshop-row">
 
 
           <div
@@ -955,7 +1222,6 @@ function buildDashboard() {
       `;
 
     }
-
   );
 
 
@@ -963,7 +1229,6 @@ function buildDashboard() {
     html;
 
 }
-
 
 
 /* =========================
@@ -1002,8 +1267,8 @@ function performSearch() {
 
 
   /*
-    Clear immediately
-    so backspace never hangs
+    Immediate clear
+    on backspace
   */
 
   results.innerHTML = "";
@@ -1048,7 +1313,7 @@ function performSearch() {
 
 
   /*
-    FAST LOCAL SEARCH
+    Fast local search
   */
 
   for (
@@ -1059,11 +1324,9 @@ function performSearch() {
 
 
     if (
-
       ALL_RECORDS[i]
         .__search
         .includes(query)
-
     ) {
 
       matches.push(
@@ -1097,9 +1360,8 @@ function performSearch() {
 }
 
 
-
 /* =========================
-   RENDER
+   RENDER RESULTS
 ========================= */
 
 function renderResults(
@@ -1136,7 +1398,10 @@ function renderResults(
 
   records.forEach(
 
-    function(record, index) {
+    function(
+      record,
+      index
+    ) {
 
 
       const card =
@@ -1150,13 +1415,9 @@ function renderResults(
 
 
       card.innerHTML =
-
         buildCard(
-
           record,
-
           index + 1
-
         );
 
 
@@ -1176,7 +1437,6 @@ function renderResults(
 }
 
 
-
 /* =========================
    BUILD CARD
 ========================= */
@@ -1188,58 +1448,47 @@ function buildCard(
 
 
   const replacementDate =
-
     clean(
-
       record[
         COL.REPLACEMENT_DATE
       ]
-
     );
 
 
   const issueDate =
-
     clean(
-
       record[
         COL.ISSUE_DATE
       ]
-
     );
 
 
   const driverName =
-
     clean(
-
       record[
         COL.DRIVER_NAME
       ]
-
     );
 
 
   const driverMobile =
-
     clean(
-
       record[
         COL.DRIVER_MOBILE
       ]
-
     );
 
 
   let statusHTML = "";
 
 
+  /*
+    INSTALLED
+  */
 
-  /* =====================
-     INSTALLED
-  ===================== */
-
-  if (replacementDate) {
+  if (
+    replacementDate
+  ) {
 
 
     statusHTML = `
@@ -1274,22 +1523,24 @@ function buildCard(
   }
 
 
+  /*
+    ISSUED
+  */
 
-  /* =====================
-     ISSUED
-  ===================== */
-
-  else if (issueDate) {
+  else if (
+    issueDate
+  ) {
 
 
     let callButton = "";
 
 
-    if (driverMobile) {
+    if (
+      driverMobile
+    ) {
 
 
       const phone =
-
         driverMobile.replace(
           /[^\d+]/g,
           ""
@@ -1300,7 +1551,9 @@ function buildCard(
 
         <a
           class="call-btn"
-          href="tel:${escapeHTML(phone)}">
+          href="tel:${escapeHTML(
+            phone
+          )}">
 
           ☎ CALL DRIVER
 
@@ -1389,10 +1642,9 @@ function buildCard(
   }
 
 
-
-  /* =====================
-     PENDING
-  ===================== */
+  /*
+    PENDING
+  */
 
   else {
 
@@ -1418,63 +1670,38 @@ function buildCard(
   }
 
 
+  /*
+    REPEATED DAMAGE
 
-  /* =====================
-     REPEATED DAMAGE KEY
-  ===================== */
+    LOCATION ONLY
+
+    Numbers ignored.
+  */
 
   const location =
-
     normalizeLocation(
-
       record[
         COL.PLACE_DAMAGE
       ]
-
     );
-
-
-  const capacity =
-
-    normalize(
-
-      record[
-        COL.CAPACITY
-      ]
-
-    );
-
-
-  const historyKey =
-
-    location +
-
-    "||" +
-
-    capacity;
 
 
   const history =
-
     location
-
       ? (
           DAMAGE_HISTORY[
-            historyKey
+            location
           ] || []
         )
-
       : [];
-
 
 
   let repeatedHTML = "";
 
 
-
-  /* =====================
-     NOT REPEATED
-  ===================== */
+  /*
+    NOT REPEATED
+  */
 
   if (
     history.length <= 1
@@ -1497,10 +1724,9 @@ function buildCard(
   }
 
 
-
-  /* =====================
-     REPEATED
-  ===================== */
+  /*
+    REPEATED
+  */
 
   else {
 
@@ -1517,315 +1743,6 @@ function buildCard(
 
 
         const pr =
-
           clean(
-
             item[
-              COL.PR_NO
-            ]
-
-          ) || "-";
-
-
-        const date =
-
-          clean(
-
-            item[
-              COL.PR_DATE
-            ]
-
-          ) ||
-
-          clean(
-
-            item[
-              COL.DATE_DAMAGE
-            ]
-
-          ) ||
-
-          "-";
-
-
-        const itemCapacity =
-
-          clean(
-
-            item[
-              COL.CAPACITY
-            ]
-
-          ) || "-";
-
-
-        rows += `
-
-          <div
-            class="repeat-row">
-
-
-            <div>
-
-              <b>
-
-                ${ordinal(
-                  index + 1
-                )} Time
-
-              </b>
-
-            </div>
-
-
-            <div>
-
-              PR No:
-
-              <b>
-
-                ${escapeHTML(
-                  pr
-                )}
-
-              </b>
-
-            </div>
-
-
-            <div>
-
-              Date:
-
-              <b>
-
-                ${escapeHTML(
-                  date
-                )}
-
-              </b>
-
-            </div>
-
-
-            <div>
-
-              Capacity:
-
-              <b>
-
-                ${escapeHTML(
-                  itemCapacity
-                )}
-
-              </b>
-
-            </div>
-
-
-          </div>
-
-        `;
-
-      }
-
-    );
-
-
-    repeatedHTML = `
-
-      <div
-        class="repeat-box repeated">
-
-
-        <div
-          class="repeat-title">
-
-          ⚠ It Damaged
-          ${history.length}
-          times
-
-        </div>
-
-
-        <div
-          class="repeat-warning">
-
-          Please Ensure Increasing Capacity if Overloaded
-
-        </div>
-
-
-        ${rows}
-
-
-      </div>
-
-    `;
-
-  }
-
-
-
-  /* =====================
-     FINAL CARD
-  ===================== */
-
-  return `
-
-
-    <div
-      class="card-number">
-
-
-      #${number}
-
-
-      <span>
-
-        Row
-        ${record.__rowNumber}
-
-      </span>
-
-
-    </div>
-
-
-
-    ${statusHTML}
-
-
-
-    ${repeatedHTML}
-
-
-
-    <div
-      class="data-grid">
-
-
-      ${field(
-        "Workshop",
-        record[
-          COL.WORKSHOP
-        ]
-      )}
-
-
-      ${field(
-        "Division",
-        record[
-          COL.DIVISION
-        ]
-      )}
-
-
-      ${field(
-        "Subdivision",
-        record[
-          COL.SUBDIVISION
-        ]
-      )}
-
-
-      ${field(
-        "Substation",
-        record[
-          COL.SUBSTATION
-        ]
-      )}
-
-
-      ${field(
-        "Feeder",
-        record[
-          COL.FEEDER
-        ]
-      )}
-
-
-      ${field(
-        "Date of Damage",
-        record[
-          COL.DATE_DAMAGE
-        ]
-      )}
-
-
-      ${field(
-        "Place of Damage",
-        record[
-          COL.PLACE_DAMAGE
-        ]
-      )}
-
-
-      ${field(
-        "DID No",
-        record[
-          COL.DID_NO
-        ]
-      )}
-
-
-      ${field(
-        "Capacity",
-        record[
-          COL.CAPACITY
-        ]
-      )}
-
-
-      ${field(
-        "Complaint Number",
-        record[
-          COL.COMPLAINT_NO
-        ]
-      )}
-
-
-      ${field(
-        "Complaint Date",
-        record[
-          COL.COMPLAINT_DATE
-        ]
-      )}
-
-
-      ${field(
-        "PR No",
-        record[
-          COL.PR_NO
-        ]
-      )}
-
-
-      ${field(
-        "PR Date",
-        record[
-          COL.PR_DATE
-        ]
-      )}
-
-
-      ${field(
-        "JE Name",
-        record[
-          COL.JE_NAME
-        ]
-      )}
-
-
-      ${field(
-        "JE Mobile",
-        record[
-          COL.JE_MOBILE
-        ]
-      )}
-
-
-      ${field(
-        "Issued To Firm",
-        record[
-          COL.ISSU
+ 

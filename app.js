@@ -1,12 +1,7 @@
 /* =========================================================
    TRANSFORMER TRACKING
-   GOOGLE SHEET -> PR SEARCH
-   LOAD ONCE -> SEARCH LOCALLY
-========================================================= */
-
-
-/* =========================================================
-   GOOGLE SHEET
+   FAST LOCAL SEARCH
+   PR SEARCH SHEET
 ========================================================= */
 
 const SHEET_ID =
@@ -15,26 +10,21 @@ const SHEET_ID =
 const SHEET_GID =
   "1464518527";
 
-
-/*
-   PR SEARCH:
-
-   Row 3 = Header
-   Row 4 onwards = Data
-
-   A:AZ loaded so search can scan all available columns.
-*/
+let ALL_RECORDS = [];
+let DAMAGE_HISTORY = new Map();
+let DATA_READY = false;
+let LOAD_STARTED = false;
 
 
 /* =========================================================
-   COLUMN MAP
+   COLUMN POSITION
    A = 0
+   X = 23
 ========================================================= */
 
 const COL = {
 
   SN: 0,
-
   WORKSHOP: 1,
   DIVISION: 2,
   SUBDIVISION: 3,
@@ -66,21 +56,7 @@ const COL = {
 
   TX_RETURN_DATE: 22,
   OBSERVATION: 23
-
 };
-
-
-/* =========================================================
-   GLOBAL DATA
-========================================================= */
-
-let ALL_RECORDS = [];
-
-let DAMAGE_HISTORY = new Map();
-
-let DATA_READY = false;
-
-let LOAD_STARTED = false;
 
 
 /* =========================================================
@@ -129,21 +105,45 @@ function esc(value) {
 
 
 /* =========================================================
-   VALUE
+   GET VALUE
 ========================================================= */
 
-function getValue(row, index) {
+function getValue(row, col) {
 
-  if (!row) {
-    return "";
-  }
-
-  return row[index] ?? "";
+  return row && row[col] != null
+    ? row[col]
+    : "";
 }
 
 
 /* =========================================================
-   DATE PARSER
+   ORDINAL
+========================================================= */
+
+function ordinal(n) {
+
+  if (n % 100 >= 11 && n % 100 <= 13) {
+    return n + "th";
+  }
+
+  if (n % 10 === 1) {
+    return n + "st";
+  }
+
+  if (n % 10 === 2) {
+    return n + "nd";
+  }
+
+  if (n % 10 === 3) {
+    return n + "rd";
+  }
+
+  return n + "th";
+}
+
+
+/* =========================================================
+   DATE SORT
 ========================================================= */
 
 function dateScore(value) {
@@ -155,7 +155,6 @@ function dateScore(value) {
     return Number.MAX_SAFE_INTEGER;
   }
 
-  /* dd/mm/yyyy */
   let m =
     s.match(
       /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
@@ -170,7 +169,6 @@ function dateScore(value) {
     ).getTime();
   }
 
-  /* yyyy-mm-dd */
   m =
     s.match(
       /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
@@ -188,46 +186,14 @@ function dateScore(value) {
   const d =
     new Date(s);
 
-  const t =
-    d.getTime();
-
-  return Number.isNaN(t)
+  return Number.isNaN(d.getTime())
     ? Number.MAX_SAFE_INTEGER
-    : t;
+    : d.getTime();
 }
 
 
 /* =========================================================
-   ORDINAL
-========================================================= */
-
-function ordinal(n) {
-
-  const v = n % 100;
-
-  if (v >= 11 && v <= 13) {
-    return n + "th";
-  }
-
-  switch (n % 10) {
-
-    case 1:
-      return n + "st";
-
-    case 2:
-      return n + "nd";
-
-    case 3:
-      return n + "rd";
-
-    default:
-      return n + "th";
-  }
-}
-
-
-/* =========================================================
-   JSONP LOADER
+   LOAD GOOGLE SHEET
 ========================================================= */
 
 function loadGoogleSheet() {
@@ -246,28 +212,36 @@ function loadGoogleSheet() {
 
 
   const callbackName =
-    "transformerTrackingCallback_" +
-    Date.now();
+    "ttCallback_" + Date.now();
 
 
   const script =
     document.createElement("script");
 
 
+  let finished = false;
+
+
   const timeout =
-    setTimeout(() => {
+    setTimeout(function() {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
 
       cleanup();
 
       LOAD_STARTED = false;
 
       searchStatus.textContent =
-        "Unable to load PR SEARCH. Please refresh.";
+        "Loading timed out. Please refresh the page.";
 
       searchStatus.className =
         "search-status error";
 
-    }, 30000);
+    }, 60000);
 
 
   function cleanup() {
@@ -287,13 +261,19 @@ function loadGoogleSheet() {
 
 
   window[callbackName] =
-    function(gviz) {
+    function(response) {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
 
       cleanup();
 
       try {
 
-        processGoogleData(gviz);
+        processGoogleData(response);
 
       } catch (error) {
 
@@ -302,53 +282,55 @@ function loadGoogleSheet() {
         LOAD_STARTED = false;
 
         searchStatus.textContent =
-          "Data processing error. Please refresh.";
+          "Data processing error.";
 
         searchStatus.className =
           "search-status error";
       }
-
     };
 
 
   /*
-    Row 3 is header.
+     IMPORTANT
 
-    We start from A3.
+     Only A:X is required.
 
-    gid ensures only PR SEARCH tab is used.
+     Row 3 = headers
+     Row 4 onward = records
   */
 
-  const params = new URLSearchParams({
-
-    gid:
-      SHEET_GID,
-
-    range:
-      "A3:AZ",
-
-    tq:
-      "select *",
-
-    tqx:
-      "responseHandler:" +
-      callbackName
-
-  });
-
-
-  script.src =
+  const url =
     "https://docs.google.com/spreadsheets/d/" +
     SHEET_ID +
-    "/gviz/tq?" +
-    params.toString();
+    "/gviz/tq" +
+    "?gid=" + encodeURIComponent(SHEET_GID) +
+    "&range=A3:X" +
+    "&headers=1" +
+    "&tq=" + encodeURIComponent("select *") +
+    "&tqx=" + encodeURIComponent(
+      "responseHandler:" + callbackName
+    );
 
+
+  console.log(
+    "Loading PR SEARCH:",
+    url
+  );
+
+
+  script.src = url;
 
   script.async = true;
 
 
   script.onerror =
     function() {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
 
       cleanup();
 
@@ -367,34 +349,49 @@ function loadGoogleSheet() {
 
 
 /* =========================================================
-   PROCESS GOOGLE DATA
+   PROCESS DATA
 ========================================================= */
 
-function processGoogleData(gviz) {
+function processGoogleData(response) {
 
   if (
-    !gviz ||
-    !gviz.table ||
-    !Array.isArray(gviz.table.rows)
+    !response ||
+    !response.table ||
+    !Array.isArray(response.table.rows)
   ) {
 
     throw new Error(
-      "Invalid Google Sheet response"
+      "Invalid Google response"
     );
   }
 
 
+  /*
+     Check Google error response
+  */
+
+  if (
+    response.status &&
+    response.status !== "ok" &&
+    response.status !== "warning"
+  ) {
+
+    const message =
+      response.errors &&
+      response.errors[0]
+        ? response.errors[0].message
+        : "Google Sheet error";
+
+    throw new Error(message);
+  }
+
+
   const rows =
-    gviz.table.rows;
+    response.table.rows;
 
 
   ALL_RECORDS = [];
 
-
-  /*
-    gviz rows start after the header because
-    range=A3:AZ and headers are automatically detected.
-  */
 
   for (
     let i = 0;
@@ -402,55 +399,54 @@ function processGoogleData(gviz) {
     i++
   ) {
 
-    const gRow =
-      rows[i];
-
-
     const cells =
-      gRow.c || [];
+      rows[i].c || [];
 
+
+    /*
+       A:X = 24 columns
+    */
 
     const record =
-      new Array(52).fill("");
+      new Array(24).fill("");
 
 
     for (
       let c = 0;
-      c < record.length;
+      c < 24;
       c++
     ) {
 
       const cell =
         cells[c];
 
-
       if (!cell) {
-        record[c] = "";
         continue;
       }
 
 
       /*
-        f = formatted value
-        v = raw value
+         Prefer formatted value.
+         This keeps dates/numbers readable.
       */
 
       record[c] =
-        cell.f ??
-        cell.v ??
-        "";
+        cell.f != null
+          ? cell.f
+          : (
+              cell.v != null
+                ? cell.v
+                : ""
+            );
     }
 
 
-    /*
-      Ignore completely empty rows.
-    */
-
     const hasData =
-      record.some(
-        value =>
-          String(value ?? "").trim() !== ""
-      );
+      record.some(function(value) {
+
+        return String(value ?? "").trim() !== "";
+
+      });
 
 
     if (!hasData) {
@@ -459,9 +455,9 @@ function processGoogleData(gviz) {
 
 
     /*
-      Search index.
+       Complete local search index.
 
-      All loaded columns are included.
+       Every column A:X is included.
     */
 
     record.__search =
@@ -471,7 +467,10 @@ function processGoogleData(gviz) {
 
 
     /*
-      Keep original row position.
+       Actual Google Sheet row number.
+
+       A3 is header,
+       therefore first data row = 4.
     */
 
     record.__sheetRow =
@@ -481,6 +480,11 @@ function processGoogleData(gviz) {
     ALL_RECORDS.push(record);
   }
 
+
+  /*
+     Build repeated damage history
+     only once.
+  */
 
   buildDamageHistory();
 
@@ -497,14 +501,19 @@ function processGoogleData(gviz) {
 
 
   console.log(
-    "Transformer Tracking loaded:",
+    "TOTAL RECORDS:",
     ALL_RECORDS.length
+  );
+
+  console.log(
+    "DAMAGE HISTORY:",
+    DAMAGE_HISTORY.size
   );
 }
 
 
 /* =========================================================
-   DAMAGE HISTORY
+   BUILD DAMAGE HISTORY
 ========================================================= */
 
 function buildDamageHistory() {
@@ -525,11 +534,6 @@ function buildDamageHistory() {
         )
       );
 
-
-    /*
-      If place is blank, do not create
-      a repeated-damage group.
-    */
 
     if (!place) {
       continue;
@@ -554,57 +558,52 @@ function buildDamageHistory() {
 
 
   /*
-    Sort each history by damage/PR date.
-
-    If dates are unavailable, original order
-    is retained.
+     Sort every history by PR Date.
   */
 
   for (
     const history of DAMAGE_HISTORY.values()
   ) {
 
-    history.sort(
-      (a, b) => {
+    history.sort(function(a, b) {
 
-        const aDate =
-          dateScore(
-            getValue(
-              a,
-              COL.PR_DATE
-            ) ||
-            getValue(
-              a,
-              COL.DATE_DAMAGE
-            )
-          );
-
-
-        const bDate =
-          dateScore(
-            getValue(
-              b,
-              COL.PR_DATE
-            ) ||
-            getValue(
-              b,
-              COL.DATE_DAMAGE
-            )
-          );
+      const aDate =
+        dateScore(
+          getValue(
+            a,
+            COL.PR_DATE
+          ) ||
+          getValue(
+            a,
+            COL.DATE_DAMAGE
+          )
+        );
 
 
-        if (aDate === bDate) {
+      const bDate =
+        dateScore(
+          getValue(
+            b,
+            COL.PR_DATE
+          ) ||
+          getValue(
+            b,
+            COL.DATE_DAMAGE
+          )
+        );
 
-          return (
-            (a.__sheetRow || 0) -
-            (b.__sheetRow || 0)
-          );
-        }
 
+      if (aDate === bDate) {
 
-        return aDate - bDate;
+        return (
+          (a.__sheetRow || 0) -
+          (b.__sheetRow || 0)
+        );
       }
-    );
+
+
+      return aDate - bDate;
+    });
   }
 }
 
@@ -627,12 +626,10 @@ function performSearch() {
   }
 
 
-  const raw =
-    searchInput.value;
-
-
   const query =
-    normalize(raw);
+    normalize(
+      searchInput.value
+    );
 
 
   if (!query) {
@@ -641,7 +638,7 @@ function performSearch() {
 
     searchStatus.textContent =
       ALL_RECORDS.length.toLocaleString() +
-      " transformer records loaded • Enter PR / Complaint Number";
+      " transformer records loaded • Search ready";
 
     searchStatus.className =
       "search-status ready";
@@ -651,13 +648,11 @@ function performSearch() {
 
 
   /*
-    LOCAL SEARCH ONLY.
-
-    No Google request here.
+     LOCAL SEARCH.
+     No Google request.
   */
 
-  const found =
-    [];
+  const found = [];
 
 
   for (
@@ -666,16 +661,15 @@ function performSearch() {
     i++
   ) {
 
-    const record =
-      ALL_RECORDS[i];
-
-
     if (
-      record.__search &&
-      record.__search.includes(query)
+      ALL_RECORDS[i].__search.includes(
+        query
+      )
     ) {
 
-      found.push(record);
+      found.push(
+        ALL_RECORDS[i]
+      );
     }
   }
 
@@ -719,10 +713,6 @@ function renderResults(records) {
   let html = "";
 
 
-  /*
-    No artificial limit on search results.
-  */
-
   for (
     let i = 0;
     i < records.length;
@@ -743,161 +733,92 @@ function renderResults(records) {
 
 
 /* =========================================================
-   RESULT CARD
+   CARD
 ========================================================= */
 
-function renderCard(row, cardNumber) {
+function renderCard(row, number) {
 
   const workshop =
-    getValue(
-      row,
-      COL.WORKSHOP
-    );
+    getValue(row, COL.WORKSHOP);
 
   const division =
-    getValue(
-      row,
-      COL.DIVISION
-    );
+    getValue(row, COL.DIVISION);
 
   const subdivision =
-    getValue(
-      row,
-      COL.SUBDIVISION
-    );
+    getValue(row, COL.SUBDIVISION);
 
   const substation =
-    getValue(
-      row,
-      COL.SUBSTATION
-    );
+    getValue(row, COL.SUBSTATION);
 
   const feeder =
-    getValue(
-      row,
-      COL.FEEDER
-    );
+    getValue(row, COL.FEEDER);
 
   const dateDamage =
-    getValue(
-      row,
-      COL.DATE_DAMAGE
-    );
+    getValue(row, COL.DATE_DAMAGE);
 
   const place =
-    getValue(
-      row,
-      COL.PLACE_DAMAGE
-    );
+    getValue(row, COL.PLACE_DAMAGE);
 
   const didNo =
-    getValue(
-      row,
-      COL.DID_NO
-    );
+    getValue(row, COL.DID_NO);
 
   const capacity =
-    getValue(
-      row,
-      COL.CAPACITY
-    );
+    getValue(row, COL.CAPACITY);
 
   const complaintNo =
-    getValue(
-      row,
-      COL.COMPLAINT_NO
-    );
+    getValue(row, COL.COMPLAINT_NO);
 
   const complaintDate =
-    getValue(
-      row,
-      COL.COMPLAINT_DATE
-    );
+    getValue(row, COL.COMPLAINT_DATE);
 
   const prNo =
-    getValue(
-      row,
-      COL.PR_NO
-    );
+    getValue(row, COL.PR_NO);
 
   const prDate =
-    getValue(
-      row,
-      COL.PR_DATE
-    );
+    getValue(row, COL.PR_DATE);
 
   const jeName =
-    getValue(
-      row,
-      COL.JE_NAME
-    );
+    getValue(row, COL.JE_NAME);
 
   const jeMobile =
-    getValue(
-      row,
-      COL.JE_MOBILE
-    );
+    getValue(row, COL.JE_MOBILE);
 
   const issuedFirm =
-    getValue(
-      row,
-      COL.ISSUED_TO_FIRM
-    );
+    getValue(row, COL.ISSUED_TO_FIRM);
 
   const issueDate =
-    getValue(
-      row,
-      COL.ISSUE_DATE
-    );
+    getValue(row, COL.ISSUE_DATE);
 
   const driverName =
-    getValue(
-      row,
-      COL.DRIVER_NAME
-    );
+    getValue(row, COL.DRIVER_NAME);
 
   const driverMobile =
-    getValue(
-      row,
-      COL.DRIVER_MOBILE
-    );
+    getValue(row, COL.DRIVER_MOBILE);
 
   const replacementDate =
-    getValue(
-      row,
-      COL.REPLACEMENT_DATE
-    );
+    getValue(row, COL.REPLACEMENT_DATE);
 
   const time =
-    getValue(
-      row,
-      COL.TIME
-    );
+    getValue(row, COL.TIME);
 
   const returnDate =
-    getValue(
-      row,
-      COL.TX_RETURN_DATE
-    );
+    getValue(row, COL.TX_RETURN_DATE);
 
   const observation =
-    getValue(
-      row,
-      COL.OBSERVATION
-    );
+    getValue(row, COL.OBSERVATION);
 
 
-  /* =====================================
+  /* =======================================================
      STATUS
-  ===================================== */
+  ======================================================= */
 
-  let statusHTML = "";
+  let statusHTML;
 
 
   if (
     String(
       replacementDate
-    ).trim()
+    ).trim() !== ""
   ) {
 
     statusHTML = `
@@ -919,7 +840,7 @@ function renderCard(row, cardNumber) {
   else if (
     String(
       issueDate
-    ).trim()
+    ).trim() !== ""
   ) {
 
     statusHTML = `
@@ -962,9 +883,10 @@ function renderCard(row, cardNumber) {
   }
 
 
-  /* =====================================
+  /* =======================================================
      REPEATED DAMAGE
-  ===================================== */
+     NO LIMIT
+  ======================================================= */
 
   const placeKey =
     normalize(place);
@@ -983,21 +905,11 @@ function renderCard(row, cardNumber) {
   let repeatHTML;
 
 
-  /*
-    IMPORTANT:
-    NO LIMIT.
-
-    If history has 2, 3, 10, 20 records,
-    ALL records will be displayed.
-  */
-
   if (history.length <= 1) {
 
     repeatHTML = `
       <div class="repeat-box normal">
-
         Not a repeated damage
-
       </div>
     `;
 
@@ -1007,6 +919,14 @@ function renderCard(row, cardNumber) {
 
     let historyHTML = "";
 
+
+    /*
+       ALL occurrences.
+
+       No slice()
+       No limit
+       No first-3 restriction.
+    */
 
     for (
       let i = 0;
@@ -1061,24 +981,16 @@ function renderCard(row, cardNumber) {
       <div class="repeat-box repeated">
 
         <div class="repeat-title">
-
           It Damaged ${history.length} times
-
         </div>
-
 
         <div class="repeat-warning">
-
           Please Ensure Increasing Capacity
           if Overloaded
-
         </div>
 
-
         <div class="repeat-history">
-
           ${historyHTML}
-
         </div>
 
       </div>
@@ -1086,9 +998,9 @@ function renderCard(row, cardNumber) {
   }
 
 
-  /* =====================================
-     DATA HTML
-  ===================================== */
+  /* =======================================================
+     FINAL CARD
+  ======================================================= */
 
   return `
     <article class="result-card">
@@ -1096,7 +1008,7 @@ function renderCard(row, cardNumber) {
       <div class="card-top">
 
         <span class="card-number">
-          Record #${cardNumber}
+          Record #${number}
         </span>
 
         <span class="card-number">
@@ -1109,218 +1021,157 @@ function renderCard(row, cardNumber) {
       ${statusHTML}
 
 
-      <div class="card-row">
-        <div class="field-label">
-          Workshop
-        </div>
+      ${field("Workshop", workshop)}
 
-        <div class="field-value">
-          ${esc(workshop || "-")}
-        </div>
+      ${field("Division", division)}
+
+      ${field("Subdivision", subdivision)}
+
+      ${field("Substation", substation)}
+
+      ${field("Feeder", feeder)}
+
+      ${field("Date of Damage", dateDamage)}
+
+      ${field("Place of Damage", place)}
+
+      ${field("DID No", didNo)}
+
+      ${field("Capacity", capacity)}
+
+      ${field("Complaint Number", complaintNo)}
+
+      ${field("Complaint Date", complaintDate)}
+
+      ${field("PR No", prNo)}
+
+      ${field("PR Date", prDate)}
+
+      ${field("JE Name", jeName)}
+
+      ${field("JE Mobile", jeMobile)}
+
+      ${field("Issued to Firm", issuedFirm)}
+
+      ${field("Issue Date", issueDate)}
+
+      ${field("Driver Name", driverName)}
+
+      ${field("Driver Mobile", driverMobile)}
+
+      ${field("Replacement Date", replacementDate)}
+
+      ${field("Time", time)}
+
+      ${field("TX Return Date", returnDate)}
+
+      ${field("Observation DTC", observation)}
+
+
+      ${repeatHTML}
+
+    </article>
+  `;
+}
+
+
+/* =========================================================
+   FIELD HTML
+========================================================= */
+
+function field(label, value) {
+
+  return `
+    <div class="card-row">
+
+      <div class="field-label">
+        ${esc(label)}
       </div>
 
-
-      <div class="card-row">
-        <div class="field-label">
-          Division
-        </div>
-
-        <div class="field-value">
-          ${esc(division || "-")}
-        </div>
+      <div class="field-value">
+        ${esc(value || "-")}
       </div>
 
-
-      <div class="card-row">
-        <div class="field-label">
-          Subdivision
-        </div>
-
-        <div class="field-value">
-          ${esc(subdivision || "-")}
-        </div>
-      </div>
+    </div>
+  `;
+}
 
 
-      <div class="card-row">
-        <div class="field-label">
-          Substation
-        </div>
+/* =========================================================
+   EVENTS
+========================================================= */
 
-        <div class="field-value">
-          ${esc(substation || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Feeder
-        </div>
-
-        <div class="field-value">
-          ${esc(feeder || "-")}
-        </div>
-      </div>
+searchBtn.addEventListener(
+  "click",
+  performSearch
+);
 
 
-      <div class="card-row">
-        <div class="field-label">
-          Date of Damage
-        </div>
+searchInput.addEventListener(
+  "keydown",
+  function(event) {
 
-        <div class="field-value">
-          ${esc(dateDamage || "-")}
-        </div>
-      </div>
+    if (
+      event.key === "Enter"
+    ) {
 
+      event.preventDefault();
 
-      <div class="card-row">
-        <div class="field-label">
-          Place of Damage
-        </div>
-
-        <div class="field-value">
-          ${esc(place || "-")}
-        </div>
-      </div>
+      performSearch();
+    }
+  }
+);
 
 
-      <div class="card-row">
-        <div class="field-label">
-          DID No
-        </div>
+/*
+   Instant local search while typing.
+*/
 
-        <div class="field-value">
-          ${esc(didNo || "-")}
-        </div>
-      </div>
+searchInput.addEventListener(
+  "input",
+  function() {
 
+    if (
+      searchInput.value.trim()
+    ) {
 
-      <div class="card-row">
-        <div class="field-label">
-          Capacity
-        </div>
+      performSearch();
 
-        <div class="field-value">
-          ${esc(capacity || "-")}
-        </div>
-      </div>
+    }
+    else {
 
+      results.innerHTML = "";
 
-      <div class="card-row">
-        <div class="field-label">
-          Complaint Number
-        </div>
+      if (DATA_READY) {
 
-        <div class="field-value">
-          ${esc(complaintNo || "-")}
-        </div>
-      </div>
+        searchStatus.textContent =
+          ALL_RECORDS.length.toLocaleString() +
+          " transformer records loaded • Search ready";
 
-
-      <div class="card-row">
-        <div class="field-label">
-          Complaint Date
-        </div>
-
-        <div class="field-value">
-          ${esc(complaintDate || "-")}
-        </div>
-      </div>
+        searchStatus.className =
+          "search-status ready";
+      }
+    }
+  }
+);
 
 
-      <div class="card-row">
-        <div class="field-label">
-          PR No
-        </div>
+/* =========================================================
+   START
+========================================================= */
 
-        <div class="field-value">
-          ${esc(prNo || "-")}
-        </div>
-      </div>
+if (
+  document.readyState === "loading"
+) {
 
+  document.addEventListener(
+    "DOMContentLoaded",
+    loadGoogleSheet
+  );
 
-      <div class="card-row">
-        <div class="field-label">
-          PR Date
-        </div>
+}
+else {
 
-        <div class="field-value">
-          ${esc(prDate || "-")}
-        </div>
-      </div>
+  loadGoogleSheet();
 
-
-      <div class="card-row">
-        <div class="field-label">
-          JE Name
-        </div>
-
-        <div class="field-value">
-          ${esc(jeName || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          JE Mobile
-        </div>
-
-        <div class="field-value">
-          ${esc(jeMobile || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Issued to Firm
-        </div>
-
-        <div class="field-value">
-          ${esc(issuedFirm || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Issue Date
-        </div>
-
-        <div class="field-value">
-          ${esc(issueDate || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Driver Name
-        </div>
-
-        <div class="field-value">
-          ${esc(driverName || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Driver Mobile
-        </div>
-
-        <div class="field-value">
-          ${esc(driverMobile || "-")}
-        </div>
-      </div>
-
-
-      <div class="card-row">
-        <div class="field-label">
-          Replacement Date
-        </div>
-
-     
+}

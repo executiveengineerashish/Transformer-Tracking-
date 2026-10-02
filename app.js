@@ -1,648 +1,1380 @@
-const SID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
-const GID="1464518527";
+const SHEET_ID =
+"1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
-let DATA=[];
-let HISTORY={};
+const SHEET_GID =
+"1464518527";
 
-const C={
-W:1,D:2,SD:3,SS:4,F:5,
-DAMAGE:6,PLACE:7,DID:8,CAP:9,
-COMPLAINT:10,COMPLAINTDATE:11,
-PR:12,PRDATE:13,
-JE:14,JEMOBILE:15,
-FIRM:16,ISSUE:17,
-DRIVER:18,MOBILE:19,
-REPLACE:20,TIME:21,RETURN:22,OBS:23
+let ALL_RECORDS = [];
+let DAMAGE_HISTORY = {};
+let searchTimer = null;
+
+/*
+  PR SEARCH columns
+  A=0 ... X=23
+*/
+
+const COL = {
+
+  SN:0,
+  WORKSHOP:1,
+  DIVISION:2,
+  SUBDIVISION:3,
+  SUBSTATION:4,
+  FEEDER:5,
+
+  DATE_DAMAGE:6,
+  PLACE_DAMAGE:7,
+  DID_NO:8,
+  CAPACITY:9,
+
+  COMPLAINT_NO:10,
+  COMPLAINT_DATE:11,
+
+  PR_NO:12,
+  PR_DATE:13,
+
+  JE_NAME:14,
+  JE_MOBILE:15,
+
+  ISSUED_TO_FIRM:16,
+  ISSUE_DATE:17,
+
+  DRIVER_NAME:18,
+  DRIVER_MOBILE:19,
+
+  REPLACEMENT_DATE:20,
+  TIME:21,
+
+  TX_RETURN_DATE:22,
+  OBSERVATION:23
 };
 
-const $=id=>document.getElementById(id);
 
-function s(v){
-return String(v??"").trim();
+/* ---------------- BASIC FUNCTIONS ---------------- */
+
+function $(id){
+  return document.getElementById(id);
 }
 
-function norm(v){
-return s(v).toLowerCase()
-.replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
+function clean(v){
+  return String(v ?? "").trim();
 }
 
-/* Removes numbers from LOCATION only */
-function location(v){
-return norm(s(v).replace(/[0-9]/g,""));
+
+/*
+  General search normalization.
+
+  Example:
+  810-172-5692
+  8101725692
+  810 172 5692
+
+  all become same searchable value.
+*/
+
+function normalize(v){
+
+  return String(v ?? "")
+    .toLowerCase()
+    .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"")
+    .trim();
+
 }
 
-/* Capacity remains separate */
-function capacity(v){
-return s(v).toLowerCase()
-.replace(/kva/g,"")
-.replace(/[^0-9.]/g,"");
+
+/*
+  Location normalization.
+
+  These will all become same location:
+
+  SISREDI
+  SISREDI 1
+  1 SISREDI
+  SISREDI (1)
+  (1) SISREDI
+  SISREDI [25]
+
+  Numbers and punctuation are ignored.
+*/
+
+function normalizeLocation(v){
+
+  let t = String(v ?? "").toLowerCase();
+
+  t = t.replace(/[0-9]+/g," ");
+
+  t = t.replace(/[\(\)\[\]\{\}]/g," ");
+
+  t = t.replace(/[-_/\\.,:;]+/g," ");
+
+  t = t.replace(/\s+/g," ").trim();
+
+  return normalize(t);
 }
+
+
+/*
+  CAPACITY IS PART OF THE REPEATED DAMAGE KEY.
+
+  Therefore:
+
+  SISREDI + 25 KVA
+  SISREDI + 63 KVA
+
+  are DIFFERENT groups.
+*/
+
+function normalizeCapacity(v){
+
+  let t = String(v ?? "")
+    .toLowerCase()
+    .replace(/kva/g,"")
+    .replace(/[^0-9.]/g,"")
+    .trim();
+
+  return t;
+}
+
+
+/* ---------------- DATE ---------------- */
 
 function parseDate(v){
 
-if(!s(v))return null;
+  if(
+    v === null ||
+    v === undefined ||
+    v === ""
+  ){
+    return null;
+  }
 
-let x=s(v);
+  const s = String(v).trim();
 
-let m=x.match(
-/Date\((\d+),(\d+),(\d+)/
-);
+  let m = s.match(
+    /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
+  );
 
-if(m)
-return new Date(
-+m[1],+m[2],+m[3]
-);
+  if(m){
+    return new Date(
+      +m[1],
+      +m[2],
+      +m[3]
+    );
+  }
 
-m=x.match(
-/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
-);
+  m = s.match(
+    /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
+  );
 
-if(m)
-return new Date(
-+m[3],+m[2]-1,+m[1]
-);
+  if(m){
 
-let d=new Date(x);
+    return new Date(
+      +m[1],
+      +m[2]-1,
+      +m[3]
+    );
 
-return isNaN(d.getTime())?null:d;
+  }
+
+  m = s.match(
+    /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
+  );
+
+  if(m){
+
+    return new Date(
+      +m[3],
+      +m[2]-1,
+      +m[1]
+    );
+
+  }
+
+  const d = new Date(s);
+
+  return isNaN(d.getTime())
+    ? null
+    : d;
 }
 
-function currentMonth(v){
 
-let d=parseDate(v);
-let n=new Date();
+/* ---------------- HTML SAFETY ---------------- */
 
-return d &&
-d.getMonth()===n.getMonth() &&
-d.getFullYear()===n.getFullYear();
-}
+function escapeHtml(v){
 
-
-/* =========================
-   LOAD GOOGLE SHEET
-========================= */
-
-function loadData(){
-
-window.transformerData=function(r){
-
-try{
-
-DATA=[];
-
-(r.table.rows||[]).forEach(
-(row,i)=>{
-
-if(i===0)return;
-
-let a=[];
-
-for(let j=0;j<24;j++){
-
-let c=row.c&&row.c[j];
-
-a.push(
-c&&c.f!=null
-?c.f
-:c&&c.v!=null
-?c.v
-:""
-);
-
-}
-
-if(a.some(x=>s(x))){
-
-a._row=i+4;
-a._search=norm(a.join(" "));
-
-DATA.push(a);
-
-}
-
-});
-
-makeHistory();
-makeDashboard();
-
-$("status").textContent=
-DATA.length.toLocaleString("en-IN")+
-" transformer records loaded • Search ready";
-
-}
-catch(e){
-
-console.error(e);
-
-$("status").textContent=
-"Error loading PR SEARCH";
-
-}
-
-};
-
-let old=document.getElementById("sheetScript");
-
-if(old)old.remove();
-
-let script=document.createElement("script");
-
-script.id="sheetScript";
-
-script.src=
-"https://docs.google.com/spreadsheets/d/"+
-SID+
-"/gviz/tq?gid="+GID+
-"&range=A3:X"+
-"&headers=1"+
-"&tqx=out%3Ajson%3BresponseHandler%3AtransformerData"+
-"&_="+Date.now();
-
-script.onerror=function(){
-
-$("status").textContent=
-"Google Sheet connection failed";
-
-};
-
-document.head.appendChild(script);
+  return String(v ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
 }
 
 
-/* =========================
-   REPEATED DAMAGE
-   PLACE + CAPACITY
-========================= */
+/* ---------------- STATUS ---------------- */
 
-function makeHistory(){
+function setStatus(message,error=false){
 
-HISTORY={};
+  const e = $("searchStatus");
 
-DATA.forEach(r=>{
+  if(!e) return;
 
-let place=location(r[C.PLACE]);
-let cap=capacity(r[C.CAP]);
+  e.textContent = message;
 
-if(!place||!cap)return;
+  e.className =
+    "search-status " +
+    (error ? "error" : "ready");
+}
 
-let key=place+"|"+cap;
 
-if(!HISTORY[key])
-HISTORY[key]=[];
+/* ---------------- LOAD GOOGLE SHEET ---------------- */
 
-HISTORY[key].push(r);
+function loadSheet(){
 
-});
+  setStatus(
+    "Loading transformer records...",
+    false
+  );
 
-Object.values(HISTORY).forEach(a=>{
+  const callbackName =
+    "transformerCallback902";
 
-a.sort((x,y)=>{
+  try{
+    delete window[callbackName];
+  }catch(e){}
 
-let dx=
-parseDate(x[C.PRDATE])||
-parseDate(x[C.DAMAGE])||
-new Date(0);
+  window[callbackName] = function(response){
 
-let dy=
-parseDate(y[C.PRDATE])||
-parseDate(y[C.DAMAGE])||
-new Date(0);
+    try{
 
-return dx-dy;
+      if(
+        !response ||
+        !response.table ||
+        !response.table.rows
+      ){
 
-});
+        throw new Error(
+          "Invalid Google Sheet response"
+        );
 
-});
+      }
+
+      processSheetData(response);
+
+    }catch(error){
+
+      console.error(
+        "Sheet error:",
+        error
+      );
+
+      setStatus(
+        "Error reading PR SEARCH data",
+        true
+      );
+
+    }
+
+    try{
+      delete window[callbackName];
+    }catch(e){}
+
+  };
+
+
+  const url =
+    "https://docs.google.com/spreadsheets/d/" +
+    SHEET_ID +
+    "/gviz/tq" +
+    "?gid=" + SHEET_GID +
+    "&range=A3:X" +
+    "&headers=1" +
+    "&tqx=out%3Ajson%3BresponseHandler%3A" +
+    callbackName +
+    "&_=" +
+    Date.now();
+
+
+  const oldScript =
+    document.getElementById(
+      "googleSheetScript902"
+    );
+
+  if(oldScript){
+    oldScript.remove();
+  }
+
+
+  const script =
+    document.createElement("script");
+
+  script.id =
+    "googleSheetScript902";
+
+  script.src = url;
+
+  script.async = true;
+
+  script.onerror = function(){
+
+    setStatus(
+      "Google Sheet connection failed. Refresh page.",
+      true
+    );
+
+  };
+
+  document.head.appendChild(script);
+
+
+  setTimeout(function(){
+
+    if(!ALL_RECORDS.length){
+
+      setStatus(
+        "Google Sheet loading timeout. Refresh page.",
+        true
+      );
+
+    }
+
+  },25000);
 
 }
 
 
-/* =========================
-   STATUS
-========================= */
+/* ---------------- PROCESS SHEET ---------------- */
 
-function getStatus(r){
+function processSheetData(response){
 
-if(!s(r[C.ISSUE]))
-return"pending";
+  ALL_RECORDS = [];
 
-if(!s(r[C.REPLACE]))
-return"issued";
-
-if(!s(r[C.RETURN]))
-return"return";
-
-return"done";
-
-}
+  const rows =
+    response.table.rows || [];
 
 
-/* =========================
-   DASHBOARD
-========================= */
+  rows.forEach(function(row,index){
 
-function makeDashboard(){
+    /*
+      Row 3 is header.
+      Data starts from Row 4.
+    */
 
-let total=0;
-let issued=0;
-let pending=0;
-let replacement=0;
-let txreturn=0;
-
-let a24=0;
-let a72=0;
-let a168=0;
-
-DATA.forEach(r=>{
-
-/* CURRENT MONTH BY PR DATE */
-
-if(!currentMonth(r[C.PRDATE]))
-return;
-
-total++;
-
-let st=getStatus(r);
-
-if(st!=="pending")
-issued++;
-
-if(st==="pending")
-pending++;
-
-if(st==="issued"){
-
-replacement++;
-
-let d=parseDate(r[C.ISSUE]);
-
-if(d){
-
-let hours=
-(Date.now()-d.getTime())/
-3600000;
-
-if(hours>24)a24++;
-if(hours>72)a72++;
-if(hours>168)a168++;
-
-}
-
-}
-
-if(st==="return")
-txreturn++;
-
-});
-
-$("total").textContent=total;
-$("issued").textContent=issued;
-$("pending").textContent=pending;
-$("replacement").textContent=replacement;
-$("txreturn").textContent=txreturn;
-
-$("a24").textContent=a24;
-$("a72").textContent=a72;
-$("a168").textContent=a168;
-
-$("month").textContent=
-new Date().toLocaleString(
-"en-IN",
-{
-month:"long",
-year:"numeric"
-}
-);
-
-}
+    if(index === 0){
+      return;
+    }
 
 
-/* =========================
-   SEARCH
-========================= */
+    const record = [];
 
-$("search").addEventListener(
-"input",
-function(){
-
-let q=norm(this.value);
-
-if(!q){
-
-$("results").innerHTML="";
-return;
-
-}
-
-let found=DATA.filter(
-r=>r._search.includes(q)
-);
-
-showResults(found);
-
-});
+    const raw = [];
 
 
-/* =========================
-   RESULTS
-========================= */
+    for(let i=0;i<24;i++){
 
-function showResults(a){
+      const cell =
+        row.c?.[i];
 
-if(!a.length){
+      if(!cell){
 
-$("results").innerHTML=
-`<div class="noresult">
-No record found
-</div>`;
+        record.push("");
+        raw.push("");
 
-return;
+        continue;
+      }
 
-}
 
-$("results").innerHTML=
-`<div class="result-count">
-${a.length.toLocaleString("en-IN")}
-record(s) found
-</div>`+
-a.map((r,i)=>makeCard(r,i+1)).join("");
+      const formatted =
+        cell.f !== undefined &&
+        cell.f !== null
+          ? String(cell.f)
+          : cell.v !== undefined &&
+            cell.v !== null
+              ? String(cell.v)
+              : "";
+
+
+      const value =
+        cell.v !== undefined &&
+        cell.v !== null
+          ? String(cell.v)
+          : "";
+
+
+      record.push(formatted);
+      raw.push(value);
+
+    }
+
+
+    if(
+      record.every(
+        x => clean(x) === ""
+      )
+    ){
+
+      return;
+
+    }
+
+
+    record.__raw = raw;
+
+    /*
+      Google Sheet row number.
+      Header is row 3.
+      First data row = 4.
+    */
+
+    record.__sheetRow =
+      index + 4;
+
+
+    /*
+      Full row search index.
+    */
+
+    record.__search =
+      normalize(
+        record.join(" ")
+      );
+
+
+    ALL_RECORDS.push(record);
+
+  });
+
+
+  buildDamageHistory();
+
+  setStatus(
+    ALL_RECORDS.length.toLocaleString("en-IN") +
+    " transformer records loaded • Search ready",
+    false
+  );
 
 }
 
 
-/* =========================
-   CARD
-========================= */
+/* ---------------- REPEATED DAMAGE ---------------- */
 
-function makeCard(r,no){
+function buildDamageHistory(){
 
-let st=getStatus(r);
+  DAMAGE_HISTORY = {};
 
-let status="";
 
-if(st==="done"){
+  ALL_RECORDS.forEach(function(record){
 
-status=
-`<div class="status installed">
+    const location =
+      normalizeLocation(
+        record[COL.PLACE_DAMAGE]
+      );
 
-<strong>
-Congratulations Your Transformer Installed
-</strong>
+    const capacity =
+      normalizeCapacity(
+        record[COL.CAPACITY]
+      );
 
-Replacement Date:
-${s(r[C.REPLACE])}
 
-</div>`;
+    /*
+      IMPORTANT:
+      Both location AND capacity are used.
 
-}
+      Therefore different capacity transformers
+      are never mixed.
+    */
 
-else if(st==="issued"){
+    if(!location || !capacity){
+      return;
+    }
 
-status=
-`<div class="status issued">
 
-<strong>
-Your Transformer Issued by Workshop
-</strong>
+    const key =
+      location +
+      "||" +
+      capacity;
 
-Please Contact Driver for Installation
 
-<div class="driver">
-Issue Date: ${s(r[C.ISSUE])}
-</div>
+    if(!DAMAGE_HISTORY[key]){
+      DAMAGE_HISTORY[key] = [];
+    }
 
-<div class="driver">
-Driver: ${s(r[C.DRIVER])||"-"}
-</div>
 
-<div class="driver">
-Mobile: ${s(r[C.MOBILE])||"-"}
-</div>
+    DAMAGE_HISTORY[key].push(record);
 
-${driverButtons(r)}
+  });
 
-</div>`;
 
-}
+  Object.keys(
+    DAMAGE_HISTORY
+  ).forEach(function(key){
 
-else if(st==="return"){
+    DAMAGE_HISTORY[key].sort(
+      function(a,b){
 
-status=
-`<div class="status return">
+        const da =
+          parseDate(
+            a[COL.PR_DATE]
+          ) ||
+          parseDate(
+            a[COL.DATE_DAMAGE]
+          ) ||
+          new Date(0);
 
-<strong>
-Transformer Installed
-</strong>
 
-TX Return Pending
+        const db =
+          parseDate(
+            b[COL.PR_DATE]
+          ) ||
+          parseDate(
+            b[COL.DATE_DAMAGE]
+          ) ||
+          new Date(0);
 
-<div>
-Replacement Date:
-${s(r[C.REPLACE])}
-</div>
 
-</div>`;
+        return da - db;
 
-}
+      }
+    );
 
-else{
-
-status=
-`<div class="status pending">
-
-<strong>
-Transformer Pending to Issue
-</strong>
-
-</div>`;
+  });
 
 }
 
 
-/* =========================
-   REPEATED DAMAGE
-========================= */
+/* ---------------- RECORD STATUS ---------------- */
 
-let key=
-location(r[C.PLACE])+
-"|"+
-capacity(r[C.CAP]);
+function getStatus(record){
 
-let history=
-HISTORY[key]||[];
+  const issueDate =
+    clean(
+      record[COL.ISSUE_DATE]
+    );
 
-let repeated="";
+  const replacementDate =
+    clean(
+      record[COL.REPLACEMENT_DATE]
+    );
 
-if(history.length>1){
-
-repeated=
-`<div class="repeat">
-
-<div class="repeat-title">
-🔁 It Damaged ${history.length} times
-</div>
-
-<div>
-Please Ensure Increasing Capacity if Overloaded
-</div>
-
-${history.map(x=>
-
-`<div class="history">
-
-PR:
-<b>${s(x[C.PR])||"-"}</b>
-
-&nbsp; | &nbsp;
-
-Date:
-${s(x[C.PRDATE])||"-"}
-
-&nbsp; | &nbsp;
-
-Capacity:
-<b>${s(x[C.CAP])||"-"} kVA</b>
-
-</div>`
-
-).join("")}
-
-</div>`;
-
-}
+  const returnDate =
+    clean(
+      record[COL.TX_RETURN_DATE]
+    );
 
 
-/* =========================
-   DATA FIELDS
-========================= */
+  if(!issueDate){
 
-let fields=[
+    return "PENDING_ISSUE";
 
-["Workshop",C.W],
-["Division",C.D],
-["Subdivision",C.SD],
-["Substation",C.SS],
-["Feeder",C.F],
-
-["Date of Damage",C.DAMAGE],
-["Place of Damage",C.PLACE],
-["DID No",C.DID],
-["Capacity",C.CAP],
-
-["Complaint Number",C.COMPLAINT],
-["Complaint Date",C.COMPLAINTDATE],
-
-["PR No",C.PR],
-["PR Date",C.PRDATE],
-
-["JE Name",C.JE],
-["JE Mobile",C.JEMOBILE],
-
-["Issued to Firm",C.FIRM],
-["Issue Date",C.ISSUE],
-
-["Driver Name",C.DRIVER],
-["Driver Mobile",C.MOBILE],
-
-["Replacement Date",C.REPLACE],
-["Time",C.TIME],
-
-["TX Return Date",C.RETURN],
-["Observation DTC",C.OBS]
-
-];
-
-let rows=fields.map(f=>{
-
-if(!s(r[f[1]]))
-return"";
-
-return`
-<div class="row">
-
-<div class="label">
-${f[0]}
-</div>
-
-<div class="value">
-${s(r[f[1]])}
-</div>
-
-</div>`;
-
-}).join("");
+  }
 
 
-return`
+  if(
+    issueDate &&
+    !replacementDate
+  ){
 
-<div class="card">
+    return "REPLACEMENT_PENDING";
 
-<div class="cardno">
-#${no} • Sheet Row ${r._row}
-</div>
+  }
 
-${status}
 
-${repeated}
+  if(
+    replacementDate &&
+    !returnDate
+  ){
 
-${rows}
+    return "RETURN_PENDING";
 
-</div>
+  }
 
-`;
+
+  if(
+    issueDate &&
+    replacementDate &&
+    returnDate
+  ){
+
+    return "COMPLETED";
+
+  }
+
+
+  return "PENDING_ISSUE";
 
 }
 
 
-/* =========================
-   DRIVER BUTTONS
-========================= */
+/* ---------------- SEARCH ---------------- */
 
-function driverButtons(r){
+function filterRecords(){
 
-let phone=
-s(r[C.MOBILE])
-.replace(/[^\d+]/g,"");
+  const input =
+    $("searchInput");
 
-let message=
-`Namaste ${s(r[C.DRIVER])||"Driver"} ji,
+  if(!input){
+    return [];
+  }
 
-Transformer PR No.: ${s(r[C.PR])||"-"}
-Capacity: ${s(r[C.CAP])||"-"} kVA
-Place: ${s(r[C.PLACE])||"-"}
-Workshop: ${s(r[C.W])||"-"}
 
-Transformer has been issued from Workshop. Please arrange installation and confirm installation status.
+  const search =
+    normalize(
+      input.value
+    );
+
+
+  return ALL_RECORDS.filter(
+    function(record){
+
+      if(
+        search &&
+        !record.__search.includes(search)
+      ){
+
+        return false;
+
+      }
+
+      return true;
+
+    }
+  );
+
+}
+
+
+function performSearch(){
+
+  const results =
+    $("results");
+
+  if(!results){
+    return;
+  }
+
+
+  const query =
+    $("searchInput").value.trim();
+
+
+  if(!query){
+
+    results.innerHTML = "";
+
+    return;
+
+  }
+
+
+  renderResults(
+    filterRecords()
+  );
+
+}
+
+
+/* ---------------- RESULTS ---------------- */
+
+function renderResults(records){
+
+  const results =
+    $("results");
+
+
+  if(!records.length){
+
+    results.innerHTML =
+      '<div class="no-results">' +
+      'No record found' +
+      '</div>';
+
+    return;
+
+  }
+
+
+  results.innerHTML =
+
+    '<div class="result-count">' +
+
+    records.length.toLocaleString("en-IN") +
+
+    ' record(s) found' +
+
+    '</div>' +
+
+    records.map(
+      function(record,index){
+
+        return buildCard(
+          record,
+          index + 1
+        );
+
+      }
+    ).join("");
+
+}
+
+
+/* ---------------- CARD ---------------- */
+
+function buildCard(
+  record,
+  number
+){
+
+  const issueDate =
+    clean(
+      record[COL.ISSUE_DATE]
+    );
+
+
+  const replacementDate =
+    clean(
+      record[COL.REPLACEMENT_DATE]
+    );
+
+
+  const driver =
+    clean(
+      record[COL.DRIVER_NAME]
+    );
+
+
+  const mobile =
+    clean(
+      record[COL.DRIVER_MOBILE]
+    );
+
+
+  let statusHTML = "";
+
+
+  /* INSTALLED */
+
+  if(replacementDate){
+
+    statusHTML =
+      '<div class="status-box installed">' +
+
+      '<strong>' +
+      'Congratulations Your Transformer Installed' +
+      '</strong>' +
+
+      '<div>' +
+      'Replacement Date: ' +
+      escapeHtml(replacementDate) +
+      '</div>' +
+
+      '</div>';
+
+  }
+
+
+  /* ISSUED */
+
+  else if(issueDate){
+
+    const phone =
+      mobile.replace(
+        /[^\d+]/g,
+        ""
+      );
+
+
+    statusHTML =
+
+      '<div class="status-box issued">' +
+
+      '<strong>' +
+      'Your Transformer Issued by Workshop' +
+      '</strong>' +
+
+      '<div>' +
+      'Please Contact Driver for Installation' +
+      '</div>' +
+
+      '<div class="status-detail">' +
+      'Issue Date: ' +
+      escapeHtml(issueDate) +
+      '</div>' +
+
+
+      (
+        driver
+          ?
+          '<div class="status-detail">' +
+          'Driver: ' +
+          escapeHtml(driver) +
+          '</div>'
+          :
+          ""
+      ) +
+
+
+      (
+        mobile
+          ?
+          '<div class="status-detail">' +
+          'Mobile: ' +
+          escapeHtml(mobile) +
+          '</div>' +
+
+          buildDriverButtons(
+            record,
+            phone
+          )
+          :
+          ""
+      ) +
+
+      '</div>';
+
+  }
+
+
+  /* PENDING */
+
+  else{
+
+    statusHTML =
+
+      '<div class="status-box pending">' +
+
+      '<strong>' +
+      'Transformer Pending to Issue' +
+      '</strong>' +
+
+      '</div>';
+
+  }
+
+
+  /* ---------------- REPEATED DAMAGE ---------------- */
+
+  const location =
+    normalizeLocation(
+      record[COL.PLACE_DAMAGE]
+    );
+
+
+  const capacity =
+    normalizeCapacity(
+      record[COL.CAPACITY]
+    );
+
+
+  /*
+    CRITICAL FIX:
+
+    Repeated damage requires:
+      SAME normalized location
+      AND
+      SAME normalized capacity
+
+    Example:
+
+    SISREDI + 25
+    SISREDI 1 + 25
+
+    = SAME
+
+    SISREDI + 25
+    SISREDI + 63
+
+    = DIFFERENT
+  */
+
+  let history = [];
+
+
+  if(location && capacity){
+
+    history =
+      ALL_RECORDS.filter(
+        function(item){
+
+          return (
+
+            normalizeLocation(
+              item[COL.PLACE_DAMAGE]
+            ) === location
+
+            &&
+
+            normalizeCapacity(
+              item[COL.CAPACITY]
+            ) === capacity
+
+          );
+
+        }
+      );
+
+
+    history.sort(
+      function(a,b){
+
+        const da =
+          parseDate(
+            a[COL.PR_DATE]
+          ) ||
+          parseDate(
+            a[COL.DATE_DAMAGE]
+          ) ||
+          new Date(0);
+
+
+        const db =
+          parseDate(
+            b[COL.PR_DATE]
+          ) ||
+          parseDate(
+            b[COL.DATE_DAMAGE]
+          ) ||
+          new Date(0);
+
+
+        return da - db;
+
+      }
+    );
+
+  }
+
+
+  let repeatedHTML = "";
+
+
+  /*
+    NO LIMIT.
+    If 4, show 4.
+    If 5, show 5.
+    If 10, show 10.
+  */
+
+  if(history.length > 1){
+
+    repeatedHTML =
+
+      '<div class="repeated-box">' +
+
+      '<div class="repeated-title">' +
+
+      '🔁 It Damaged ' +
+      history.length +
+      ' times' +
+
+      '</div>' +
+
+
+      '<div class="repeated-warning">' +
+
+      'Please Ensure Increasing Capacity if Overloaded' +
+
+      '</div>' +
+
+
+      history.map(
+        function(item){
+
+          return (
+
+            '<div class="history-item">' +
+
+            '<span>' +
+
+            'PR: <strong>' +
+
+            escapeHtml(
+              item[COL.PR_NO] || "-"
+            ) +
+
+            '</strong>' +
+
+            '</span>' +
+
+
+            '<span>' +
+
+            'Date: ' +
+
+            escapeHtml(
+              item[COL.PR_DATE] ||
+              item[COL.DATE_DAMAGE] ||
+              "-"
+            ) +
+
+            '</span>' +
+
+
+            '<span>' +
+
+            'Capacity: <strong>' +
+
+            escapeHtml(
+              item[COL.CAPACITY] || "-"
+            ) +
+
+            ' kVA</strong>' +
+
+            '</span>' +
+
+
+            '</div>'
+
+          );
+
+        }
+      ).join("") +
+
+
+      '</div>';
+
+  }
+
+
+  /* ---------------- DATA FIELDS ---------------- */
+
+  const fields = [
+
+    ["Workshop",
+      record[COL.WORKSHOP]],
+
+    ["Division",
+      record[COL.DIVISION]],
+
+    ["Subdivision",
+      record[COL.SUBDIVISION]],
+
+    ["Substation",
+      record[COL.SUBSTATION]],
+
+    ["Feeder",
+      record[COL.FEEDER]],
+
+    ["Date of Damage",
+      record[COL.DATE_DAMAGE]],
+
+    ["Place of Damage",
+      record[COL.PLACE_DAMAGE]],
+
+    ["DID No",
+      record[COL.DID_NO]],
+
+    ["Capacity",
+      record[COL.CAPACITY]],
+
+    ["Complaint Number",
+      record[COL.COMPLAINT_NO]],
+
+    ["Complaint Date",
+      record[COL.COMPLAINT_DATE]],
+
+    ["PR No",
+      record[COL.PR_NO]],
+
+    ["PR Date",
+      record[COL.PR_DATE]],
+
+    ["JE Name",
+      record[COL.JE_NAME]],
+
+    ["JE Mobile",
+      record[COL.JE_MOBILE]],
+
+    ["Issued to Firm",
+      record[COL.ISSUED_TO_FIRM]],
+
+    ["Issue Date",
+      record[COL.ISSUE_DATE]],
+
+    ["Driver Name",
+      record[COL.DRIVER_NAME]],
+
+    ["Driver Mobile",
+      record[COL.DRIVER_MOBILE]],
+
+    ["Replacement Date",
+      record[COL.REPLACEMENT_DATE]],
+
+    ["Time",
+      record[COL.TIME]],
+
+    ["TX Return Date",
+      record[COL.TX_RETURN_DATE]],
+
+    ["Observation DTC",
+      record[COL.OBSERVATION]
+
+  ];
+
+
+  const dataHTML =
+
+    fields.map(
+      function(field){
+
+        if(
+          !clean(field[1])
+        ){
+
+          return "";
+
+        }
+
+
+        return (
+
+          '<div class="data-row">' +
+
+          '<div class="data-label">' +
+
+          escapeHtml(
+            field[0]
+          ) +
+
+          '</div>' +
+
+          '<div class="data-value">' +
+
+          escapeHtml(
+            field[1]
+          ) +
+
+          '</div>' +
+
+          '</div>'
+
+        );
+
+      }
+    ).join("");
+
+
+  return (
+
+    '<div class="result-card">' +
+
+    '<div class="card-number">' +
+
+    '#' +
+    number +
+    ' • Sheet Row ' +
+    record.__sheetRow +
+
+    '</div>' +
+
+    statusHTML +
+
+    /*
+      Repeated damage is immediately
+      below status.
+    */
+
+    repeatedHTML +
+
+    '<div class="data-section">' +
+
+    dataHTML +
+
+    '</div>' +
+
+    '</div>'
+
+  );
+
+}
+
+
+/* ---------------- DRIVER BUTTONS ---------------- */
+
+function buildDriverButtons(
+  record,
+  phone
+){
+
+  const driver =
+    clean(
+      record[COL.DRIVER_NAME]
+    ) || "Driver";
+
+
+  const pr =
+    clean(
+      record[COL.PR_NO]
+    ) || "-";
+
+
+  const capacity =
+    clean(
+      record[COL.CAPACITY]
+    ) || "-";
+
+
+  const place =
+    clean(
+      record[COL.PLACE_DAMAGE]
+    ) || "-";
+
+
+  const workshop =
+    clean(
+      record[COL.WORKSHOP]
+    ) || "-";
+
+
+  /*
+    WhatsApp message is prepared automatically.
+
+    User only has to tap SEND inside WhatsApp.
+  */
+
+  const message =
+
+`Namaste ${driver} ji,
+
+Transformer PR No.: ${pr}
+Capacity: ${capacity} kVA
+Place: ${place}
+Workshop: ${workshop}
+
+The transformer has been issued from Workshop. Please arrange installation and confirm the installation status.
 
 Thank you.`;
 
-return`
 
-<div class="buttons">
+  let cleanPhone =
+    String(phone || "")
+      .replace(/\D/g,"");
 
-<a
-class="call"
-href="tel:${phone}">
-📞 CALL DRIVER
-</a>
 
-<a
-class="whatsapp"
-target="_blank"
-href="https://wa.me/${phone}?text=${encodeURIComponent(message)}">
-💬 WHATSAPP
-</a>
+  /*
+    Indian mobile numbers:
+    if 10 digits, add 91.
+  */
 
-</div>
+  if(
+    cleanPhone.length === 10
+  ){
 
-`;
+    cleanPhone =
+      "91" +
+      cleanPhone;
+
+  }
+
+
+  const whatsappURL =
+
+    "https://wa.me/" +
+    cleanPhone +
+    "?text=" +
+    encodeURIComponent(
+      message
+    );
+
+
+  return (
+
+    '<div class="driver-buttons">' +
+
+    '<a class="call-driver" ' +
+    'href="tel:' +
+    escapeHtml(phone) +
+    '">' +
+
+    '📞 CALL DRIVER' +
+
+    '</a>' +
+
+
+    '<a class="whatsapp-driver" ' +
+
+    'href="' +
+    whatsappURL +
+    '"' +
+
+    'target="_blank" ' +
+    'rel="noopener">' +
+
+    '💬 WHATSAPP' +
+
+    '</a>' +
+
+    '</div>'
+
+  );
 
 }
 
 
-/* =========================
-   START
-========================= */
+/* ---------------- PAGE START ---------------- */
 
-loadData();
+document.addEventListener(
+  "DOMContentLoaded",
+  function(){
+
+    const searchInput =
+      $("searchInput");
+
+
+    const clearBtn =
+      $("clearBtn");
+
+
+    /*
+      AUTOMATIC SEARCH WHILE TYPING
+    */
+
+    searchInput.addEventListener(
+      "input",
+      function(){
+
+        clearTimeout(
+          searchTimer
+        );
+
+
+        searchTimer =
+          setTimeout(
+            function(){
+
+              performSearch();
+
+            },
+            40
+          );
+
+      }
+    );
+
+
+    /*
+      CLEAR BUTTON
+    */
+
+    clearBtn.addEventListener(
+      "click",
+      function(){
+
+        searchInput.value = "";
+
+        $("results").innerHTML = "";
+
+        searchInput.focus();
+
+      }
+    );
+
+
+    /*
+      LOAD ALL PR SEARCH DATA ONCE
+    */
+
+    loadSheet();
+
+  }
+);

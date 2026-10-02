@@ -2,12 +2,13 @@
   box-sizing:border-box;
 }
 
-html,body{
+html,
+body{
   margin:0;
   padding:0;
   width:100%;
   min-height:100%;
-  font-family:Arial,sans-serif;
+  font-family:Arial,Helvetica,sans-serif;
   background:#f4f5f7;
   color:#222;
 }
@@ -24,259 +25,520 @@ body{
   background:#f4f5f7;
 }
 
-.top{
-  background:linear-gradient(135deg,#ff6a00,#e53935);
-  color:white;
-  padding:16px 15px 14px;
-  border-radius:0 0 18px 18px;
-  box-shadow:0 3px 12px rgba(0,0,0,.18);
+
+/* HEADER */
+
+.header{
+  background:
+    linear-gradient(
+      135deg,
+      #ff7200 0%,
+      #ff4b00 50%,
+      #f21d20 100%
+    );
+
+  color:#fff;
+
+  padding:
+    20px
+    16px
+    17px;
+
+  border-radius:
+    0
+    0
+    22px
+    22px;
+
+  box-shadow:
+    0 4px 15px rgba(0,0,0,.16);
 }
 
 .title{
-  font-size:23px;
+  font-size:28px;
   font-weight:700;
   line-height:1.1;
 }
 
-.sub{
-  margin-top:5px;
-  font-size:12px;
-  opacity:.9;
+.status{
+  margin-top:7px;
+  font-size:13px;
+  opacity:.95;
 }
+
+.status.ready{
+  color:#fff;
+}
+
+.status.error{
+  color:#ffe0e0;
+}
+
+
+/* MAIN */
 
 main{
   padding:12px;
 }
 
-.searchBox{
-  background:white;
-  border-radius:14px;
-  padding:13px;
-  box-shadow:0 2px 9px rgba(0,0,0,.08);
+
+/* SEARCH CARD */
+
+.search-card{
+  background:#fff;
+
+  border-radius:17px;
+
+  padding:15px;
+
+  box-shadow:
+    0 3px 13px rgba(0,0,0,.08);
 }
 
-.searchBox label{
-  display:block;
-  font-size:13px;
+.search-label{
+  font-size:18px;
   font-weight:700;
-  margin-bottom:7px;
+  margin-bottom:10px;
 }
 
-.searchRow{
+.search-row{
   display:flex;
-  gap:7px;
+  gap:9px;
 }
 
-.searchRow input{
+#searchInput{
   flex:1;
   min-width:0;
-  height:44px;
-  border:1px solid #d7d7d7;
-  border-radius:10px;
-  padding:0 11px;
-  font-size:15px;
-  outline:none;
-  background:#fff;
-}
 
-.searchRow input:focus{
-  border-color:#ff6a00;
-  box-shadow:0 0 0 2px rgba(255,106,0,.12);
-}
+  height:48px;
 
-.searchRow button{
-  width:90px;
-  border:0;
-  border-radius:10px;
-  background:#ff6500;
-  color:#fff;
-  font-weight:700;
-  font-size:12px;
-}
+  border:
+    1px solid
+    #d7d7d7;
 
-.searchRow button:active{
-  transform:scale(.98);
-}
-
-.hint{
-  margin-top:6px;
-  font-size:10px;
-  color:#888;
-}
-
-.message{
-  margin-top:10px;
-  background:white;
   border-radius:12px;
-  padding:11px;
-  text-align:center;
-  color:#777;
-  font-size:12px;
-}
 
-.card{
-  margin-top:10px;
+  padding:
+    0
+    13px;
+
+  font-size:16px;
+
+  outline:none;
+
   background:#fff;
-  border-radius:14px;
-  padding:12px;
-  box-shadow:0 2px 9px rgba(0,0,0,.08);
 }
 
-.cardHead{
-  display:flex;
-  justify-content:space-between;
-  gap:8px;
-  align-items:flex-start;
-  border-bottom:1px solid #eee;
-  padding-bottom:8px;
-  margin-bottom:8px;
+#searchInput:focus{
+  border-color:#ff6500;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(255,101,0,.12);
 }
 
-.pr{
-  font-size:17px;
+#searchBtn{
+  width:105px;
+  height:48px;
+
+  border:0;
+
+  border-radius:12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff7600,
+      #ff4b00
+    );
+
+  color:#fff;
+
+  font-size:13px;
+
   font-weight:700;
-  color:#e65100;
-  word-break:break-all;
+
+  cursor:pointer;
 }
 
-.badge{
-  white-space:nowrap;
+#searchBtn:active{
+  transform:scale(.97);
+}
+
+.search-hint{
+  margin-top:7px;
+
   font-size:10px;
-  font-weight:700;
-  padding:5px 7px;
-  border-radius:20px;
-  background:#eee;
-}
 
-.installed{
-  background:#e7f7ec;
-  color:#16843b;
-}
-
-.issued{
-  background:#e8f1ff;
-  color:#1769aa;
-}
-
-.pending{
-  background:#fff3e0;
-  color:#e65100;
-}
-
-.infoGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px;
-}
-
-.item{
-  background:#f7f7f7;
-  border-radius:8px;
-  padding:7px;
-  min-width:0;
-}
-
-.item.full{
-  grid-column:1/-1;
-}
-
-.label{
-  font-size:9px;
   color:#888;
-  margin-bottom:2px;
-  text-transform:uppercase;
-}
 
-.value{
-  font-size:12px;
-  font-weight:600;
-  word-break:break-word;
-}
-
-.alert{
-  margin-top:9px;
-  padding:10px;
-  border-radius:10px;
-  background:#fff3e0;
-  border-left:4px solid #ff6a00;
-  color:#7a3d00;
-  font-size:12px;
-  font-weight:700;
   line-height:1.4;
 }
 
-.ok{
-  background:#eaf8ee;
-  border-left-color:#20a04b;
-  color:#166b34;
+
+/* MESSAGE */
+
+.message{
+  margin-top:11px;
+
+  background:#fff;
+
+  border-radius:13px;
+
+  padding:12px;
+
+  text-align:center;
+
+  color:#777;
+
+  font-size:13px;
+
+  box-shadow:
+    0 2px 8px rgba(0,0,0,.05);
 }
 
-.issue{
-  background:#edf5ff;
-  border-left-color:#2878c8;
-  color:#15548b;
+.message.loading{
+  color:#ff6500;
+  font-weight:600;
 }
+
+.message.error{
+  color:#c62828;
+}
+
+
+/* RESULT CARD */
+
+.card{
+  margin-top:11px;
+
+  background:#fff;
+
+  border-radius:16px;
+
+  padding:13px;
+
+  box-shadow:
+    0 3px 12px rgba(0,0,0,.08);
+}
+
+
+/* CARD HEADER */
+
+.card-head{
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:8px;
+
+  align-items:flex-start;
+
+  padding-bottom:9px;
+
+  margin-bottom:9px;
+
+  border-bottom:
+    1px solid
+    #eeeeee;
+}
+
+.pr-number{
+  font-size:17px;
+
+  font-weight:700;
+
+  color:#e65100;
+
+  word-break:break-word;
+}
+
+.pr-date{
+  margin-top:3px;
+
+  color:#777;
+
+  font-size:10px;
+}
+
+
+/* BADGE */
+
+.badge{
+  padding:
+    5px
+    8px;
+
+  border-radius:20px;
+
+  font-size:9px;
+
+  font-weight:700;
+
+  white-space:nowrap;
+}
+
+.badge.installed{
+  color:#167238;
+  background:#e7f7ec;
+}
+
+.badge.issued{
+  color:#175d9b;
+  background:#e8f2ff;
+}
+
+.badge.pending{
+  color:#a44d00;
+  background:#fff1df;
+}
+
+
+/* STATUS */
+
+.alert{
+  margin-top:9px;
+
+  padding:10px;
+
+  border-radius:10px;
+
+  font-size:12px;
+
+  line-height:1.45;
+
+  background:#fff3e0;
+
+  color:#754000;
+
+  border-left:
+    4px solid
+    #ff7200;
+}
+
+.alert.ok{
+  background:#eaf8ee;
+
+  color:#176b34;
+
+  border-left-color:#22a451;
+}
+
+.alert.issue{
+  background:#edf5ff;
+
+  color:#17578d;
+
+  border-left-color:#2878c8;
+}
+
+
+/* INFORMATION */
+
+.info-grid{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap:7px;
+
+  margin-top:10px;
+}
+
+.info{
+  padding:8px;
+
+  background:#f7f7f7;
+
+  border-radius:9px;
+
+  min-width:0;
+}
+
+.info.full{
+  grid-column:
+    1 / -1;
+}
+
+.info-label{
+  color:#888;
+
+  font-size:8px;
+
+  font-weight:600;
+
+  margin-bottom:3px;
+}
+
+.info-value{
+  color:#222;
+
+  font-size:11px;
+
+  font-weight:600;
+
+  line-height:1.35;
+
+  word-break:break-word;
+}
+
+
+/* REPEATED DAMAGE */
+
+.repeat-alert{
+  margin-top:10px;
+
+  padding:10px;
+
+  border-radius:10px;
+
+  background:#fff0df;
+
+  color:#873f00;
+
+  border-left:
+    4px solid
+    #ff6500;
+
+  font-size:12px;
+
+  font-weight:700;
+
+  line-height:1.4;
+}
+
+.not-repeat{
+  margin-top:10px;
+
+  padding:9px;
+
+  border-radius:10px;
+
+  background:#eaf8ee;
+
+  color:#176b34;
+
+  font-size:11px;
+
+  font-weight:700;
+}
+
+
+/* HISTORY */
 
 .history{
-  margin-top:8px;
+  margin-top:9px;
+
+  padding:9px;
+
   background:#fafafa;
-  border-radius:9px;
-  padding:8px;
+
+  border-radius:10px;
 }
 
-.historyTitle{
+.history-title{
   font-size:11px;
+
   font-weight:700;
+
   margin-bottom:5px;
+
+  color:#333;
 }
 
-.historyRow{
-  padding:6px 0;
-  border-bottom:1px solid #eee;
+.history-row{
+  padding:
+    7px
+    0;
+
+  border-bottom:
+    1px solid
+    #e9e9e9;
+
   font-size:11px;
+
+  line-height:1.4;
 }
 
-.historyRow:last-child{
+.history-row:last-child{
   border-bottom:0;
 }
 
-.small{
-  font-size:10px;
+.history-small{
   color:#777;
+
+  font-size:10px;
 }
 
-.loading{
-  color:#ff6500;
-  font-weight:700;
+
+/* LOADING */
+
+.spinner{
+  display:inline-block;
+
+  width:12px;
+  height:12px;
+
+  border:
+    2px solid
+    #ddd;
+
+  border-top-color:
+    #ff6500;
+
+  border-radius:50%;
+
+  animation:
+    spin .7s linear infinite;
+
+  vertical-align:-2px;
+
+  margin-right:5px;
 }
 
-.error{
-  color:#c62828;
-  font-weight:700;
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
 }
+
+
+/* MOBILE */
 
 @media(max-width:380px){
+
   main{
     padding:8px;
   }
 
-  .top{
-    padding:14px 12px;
+  .header{
+    padding:17px 13px;
   }
 
   .title{
-    font-size:21px;
+    font-size:24px;
   }
 
-  .infoGrid{
+  .search-card{
+    padding:12px;
+  }
+
+  .search-label{
+    font-size:16px;
+  }
+
+  #searchBtn{
+    width:88px;
+    font-size:12px;
+  }
+
+  .info-grid{
     grid-template-columns:1fr;
   }
 
-  .item.full{
+  .info.full{
     grid-column:auto;
-  }
-
-  .searchRow button{
-    width:82px;
   }
 }

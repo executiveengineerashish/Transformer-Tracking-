@@ -2,24 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport"
-content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 <title>Transformer Tracking</title>
 
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261003">
 </head>
 
 <body>
 
-<div class="app">
-
-<header class="topbar">
+<header class="app-header">
 
   <div class="header-icon">⚡</div>
 
-  <div class="header-text">
+  <div>
     <div class="app-title">Transformer Tracking</div>
     <div class="app-subtitle">PR / Complaint Search</div>
   </div>
@@ -27,69 +24,94 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 </header>
 
 
-<!-- DASHBOARD -->
+<main>
+
+
+<!-- ================= DASHBOARD ================= -->
 
 <section class="dashboard">
 
-  <div class="dashboard-title">
-    📊 Transformer Pendency Dashboard
-  </div>
+  <h1>📊 Transformer Pendency Dashboard</h1>
 
   <div id="dashboardMonth" class="dashboard-month">
     Current Month
   </div>
 
 
-  <div class="dashboard-cards">
+  <div class="summary-grid">
 
-    <div class="dash-card total">
-      <div>Total</div>
+    <div class="summary-card total">
+      <span>Total</span>
       <strong id="dashTotal">0</strong>
     </div>
 
-    <div class="dash-card issued">
-      <div>Issued</div>
+    <div class="summary-card issued">
+      <span>Issued</span>
       <strong id="dashIssued">0</strong>
     </div>
 
-    <div class="dash-card pending">
-      <div>Pending to Issue</div>
+    <div class="summary-card pending">
+      <span>Pending to Issue</span>
       <strong id="dashPending">0</strong>
+    </div>
+
+    <div class="summary-card replacement">
+      <span>Replacement Pending</span>
+      <strong id="dashReplacement">0</strong>
+    </div>
+
+    <div class="summary-card returned">
+      <span>TX Return Pending</span>
+      <strong id="dashReturn">0</strong>
     </div>
 
   </div>
 
 
-  <div class="dashboard-section">
-    Workshop-wise Pending to Issue
+  <h2>⚠️ Today's Action</h2>
+
+  <div class="action-grid">
+
+    <div>
+      <span>Issue &gt; 24 Hours</span>
+      <strong id="action24">0</strong>
+    </div>
+
+    <div>
+      <span>Issue &gt; 72 Hours</span>
+      <strong id="action72">0</strong>
+    </div>
+
+    <div>
+      <span>Issue &gt; 7 Days</span>
+      <strong id="action7">0</strong>
+    </div>
+
   </div>
+
+
+  <h2>Workshop-wise Pending to Issue</h2>
 
   <div id="workshopDashboard">
     Loading dashboard...
   </div>
 
 
-  <div class="dashboard-section">
-    Capacity-wise Pending to Issue
-  </div>
+  <h2>Capacity-wise Pending to Issue</h2>
 
   <div id="capacityDashboard">
     Loading dashboard...
   </div>
 
 
-  <div class="dashboard-section">
-    Ageing of Pending to Issue
-  </div>
+  <h2>Ageing of Pending to Issue</h2>
 
   <div id="ageingDashboard">
     Loading dashboard...
   </div>
 
 
-  <div class="dashboard-section">
-    🔄 Repeated Damage
-  </div>
+  <h2>🔄 Repeated Damage</h2>
 
   <div id="repeatedDashboard">
     Loading dashboard...
@@ -98,22 +120,20 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 </section>
 
 
-<!-- SEARCH -->
 
-<section class="search-panel">
+<!-- ================= SEARCH ================= -->
 
-  <div class="search-title">
-    PR / Complaint Number
-  </div>
+<section class="search-card">
+
+  <h2>PR / Complaint Number</h2>
 
   <div class="search-row">
 
     <input
       id="searchInput"
-      type="search"
-      placeholder="Enter PR / Complaint Number"
+      type="text"
       autocomplete="off"
-      spellcheck="false"
+      placeholder="Enter PR / Complaint Number"
     >
 
     <button id="searchBtn">
@@ -129,18 +149,21 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 </section>
 
 
-<!-- RESULTS -->
 
-<div id="results"></div>
+<!-- ================= RESULTS ================= -->
+
+<section id="results"></section>
+
+
+</main>
 
 
 <footer>
-  Transformer Tracking
+Transformer Tracking
 </footer>
 
-</div>
 
-<script src="app.js"></script>
+<script src="app.js?v=20261003"></script>
 
 </body>
 </html>

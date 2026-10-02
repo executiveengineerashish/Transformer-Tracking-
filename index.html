@@ -1,172 +1,52 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <title>PR Search</title>
-
-  <link
-    rel="stylesheet"
-    href="./style.css"
-  >
+  <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <!-- HEADER -->
+  <header class="top">
+    <div class="title">PR Search</div>
+    <div class="sub" id="status">Connecting to PR SEARCH...</div>
+  </header>
 
-    <header class="topbar">
+  <main>
 
-      <div class="title">
+    <section class="searchBox">
+      <label>PR / Complaint Number</label>
 
-        <h1>PR Search</h1>
-
-        <p
-          class="subtitle"
-          id="subtitle"
+      <div class="searchRow">
+        <input
+          id="searchInput"
+          type="search"
+          inputmode="numeric"
+          placeholder="Enter PR / Complaint Number"
+          autocomplete="off"
         >
-          Loading PR Search…
-        </p>
-
+        <button id="searchBtn">SEARCH</button>
       </div>
 
-
-      <button
-        class="refreshBtn"
-        id="refreshBtn"
-        type="button"
-        aria-label="Refresh"
-      >
-        ↻
-      </button>
-
-    </header>
-
-
-    <!-- SEARCH -->
-
-    <section class="searchPanel">
-
-      <label class="searchLabel">
-        PR / Complaint Number
-      </label>
-
-
-      <input
-        id="q"
-        type="text"
-        inputmode="numeric"
-        autocomplete="off"
-        placeholder="Enter PR / Complaint Number"
-      >
-
-
-      <button
-        class="searchBtn"
-        id="searchBtn"
-        type="button"
-      >
-        PR/Complaint Number
-      </button>
-
+      <div class="hint">
+        Search works across all columns
+      </div>
     </section>
 
-
-    <!-- ERROR -->
-
-    <div
-      class="error"
-      id="error"
-      style="display:none"
-    ></div>
-
-
-    <!-- RESULTS -->
-
-    <section class="resultsPanel">
-
-      <div
-        class="resultsSummary"
-        id="resultsSummary"
-      >
-        Enter PR / Complaint Number to search.
-      </div>
-
-
-      <div
-        class="pager"
-        id="pager"
-        style="display:none"
-      >
-
-        <button
-          class="pageBtn"
-          id="prevBtn"
-          type="button"
-          disabled
-        >
-          Prev
-        </button>
-
-
-        <button
-          class="pageBtn"
-          id="nextBtn"
-          type="button"
-          disabled
-        >
-          Next
-        </button>
-
-      </div>
-
-
-      <!-- MOBILE RESULTS -->
-
-      <div
-        id="mobileResults"
-        class="mobileResults"
-      ></div>
-
-
-      <!-- DESKTOP TABLE -->
-
-      <div
-        id="tableWrap"
-        class="tableWrap"
-        style="display:none"
-      >
-
-        <table>
-
-          <thead id="thead"></thead>
-
-          <tbody id="tbody"></tbody>
-
-        </table>
-
-      </div>
-
+    <section id="message" class="message">
+      Enter PR / Complaint Number to search.
     </section>
 
+    <section id="results"></section>
 
-  </div>
+  </main>
 
+</div>
 
-  <script
-    type="module"
-    src="./app.js"
-  ></script>
-
+<script src="script.js"></script>
 </body>
-
 </html>

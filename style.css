@@ -22,33 +22,33 @@ body{
 .app-header{
  background:linear-gradient(135deg,#ff0808,#ff3c00);
  color:#fff;
- padding:24px 18px;
+ padding:23px 17px;
  display:flex;
  align-items:center;
- gap:16px;
+ gap:15px;
  box-shadow:0 3px 12px rgba(0,0,0,.18);
 }
 
 .header-icon{
- width:72px;
- height:72px;
- border-radius:18px;
+ width:68px;
+ height:68px;
+ border-radius:17px;
  display:flex;
  align-items:center;
  justify-content:center;
- font-size:45px;
- background:rgba(255,255,255,.10);
+ font-size:43px;
+ background:rgba(255,255,255,.1);
  border:1px solid rgba(255,255,255,.45);
 }
 
 .app-title{
- font-size:29px;
+ font-size:28px;
  font-weight:800;
 }
 
 .app-subtitle{
  font-size:18px;
- margin-top:5px;
+ margin-top:4px;
 }
 
 
@@ -57,7 +57,7 @@ body{
 main{
  max-width:720px;
  margin:auto;
- padding:16px 10px 50px;
+ padding:13px 9px 45px;
 }
 
 
@@ -66,31 +66,31 @@ main{
 .dashboard{
  background:#fff;
  border-radius:25px;
- padding:18px;
- margin-bottom:16px;
+ padding:17px;
+ margin-bottom:15px;
  box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
 .dashboard-heading{
  display:flex;
  align-items:center;
- gap:10px;
+ gap:9px;
  margin-bottom:15px;
 }
 
 .dashboard-heading>span{
- font-size:28px;
+ font-size:27px;
 }
 
 .dashboard-heading h1{
  margin:0;
- font-size:22px;
+ font-size:21px;
 }
 
 .dashboard-heading div div{
- margin-top:4px;
+ margin-top:3px;
  color:#777;
- font-size:15px;
+ font-size:14px;
 }
 
 
@@ -99,13 +99,13 @@ main{
 .summary-grid{
  display:grid;
  grid-template-columns:repeat(3,1fr);
- gap:9px;
+ gap:8px;
 }
 
 .summary-card{
- min-height:86px;
+ min-height:82px;
  border-radius:17px;
- padding:13px 9px;
+ padding:12px 9px;
  display:flex;
  flex-direction:column;
  justify-content:center;
@@ -117,7 +117,7 @@ main{
 }
 
 .summary-card strong{
- font-size:28px;
+ font-size:27px;
  margin-top:4px;
 }
 
@@ -150,16 +150,16 @@ main{
 /* SECTION */
 
 .section-title{
- font-size:19px;
+ font-size:18px;
  font-weight:800;
- margin:22px 0 12px;
+ margin:21px 0 11px;
 }
 
 
 /* WORKSHOP */
 
 .dashboard-row{
- margin:11px 0 14px;
+ margin:10px 0 13px;
 }
 
 .dashboard-row-title{
@@ -171,12 +171,8 @@ main{
  margin-bottom:5px;
 }
 
-.dashboard-row-title span:last-child{
- font-size:15px;
-}
-
 .dashboard-bar-bg{
- height:12px;
+ height:11px;
  width:100%;
  background:#ededed;
  border-radius:20px;
@@ -189,10 +185,80 @@ main{
  background:linear-gradient(90deg,#ff1800,#ff9700);
 }
 
-.no-dashboard-data{
- color:#888;
- text-align:center;
+
+/* AGEING */
+
+.ageing-row{
+ background:#fafafa;
+ border-radius:13px;
  padding:10px;
+ margin-bottom:8px;
+ border:1px solid #eee;
+}
+
+.ageing-name{
+ font-weight:800;
+ font-size:14px;
+ margin-bottom:7px;
+}
+
+.ageing-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:6px;
+}
+
+.age-box{
+ text-align:center;
+ background:#fff;
+ border-radius:9px;
+ padding:7px 3px;
+}
+
+.age-box span{
+ display:block;
+ font-size:10px;
+ color:#777;
+}
+
+.age-box strong{
+ display:block;
+ font-size:17px;
+ margin-top:2px;
+}
+
+
+/* WORKSHOP CAPACITY */
+
+.wc-row{
+ background:#fafafa;
+ border-radius:13px;
+ padding:10px;
+ margin-bottom:8px;
+ border:1px solid #eee;
+}
+
+.wc-name{
+ font-weight:800;
+ font-size:14px;
+ margin-bottom:7px;
+}
+
+.wc-capacity{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px;
+}
+
+.wc-chip{
+ background:#fff1e5;
+ border-radius:9px;
+ padding:6px 8px;
+ font-size:12px;
+}
+
+.wc-chip strong{
+ margin-left:3px;
 }
 
 
@@ -214,7 +280,7 @@ main{
 
 .search-row{
  display:grid;
- grid-template-columns:minmax(0,1fr) 130px;
+ grid-template-columns:minmax(0,1fr) 125px;
  gap:8px;
 }
 
@@ -224,14 +290,9 @@ main{
  border:3px solid #ff5700;
  border-radius:24px;
  padding:0 17px;
- font-size:19px;
- color:#222;
+ font-size:18px;
  outline:none;
  min-width:0;
-}
-
-#searchInput:focus{
- border-color:#ff2300;
 }
 
 #searchBtn{
@@ -239,11 +300,13 @@ main{
  border:0;
  border-radius:22px;
  background:linear-gradient(135deg,#ff4b00,#ff0808);
- color:#fff;
- font-size:17px;
+ color:white;
+ font-size:16px;
  font-weight:800;
- box-shadow:0 4px 12px rgba(255,40,0,.22);
 }
+
+
+/* STATUS */
 
 .search-status{
  margin-top:12px;
@@ -263,7 +326,7 @@ main{
 }
 
 
-/* RESULT COUNT */
+/* RESULT */
 
 .result-count{
  background:#e3f8ec;
@@ -281,9 +344,6 @@ main{
  padding:25px;
  text-align:center;
 }
-
-
-/* RESULT CARD */
 
 .result-card{
  background:#fff;
@@ -303,7 +363,7 @@ main{
 }
 
 
-/* STATUS */
+/* STATUS BOX */
 
 .status-box{
  width:100%;
@@ -339,6 +399,46 @@ main{
 }
 
 
+/* DAMAGE FREQUENCY */
+
+.damage-frequency{
+ border-radius:18px;
+ padding:15px;
+ margin-bottom:13px;
+ background:#fff5df;
+ border-left:6px solid #ff8500;
+}
+
+.damage-title{
+ font-size:19px;
+ font-weight:800;
+ color:#984b00;
+ margin-bottom:4px;
+}
+
+.damage-subtitle{
+ font-size:13px;
+ color:#8d520d;
+ font-weight:700;
+ margin-bottom:10px;
+}
+
+.history-item{
+ background:#fff;
+ border-radius:13px;
+ padding:11px;
+ margin-top:8px;
+ line-height:1.55;
+ overflow-wrap:anywhere;
+}
+
+.history-number{
+ font-weight:800;
+ color:#984b00;
+ margin-bottom:3px;
+}
+
+
 /* DRIVER */
 
 .driver-buttons{
@@ -367,43 +467,6 @@ main{
 }
 
 
-/* REPEATED IN RESULT ONLY */
-
-.repeated-box{
- background:#fff4df;
- border-left:6px solid #ff8500;
- border-radius:18px;
- padding:14px;
- margin-bottom:14px;
-}
-
-.repeated-title{
- color:#984b00;
- font-size:18px;
- font-weight:800;
-}
-
-.repeated-warning{
- color:#984b00;
- font-size:14px;
- font-weight:700;
- margin:5px 0 10px;
-}
-
-.history-item{
- background:#fff;
- border-radius:13px;
- padding:12px;
- margin-top:8px;
- line-height:1.55;
- overflow-wrap:anywhere;
-}
-
-.history-number{
- font-weight:800;
-}
-
-
 /* DATA */
 
 .data-section{
@@ -416,7 +479,6 @@ main{
  grid-template-columns:40% 60%;
  border-bottom:1px solid #e5e5e5;
  padding:11px 3px;
- width:100%;
 }
 
 .data-label{
@@ -429,11 +491,9 @@ main{
 .data-value{
  color:#222;
  font-size:15px;
- font-weight:400;
  min-width:0;
  overflow-wrap:anywhere;
  word-break:break-word;
- white-space:normal;
 }
 
 
@@ -451,34 +511,12 @@ footer{
 
 @media(max-width:600px){
 
- .app-header{
-  padding:22px 15px;
- }
-
- .header-icon{
-  width:64px;
-  height:64px;
-  font-size:40px;
- }
-
  .app-title{
-  font-size:26px;
+  font-size:25px;
  }
 
  .app-subtitle{
   font-size:17px;
- }
-
- main{
-  padding:12px 9px 45px;
- }
-
- .dashboard{
-  padding:16px;
- }
-
- .dashboard-heading h1{
-  font-size:20px;
  }
 
  .summary-grid{
@@ -486,29 +524,15 @@ footer{
  }
 
  .summary-card{
-  min-height:82px;
+  min-height:80px;
  }
 
  .summary-card strong{
-  font-size:27px;
+  font-size:26px;
  }
 
- .search-card{
-  padding:17px;
- }
-
- .search-row{
-  grid-template-columns:minmax(0,1fr) 125px;
- }
-
- #searchInput{
-  height:62px;
-  font-size:18px;
- }
-
- #searchBtn{
-  height:62px;
-  font-size:16px;
+ .ageing-grid{
+  grid-template-columns:repeat(3,1fr);
  }
 
 }

@@ -1,864 +1,282 @@
-:root {
-
-  --orange: #ff8a00;
-
-  --orange2: #ff3d00;
-
-  --orange3: #ffb000;
-
-  --light-orange: #fff3e4;
-
-  --border: #ead7bd;
-
-  --text: #303642;
-
-  --muted: #707783;
-
-  --white: #ffffff;
-
-  --green: #168642;
-
-  --green-bg: #eaf8ef;
-
-  --blue: #1769aa;
-
-  --blue-bg: #eaf4ff;
-
-  --red: #c62828;
-
-  --red-bg: #fff0f0;
-
-  --shadow:
-    0 8px 25px rgba(255, 115, 0, 0.12);
-
-  --radius: 22px;
-
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Arial,
-    sans-serif;
+*{
+  box-sizing:border-box;
 }
 
-
-/* =========================================
-   RESET
-========================================= */
-
-* {
-
-  box-sizing: border-box;
-
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+  font-family:Arial,sans-serif;
+  background:#f4f5f7;
+  color:#222;
 }
 
-
-html {
-
-  width: 100%;
-
-  min-height: 100%;
-
+body{
+  display:flex;
+  justify-content:center;
 }
 
-
-body {
-
-  margin: 0;
-
-  min-height: 100vh;
-
-  background:
-    linear-gradient(
-      180deg,
-      #fff7ed 0%,
-      #fffaf5 45%,
-      #fffdfb 100%
-    );
-
-  color: var(--text);
-
+.app{
+  width:100%;
+  max-width:520px;
+  min-height:100vh;
+  background:#f4f5f7;
 }
 
-
-/* =========================================
-   APP
-========================================= */
-
-.app {
-
-  width: 100%;
-
-  max-width: 900px;
-
-  margin: 0 auto;
-
-  padding-bottom: 35px;
-
+.top{
+  background:linear-gradient(135deg,#ff6a00,#e53935);
+  color:white;
+  padding:16px 15px 14px;
+  border-radius:0 0 18px 18px;
+  box-shadow:0 3px 12px rgba(0,0,0,.18);
 }
 
-
-/* =========================================
-   TOP BAR
-========================================= */
-
-.topbar {
-
-  min-height: 180px;
-
-  padding:
-    35px 28px 30px;
-
-  color: white;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 20px;
-
-  border-radius:
-    0 0 38px 38px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ff9d00 0%,
-      #ff7900 45%,
-      #ff3d00 100%
-    );
-
-  box-shadow:
-    0 10px 30px
-    rgba(255, 95, 0, 0.25);
-
+.title{
+  font-size:23px;
+  font-weight:700;
+  line-height:1.1;
 }
 
-
-.title {
-
-  min-width: 0;
-
+.sub{
+  margin-top:5px;
+  font-size:12px;
+  opacity:.9;
 }
 
-
-.title h1 {
-
-  margin: 0;
-
-  font-size: 38px;
-
-  line-height: 1.1;
-
-  font-weight: 800;
-
-  letter-spacing: -0.7px;
-
+main{
+  padding:12px;
 }
 
-
-.subtitle {
-
-  margin: 10px 0 0;
-
-  font-size: 16px;
-
-  opacity: 0.95;
-
+.searchBox{
+  background:white;
+  border-radius:14px;
+  padding:13px;
+  box-shadow:0 2px 9px rgba(0,0,0,.08);
 }
 
-
-.refreshBtn {
-
-  width: 74px;
-
-  height: 74px;
-
-  flex: 0 0 auto;
-
-  border: 1px solid
-    rgba(255,255,255,.75);
-
-  border-radius: 20px;
-
-  background:
-    rgba(255,255,255,.12);
-
-  color: white;
-
-  font-size: 34px;
-
-  cursor: pointer;
-
+.searchBox label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:7px;
 }
 
-
-.refreshBtn:active {
-
-  transform: scale(.96);
-
+.searchRow{
+  display:flex;
+  gap:7px;
 }
 
-
-/* =========================================
-   SEARCH PANEL
-========================================= */
-
-.searchPanel {
-
-  margin:
-    28px 22px 0;
-
-  padding: 25px;
-
-  background: white;
-
-  border: 1px solid
-    var(--border);
-
-  border-radius: var(--radius);
-
-  box-shadow: var(--shadow);
-
+.searchRow input{
+  flex:1;
+  min-width:0;
+  height:44px;
+  border:1px solid #d7d7d7;
+  border-radius:10px;
+  padding:0 11px;
+  font-size:15px;
+  outline:none;
+  background:#fff;
 }
 
-
-.searchLabel {
-
-  display: block;
-
-  margin-bottom: 10px;
-
-  font-size: 20px;
-
-  font-weight: 700;
-
+.searchRow input:focus{
+  border-color:#ff6a00;
+  box-shadow:0 0 0 2px rgba(255,106,0,.12);
 }
 
-
-#q {
-
-  width: 100%;
-
-  height: 68px;
-
-  padding:
-    0 20px;
-
-  border-radius: 18px;
-
-  border: 2px solid
-    #e7c9a2;
-
-  background: #fffdfb;
-
-  color: var(--text);
-
-  font-size: 21px;
-
-  outline: none;
-
+.searchRow button{
+  width:90px;
+  border:0;
+  border-radius:10px;
+  background:#ff6500;
+  color:#fff;
+  font-weight:700;
+  font-size:12px;
 }
 
-
-#q:focus {
-
-  border-color:
-    var(--orange);
-
-  box-shadow:
-    0 0 0 4px
-    rgba(255,138,0,.13);
-
+.searchRow button:active{
+  transform:scale(.98);
 }
 
-
-.searchBtn {
-
-  width: 100%;
-
-  height: 64px;
-
-  margin-top: 16px;
-
-  border: 0;
-
-  border-radius: 18px;
-
-  background:
-    linear-gradient(
-      100deg,
-      #ff9d00,
-      #ff3d00
-    );
-
-  color: white;
-
-  font-size: 20px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  box-shadow:
-    0 7px 18px
-    rgba(255,92,0,.22);
-
+.hint{
+  margin-top:6px;
+  font-size:10px;
+  color:#888;
 }
 
-
-.searchBtn:active {
-
-  transform: scale(.99);
-
+.message{
+  margin-top:10px;
+  background:white;
+  border-radius:12px;
+  padding:11px;
+  text-align:center;
+  color:#777;
+  font-size:12px;
 }
 
-
-/* =========================================
-   ERROR
-========================================= */
-
-.error {
-
-  margin:
-    18px 22px 0;
-
-  padding: 16px;
-
-  border-radius: 16px;
-
-  border: 1px solid #efb1b1;
-
-  background: #fff0f0;
-
-  color: #a82d2d;
-
-  font-size: 15px;
-
+.card{
+  margin-top:10px;
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+  box-shadow:0 2px 9px rgba(0,0,0,.08);
 }
 
-
-/* =========================================
-   RESULTS
-========================================= */
-
-.resultsPanel {
-
-  margin:
-    22px 22px 0;
-
-  padding: 22px;
-
-  background: white;
-
-  border: 1px solid
-    var(--border);
-
-  border-radius: var(--radius);
-
-  box-shadow: var(--shadow);
-
+.cardHead{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:flex-start;
+  border-bottom:1px solid #eee;
+  padding-bottom:8px;
+  margin-bottom:8px;
 }
 
-
-.resultsSummary {
-
-  font-size: 19px;
-
-  font-weight: 700;
-
+.pr{
+  font-size:17px;
+  font-weight:700;
+  color:#e65100;
+  word-break:break-all;
 }
 
-
-.pager {
-
-  display: grid;
-
-  grid-template-columns:
-    1fr 1fr;
-
-  gap: 10px;
-
-  margin-top: 15px;
-
+.badge{
+  white-space:nowrap;
+  font-size:10px;
+  font-weight:700;
+  padding:5px 7px;
+  border-radius:20px;
+  background:#eee;
 }
 
-
-.pageBtn {
-
-  height: 54px;
-
-  border-radius: 16px;
-
-  border: 1px solid
-    var(--border);
-
-  background: white;
-
-  color: var(--text);
-
-  font-size: 17px;
-
-  cursor: pointer;
-
+.installed{
+  background:#e7f7ec;
+  color:#16843b;
 }
 
-
-.pageBtn:disabled {
-
-  opacity: .45;
-
-  cursor: not-allowed;
-
+.issued{
+  background:#e8f1ff;
+  color:#1769aa;
 }
 
-
-/* =========================================
-   MOBILE CARDS
-========================================= */
-
-.mobileResults {
-
-  margin-top: 18px;
-
+.pending{
+  background:#fff3e0;
+  color:#e65100;
 }
 
-
-.dataCard {
-
-  overflow: hidden;
-
-  margin-bottom: 20px;
-
-  border: 1px solid
-    var(--border);
-
-  border-radius: 22px;
-
-  background: white;
-
-  box-shadow:
-    0 6px 20px
-    rgba(255,115,0,.10);
-
+.infoGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
 }
 
-
-.cardTitle {
-
-  padding:
-    14px 18px;
-
-  background:
-    linear-gradient(
-      100deg,
-      #ff9d00,
-      #ff4d00
-    );
-
-  color: white;
-
-  font-size: 19px;
-
-  font-weight: 800;
-
+.item{
+  background:#f7f7f7;
+  border-radius:8px;
+  padding:7px;
+  min-width:0;
 }
 
-
-.dataItem {
-
-  padding:
-    12px 18px;
-
-  border-bottom:
-    1px solid #eee2d4;
-
+.item.full{
+  grid-column:1/-1;
 }
 
-
-.dataItem:last-child {
-
-  border-bottom: 0;
-
+.label{
+  font-size:9px;
+  color:#888;
+  margin-bottom:2px;
+  text-transform:uppercase;
 }
 
-
-.dataLabel {
-
-  display: block;
-
-  margin-bottom: 3px;
-
-  color: #9a6332;
-
-  font-size: 13px;
-
-  font-weight: 800;
-
-  text-transform: uppercase;
-
+.value{
+  font-size:12px;
+  font-weight:600;
+  word-break:break-word;
 }
 
-
-.dataValue {
-
-  display: block;
-
-  color: #303640;
-
-  font-size: 16px;
-
-  line-height: 1.35;
-
-  word-break: break-word;
-
+.alert{
+  margin-top:9px;
+  padding:10px;
+  border-radius:10px;
+  background:#fff3e0;
+  border-left:4px solid #ff6a00;
+  color:#7a3d00;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.4;
 }
 
-
-/* =========================================
-   STATUS BOXES
-========================================= */
-
-.status {
-
-  margin: 14px;
-
-  padding: 15px 16px;
-
-  border-radius: 16px;
-
-  font-size: 15px;
-
-  line-height: 1.45;
-
+.ok{
+  background:#eaf8ee;
+  border-left-color:#20a04b;
+  color:#166b34;
 }
 
-
-.status.installed {
-
-  background:
-    var(--green-bg);
-
-  border: 1px solid #9bd5ad;
-
-  color: #126d32;
-
-  font-weight: 700;
-
+.issue{
+  background:#edf5ff;
+  border-left-color:#2878c8;
+  color:#15548b;
 }
 
-
-.status.issued {
-
-  background:
-    var(--blue-bg);
-
-  border: 1px solid #a8d1ef;
-
-  color: #07558d;
-
-  font-weight: 700;
-
+.history{
+  margin-top:8px;
+  background:#fafafa;
+  border-radius:9px;
+  padding:8px;
 }
 
-
-.status.notRepeated {
-
-  background:
-    #f0faf2;
-
-  border: 1px solid #b8dfc0;
-
-  color: #26733a;
-
-  font-weight: 700;
-
+.historyTitle{
+  font-size:11px;
+  font-weight:700;
+  margin-bottom:5px;
 }
 
-
-.status.repeated {
-
-  background:
-    #fff4df;
-
-  border: 1px solid #f0bd69;
-
-  color: #8a4c00;
-
+.historyRow{
+  padding:6px 0;
+  border-bottom:1px solid #eee;
+  font-size:11px;
 }
 
-
-.status.repeated strong {
-
-  color: #713900;
-
+.historyRow:last-child{
+  border-bottom:0;
 }
 
-
-/* =========================================
-   TABLE
-========================================= */
-
-.tableWrap {
-
-  display: none;
-
-  overflow: auto;
-
-  margin-top: 20px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 15px;
-
+.small{
+  font-size:10px;
+  color:#777;
 }
 
-
-table {
-
-  width: 100%;
-
-  min-width: 900px;
-
-  border-collapse: collapse;
-
+.loading{
+  color:#ff6500;
+  font-weight:700;
 }
 
-
-th,
-td {
-
-  padding: 10px;
-
-  border-bottom:
-    1px solid #eee0d0;
-
-  text-align: left;
-
-  white-space: nowrap;
-
-  font-size: 13px;
-
+.error{
+  color:#c62828;
+  font-weight:700;
 }
 
-
-th {
-
-  position: sticky;
-
-  top: 0;
-
-  background:
-    #fff0d7;
-
-  color: #713900;
-
-  font-weight: 800;
-
-}
-
-
-/* =========================================
-   DESKTOP
-========================================= */
-
-@media (min-width: 800px) {
-
-  .app {
-
-    max-width: 1100px;
-
+@media(max-width:380px){
+  main{
+    padding:8px;
   }
 
-
-  .topbar {
-
-    padding-left: 45px;
-
-    padding-right: 45px;
-
+  .top{
+    padding:14px 12px;
   }
 
-
-  .searchPanel,
-  .resultsPanel {
-
-    margin-left: 35px;
-
-    margin-right: 35px;
-
+  .title{
+    font-size:21px;
   }
 
-
-  .mobileResults {
-
-    display: none;
-
+  .infoGrid{
+    grid-template-columns:1fr;
   }
 
-
-  .tableWrap {
-
-    display: block;
-
+  .item.full{
+    grid-column:auto;
   }
 
-}
-
-
-/* =========================================
-   MOBILE PORTRAIT
-========================================= */
-
-@media (max-width: 600px) {
-
-  .app {
-
-    width: 100%;
-
+  .searchRow button{
+    width:82px;
   }
-
-
-  .topbar {
-
-    min-height: 180px;
-
-    padding:
-      30px 27px 28px;
-
-    border-radius:
-      0 0 35px 35px;
-
-  }
-
-
-  .title h1 {
-
-    font-size: 34px;
-
-  }
-
-
-  .subtitle {
-
-    font-size: 14px;
-
-  }
-
-
-  .refreshBtn {
-
-    width: 64px;
-
-    height: 64px;
-
-    border-radius: 18px;
-
-    font-size: 29px;
-
-  }
-
-
-  .searchPanel {
-
-    margin:
-      22px 20px 0;
-
-    padding: 22px;
-
-    border-radius: 22px;
-
-  }
-
-
-  .searchLabel {
-
-    font-size: 19px;
-
-  }
-
-
-  #q {
-
-    height: 64px;
-
-    font-size: 19px;
-
-  }
-
-
-  .searchBtn {
-
-    height: 62px;
-
-    font-size: 18px;
-
-  }
-
-
-  .resultsPanel {
-
-    margin:
-      20px 20px 0;
-
-    padding: 20px;
-
-    border-radius: 22px;
-
-  }
-
-
-  .resultsSummary {
-
-    font-size: 18px;
-
-  }
-
-}
-
-
-/* =========================================
-   VERY SMALL PHONE
-========================================= */
-
-@media (max-width: 380px) {
-
-  .topbar {
-
-    padding-left: 20px;
-
-    padding-right: 20px;
-
-  }
-
-
-  .title h1 {
-
-    font-size: 29px;
-
-  }
-
-
-  .refreshBtn {
-
-    width: 55px;
-
-    height: 55px;
-
-  }
-
-
-  .searchPanel,
-  .resultsPanel {
-
-    margin-left: 14px;
-
-    margin-right: 14px;
-
-  }
-
 }

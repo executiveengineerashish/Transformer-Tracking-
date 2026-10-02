@@ -1,480 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  >
-
-  <meta name="theme-color" content="#ff3b00">
-
-  <title>Transformer Tracking</title>
-
-  <link
-    rel="stylesheet"
-    href="./style.css?v=901"
-  >
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#ff3b00">
+<title>Transformer Tracking</title>
+<link rel="stylesheet" href="./style.css?v=902">
 </head>
 
 <body>
 
 <header class="top-header">
-
   <div class="header-icon">⚡</div>
 
   <div>
     <h1>Transformer Tracking</h1>
-    <div class="header-subtitle">
-      PR / Complaint Search
-    </div>
+    <div class="header-subtitle">PR / Complaint Search</div>
   </div>
-
 </header>
-
 
 <main class="main-container">
 
+<section class="dashboard-card">
 
-  <!-- ================= DASHBOARD ================= -->
+  <div class="dashboard-title">
+    📊 Transformer Monitoring Dashboard
+  </div>
 
-  <section class="dashboard-card">
+  <div class="dashboard-month" id="dashboardMonth">
+    Loading...
+  </div>
 
-    <div class="dashboard-title">
-      📊 Transformer Monitoring Dashboard
-    </div>
+  <div class="summary-grid">
 
-    <div
-      class="dashboard-month"
-      id="dashboardMonth"
-    >
-      Loading...
-    </div>
+    <button class="summary-box total"
+      data-action="status"
+      data-value="ALL">
 
+      <span>Total PR</span>
+      <strong id="dashTotal">0</strong>
 
-    <!-- MAIN SUMMARY -->
-
-    <div class="summary-grid">
-
-      <button
-        class="summary-box total"
-        data-action="status"
-        data-value="ALL"
-      >
-        <span>Total PR</span>
-        <strong id="dashTotal">0</strong>
-      </button>
-
-
-      <button
-        class="summary-box issued"
-        data-action="status"
-        data-value="ISSUED"
-      >
-        <span>Issued</span>
-        <strong id="dashIssued">0</strong>
-      </button>
-
-
-      <button
-        class="summary-box pending"
-        data-action="status"
-        data-value="PENDING_ISSUE"
-      >
-        <span>Pending Issue</span>
-        <strong id="dashPending">0</strong>
-      </button>
-
-
-      <button
-        class="summary-box replacement"
-        data-action="status"
-        data-value="REPLACEMENT_PENDING"
-      >
-        <span>Replacement Pending</span>
-        <strong id="dashReplacement">0</strong>
-      </button>
-
-
-      <button
-        class="summary-box return"
-        data-action="status"
-        data-value="RETURN_PENDING"
-      >
-        <span>TX Return Pending</span>
-        <strong id="dashReturn">0</strong>
-      </button>
-
-    </div>
-
-
-    <!-- TODAY'S ACTION -->
-
-    <div class="action-title">
-      ⚠️ Today's Action
-    </div>
-
-
-    <div class="mini-grid">
-
-      <button
-        class="mini-box"
-        data-action="age"
-        data-value="24"
-      >
-        Issue &gt; 24 Hours
-        <b id="age24">0</b>
-      </button>
-
-
-      <button
-        class="mini-box"
-        data-action="age"
-        data-value="72"
-      >
-        Issue &gt; 72 Hours
-        <b id="age72">0</b>
-      </button>
-
-
-      <button
-        class="mini-box"
-        data-action="age"
-        data-value="168"
-      >
-        Issue &gt; 7 Days
-        <b id="age168">0</b>
-      </button>
-
-    </div>
-
-
-    <!-- WORKSHOP -->
-
-    <div class="section-heading">
-      Workshop-wise Pending to Issue
-    </div>
-
-    <div
-      id="workshopDashboard"
-      class="dashboard-loading"
-    >
-      Loading dashboard...
-    </div>
-
-
-    <!-- CAPACITY -->
-
-    <div class="section-heading">
-      Capacity-wise Pending to Issue
-    </div>
-
-    <div
-      id="capacityDashboard"
-      class="chip-list"
-    >
-    </div>
-
-
-    <!-- AGEING -->
-
-    <div class="section-heading">
-      Ageing of Pending to Issue
-    </div>
-
-    <div
-      id="ageingDashboard"
-      class="ageing-grid"
-    >
-    </div>
-
-
-    <!-- REPEATED DAMAGE -->
-
-    <div class="section-heading">
-      🔁 Repeated Damage
-    </div>
-
-    <div
-      id="repeatedDashboard"
-      class="repeated-summary"
-    >
-      Loading...
-    </div>
-
-  </section>
-
-
-
-  <!-- ================= SEARCH ================= -->
-
-  <section class="search-card">
-
-    <label
-      for="searchInput"
-      class="search-label"
-    >
-      PR / Complaint Number
-    </label>
-
-
-    <div class="search-row">
-
-      <input
-        id="searchInput"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="Search PR / Complaint / Mobile / Place..."
-      >
-
-
-      <button
-        id="filterBtn"
-        type="button"
-      >
-        FILTER
-      </button>
-
-    </div>
-
-
-    <!-- TOOLBAR -->
-
-    <div class="toolbar">
-
-      <button
-        id="compactBtn"
-        class="tool-btn"
-        type="button"
-      >
-        ▤ Compact
-      </button>
-
-
-      <button
-        id="clearBtn"
-        class="tool-btn"
-        type="button"
-      >
-        ✕ Clear
-      </button>
-
-    </div>
-
-
-    <!-- ACTIVE FILTERS -->
-
-    <div
-      id="activeFilters"
-      class="active-filters"
-    >
-    </div>
-
-
-    <div
-      id="searchStatus"
-      class="search-status loading"
-    >
-      Loading transformer records...
-    </div>
-
-  </section>
-
-
-
-  <!-- ================= RESULTS ================= -->
-
-  <section
-    id="results"
-    class="results"
-  >
-  </section>
-
-
-</main>
-
-
-
-<!-- ================= FILTER POPUP ================= -->
-
-<div
-  id="filterModal"
-  class="modal hidden"
->
-
-  <div class="modal-card">
-
-
-    <div class="modal-head">
-
-      <b>
-        Advanced Filter
-      </b>
-
-      <button
-        id="closeFilter"
-        type="button"
-      >
-        ✕
-      </button>
-
-    </div>
-
-
-
-    <label>
-      Workshop
-    </label>
-
-    <select id="fWorkshop">
-      <option value="">
-        All
-      </option>
-    </select>
-
-
-
-    <label>
-      Division
-    </label>
-
-    <select id="fDivision">
-      <option value="">
-        All
-      </option>
-    </select>
-
-
-
-    <label>
-      Subdivision
-    </label>
-
-    <select id="fSubdivision">
-      <option value="">
-        All
-      </option>
-    </select>
-
-
-
-    <label>
-      Substation
-    </label>
-
-    <select id="fSubstation">
-      <option value="">
-        All
-      </option>
-    </select>
-
-
-
-    <label>
-      Capacity
-    </label>
-
-    <select id="fCapacity">
-      <option value="">
-        All
-      </option>
-    </select>
-
-
-
-    <label>
-      Status
-    </label>
-
-    <select id="fStatus">
-
-      <option value="">
-        All
-      </option>
-
-      <option value="PENDING_ISSUE">
-        Pending to Issue
-      </option>
-
-      <option value="ISSUED">
-        Issued
-      </option>
-
-      <option value="REPLACEMENT_PENDING">
-        Replacement Pending
-      </option>
-
-      <option value="RETURN_PENDING">
-        TX Return Pending
-      </option>
-
-      <option value="COMPLETED">
-        Completed
-      </option>
-
-    </select>
-
-
-
-    <div class="date-row">
-
-      <div>
-
-        <label>
-          PR Date From
-        </label>
-
-        <input
-          id="fFrom"
-          type="date"
-        >
-
-      </div>
-
-
-      <div>
-
-        <label>
-          PR Date To
-        </label>
-
-        <input
-          id="fTo"
-          type="date"
-        >
-
-      </div>
-
-    </div>
-
-
-
-    <button
-      id="applyFilter"
-      class="apply-btn"
-      type="button"
-    >
-      APPLY FILTER
     </button>
 
 
+    <button class="summary-box issued"
+      data-action="status"
+      data-value="ISSUED">
+
+      <span>Issued</span>
+      <strong id="dashIssued">0</strong>
+
+    </button>
+
+
+    <button class="summary-box pending"
+      data-action="status"
+      data-value="PENDING_ISSUE">
+
+      <span>Pending Issue</span>
+      <strong id="dashPending">0</strong>
+
+    </button>
+
+
+    <button class="summary-box replacement"
+      data-action="status"
+      data-value="REPLACEMENT_PENDING">
+
+      <span>Replacement Pending</span>
+      <strong id="dashReplacement">0</strong>
+
+    </button>
+
+
+    <button class="summary-box return"
+      data-action="status"
+      data-value="RETURN_PENDING">
+
+      <span>TX Return Pending</span>
+      <strong id="dashReturn">0</strong>
+
+    </button>
+
   </div>
 
-</div>
+
+  <div class="action-title">
+    ⚠️ Today's Action
+  </div>
 
 
+  <div class="mini-grid">
 
-<footer class="footer">
-  Transformer Tracking
-</footer>
+    <button class="mini-box"
+      data-action="age"
+      data-value="24">
+
+      Issue &gt; 24 Hours
+      <b id="age24">0</b>
+
+    </button>
 
 
+    <button class="mini-box"
+      data-action="age"
+      data-value="72">
 
-<script src="./app.js?v=901"></script>
+      Issue &gt; 72 Hours
+      <b id="age72">0</b>
 
-</body>
-</html>
+    </button>
+
+
+    <button class="mini-box"
+      data-action="age"
+      data

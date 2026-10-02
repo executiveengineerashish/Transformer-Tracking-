@@ -1,66 +1,502 @@
-/* =====================================================
-   PR SEARCH
-   Google Sheet -> PR SEARCH
-   ===================================================== */
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
+
+<title>Transformer Tracking</title>
+
+<style>
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f4f5f7;
+  color:#222;
+}
+
+.app{
+  width:100%;
+  max-width:520px;
+  min-height:100vh;
+  margin:auto;
+  background:#f5f6f8;
+}
+
+/* ================= HEADER ================= */
+
+.header{
+  background:linear-gradient(135deg,#ff6a00,#ff1700);
+  color:#fff;
+  padding:32px 25px 34px;
+  border-radius:0 0 30px 30px;
+  box-shadow:0 5px 16px rgba(0,0,0,.18);
+}
+
+.title{
+  font-size:29px;
+  font-weight:700;
+  line-height:1.15;
+  margin:0 0 8px;
+}
+
+.subtitle{
+  font-size:15px;
+  opacity:.95;
+}
+
+/* ================= SEARCH CARD ================= */
+
+.searchBox{
+  background:#fff;
+  margin:-8px 20px 16px;
+  padding:21px 24px;
+  border-radius:23px;
+  box-shadow:0 5px 18px rgba(0,0,0,.10);
+}
+
+.label{
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:13px;
+}
+
+.searchRow{
+  display:flex;
+  gap:12px;
+}
+
+.searchInput{
+  flex:1;
+  min-width:0;
+  height:62px;
+  border:1px solid #d8d8d8;
+  border-radius:17px;
+  padding:0 17px;
+  font-size:18px;
+  outline:none;
+  background:#fafafa;
+}
+
+.searchInput:focus{
+  border-color:#ff6500;
+  background:#fff;
+  box-shadow:0 0 0 2px rgba(255,101,0,.08);
+}
+
+.searchBtn{
+  width:135px;
+  height:62px;
+  border:none;
+  border-radius:17px;
+  background:linear-gradient(135deg,#ff7100,#ff3200);
+  color:#fff;
+  font-size:17px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.searchBtn:active{
+  transform:scale(.97);
+}
+
+.searchBtn:disabled{
+  opacity:.55;
+}
+
+/* ================= MESSAGE ================= */
+
+.message{
+  margin:14px 20px;
+  padding:16px 14px;
+  border-radius:16px;
+  text-align:center;
+  font-size:15px;
+  line-height:1.45;
+  background:#fff;
+  color:#666;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.loading{
+  color:#e65100;
+}
+
+.error{
+  background:#fff0ee;
+  color:#b71c1c;
+}
+
+.success{
+  background:#edf9f0;
+  color:#176b2b;
+}
+
+/* ================= RESULTS ================= */
+
+.results{
+  padding:0 15px 30px;
+}
+
+.resultCount{
+  font-size:16px;
+  font-weight:700;
+  margin:15px 5px;
+  color:#444;
+}
+
+/* ================= CARD ================= */
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  margin-bottom:16px;
+  overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.10);
+}
+
+.cardHead{
+  background:#fff2ea;
+  border-bottom:1px solid #f1ddd3;
+  padding:15px 16px;
+}
+
+.cardTitle{
+  font-size:20px;
+  font-weight:700;
+  color:#d84315;
+  word-break:break-word;
+}
+
+.cardSub{
+  font-size:13px;
+  color:#777;
+  margin-top:4px;
+}
+
+.cardBody{
+  padding:14px 16px;
+}
+
+/* ================= ROW ================= */
+
+.row{
+  display:flex;
+  gap:10px;
+  padding:9px 0;
+  border-bottom:1px solid #eeeeee;
+}
+
+.key{
+  width:43%;
+  flex-shrink:0;
+  font-size:12px;
+  font-weight:600;
+  color:#777;
+}
+
+.value{
+  width:57%;
+  font-size:13px;
+  font-weight:600;
+  color:#222;
+  word-break:break-word;
+}
+
+/* ================= STATUS ================= */
+
+.statusBox{
+  margin:14px 0 5px;
+  padding:13px;
+  border-radius:13px;
+  font-size:13px;
+  line-height:1.55;
+}
+
+.installed{
+  background:#e8f7ed;
+  color:#176b2b;
+  border-left:5px solid #2e9d4d;
+}
+
+.issued{
+  background:#fff4df;
+  color:#925600;
+  border-left:5px solid #f39c12;
+}
+
+.pending{
+  background:#fff0ee;
+  color:#a52316;
+  border-left:5px solid #e04432;
+}
+
+/* ================= REPEATED DAMAGE ================= */
+
+.repeatBox{
+  margin:14px 0 5px;
+  padding:13px;
+  border-radius:13px;
+  background:#fff8e1;
+  border-left:5px solid #ff9800;
+}
+
+.repeatTitle{
+  font-size:15px;
+  font-weight:700;
+  color:#d35400;
+  margin-bottom:7px;
+}
+
+.history{
+  font-size:12px;
+  line-height:1.7;
+  color:#444;
+}
+
+.historyItem{
+  padding:5px 0;
+  border-top:1px dashed #ddd;
+}
+
+/* ================= ALL DETAILS ================= */
+
+details{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid #eee;
+}
+
+summary{
+  cursor:pointer;
+  color:#d84315;
+  font-size:13px;
+  font-weight:700;
+}
+
+.allDetails{
+  margin-top:7px;
+}
+
+/* ================= FOOTER ================= */
+
+.footer{
+  text-align:center;
+  color:#aaa;
+  font-size:12px;
+  padding:15px 0 30px;
+}
+
+/* ================= SMALL MOBILE ================= */
+
+@media(max-width:380px){
+
+  .header{
+    padding-left:20px;
+    padding-right:20px;
+  }
+
+  .title{
+    font-size:25px;
+  }
+
+  .searchBox{
+    margin-left:14px;
+    margin-right:14px;
+    padding:18px;
+  }
+
+  .label{
+    font-size:18px;
+  }
+
+  .searchRow{
+    gap:8px;
+  }
+
+  .searchInput{
+    height:56px;
+    font-size:16px;
+    padding:0 12px;
+  }
+
+  .searchBtn{
+    width:105px;
+    height:56px;
+    font-size:15px;
+  }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+
+  <div class="header">
+
+    <div class="title">
+      Transformer Tracking
+    </div>
+
+    <div class="subtitle">
+      PR / Complaint tracking system
+    </div>
+
+  </div>
+
+
+  <!-- SEARCH -->
+
+  <div class="searchBox">
+
+    <div class="label">
+      PR / Complaint Number
+    </div>
+
+    <div class="searchRow">
+
+      <input
+        id="searchInput"
+        class="searchInput"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        placeholder="Enter PR / Complaint Number"
+      >
+
+      <button
+        id="searchBtn"
+        class="searchBtn"
+      >
+        SEARCH
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- MESSAGE -->
+
+  <div
+    id="message"
+    class="message"
+  >
+    Enter PR / Complaint Number to search.
+  </div>
+
+
+  <!-- RESULTS -->
+
+  <div
+    id="results"
+    class="results"
+  ></div>
+
+
+  <!-- FOOTER -->
+
+  <div class="footer">
+    Transformer Tracking
+  </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   GOOGLE SHEET
+===================================================== */
 
 const SHEET_ID =
-  "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+"1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
 const SHEET_GID =
-  "1464518527";
+"1464518527";
 
 const SHEET_NAME =
-  "PR SEARCH";
+"PR SEARCH";
 
 
-let headers = [];
-let rows = [];
-let ready = false;
-
-
-/* DOM */
+/* =====================================================
+   ELEMENTS
+===================================================== */
 
 const input =
-  document.getElementById("searchInput");
+document.getElementById("searchInput");
 
 const searchBtn =
-  document.getElementById("searchBtn");
-
-const status =
-  document.getElementById("status");
+document.getElementById("searchBtn");
 
 const message =
-  document.getElementById("message");
+document.getElementById("message");
 
 const results =
-  document.getElementById("results");
+document.getElementById("results");
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let allRows = [];
+
+let headers = [];
+
+let loading = false;
+
+let autoSearchTimer = null;
 
 
 /* =====================================================
    NORMALIZE
-   ===================================================== */
+===================================================== */
 
 function normalize(value){
 
-  return String(value ?? "")
+  if(
+    value === null ||
+    value === undefined
+  ){
+    return "";
+  }
+
+  return String(value)
     .toLowerCase()
-    .trim();
-
-}
-
-
-function compact(value){
-
-  return normalize(value)
-    .replace(/[\s\-\/]/g,"");
+    .trim()
+    .replace(/[\s\-\/\\().,:_]/g,"");
 
 }
 
 
 /* =====================================================
    ESCAPE HTML
-   ===================================================== */
+===================================================== */
 
 function escapeHTML(value){
 
@@ -75,376 +511,95 @@ function escapeHTML(value){
 
 
 /* =====================================================
-   CSV PARSER
-   ===================================================== */
-
-function parseCSV(text){
-
-  const data = [];
-
-  let row = [];
-
-  let cell = "";
-
-  let quoted = false;
-
-
-  for(
-    let i = 0;
-    i < text.length;
-    i++
-  ){
-
-    const c =
-      text[i];
-
-    const next =
-      text[i + 1];
-
-
-    if(
-      c === '"' &&
-      quoted &&
-      next === '"'
-    ){
-
-      cell += '"';
-
-      i++;
-
-      continue;
-    }
-
-
-    if(c === '"'){
-
-      quoted =
-        !quoted;
-
-      continue;
-    }
-
-
-    if(
-      c === "," &&
-      !quoted
-    ){
-
-      row.push(cell);
-
-      cell = "";
-
-      continue;
-    }
-
-
-    if(
-      (c === "\n" ||
-       c === "\r") &&
-      !quoted
-    ){
-
-      if(
-        c === "\r" &&
-        next === "\n"
-      ){
-
-        i++;
-      }
-
-
-      row.push(cell);
-
-      cell = "";
-
-
-      if(
-        row.some(
-          x =>
-          String(x).trim() !== ""
-        )
-      ){
-
-        data.push(row);
-      }
-
-
-      row = [];
-
-      continue;
-    }
-
-
-    cell += c;
-  }
-
-
-  if(
-    cell !== "" ||
-    row.length
-  ){
-
-    row.push(cell);
-
-    if(
-      row.some(
-        x =>
-        String(x).trim() !== ""
-      )
-    ){
-
-      data.push(row);
-    }
-  }
-
-
-  return data;
-}
-
-
-/* =====================================================
-   FIND HEADER ROW
-   ===================================================== */
-
-function findHeaderRow(data){
-
-  const keys = [
-
-    "place of damage",
-
-    "did no",
-
-    "capacity",
-
-    "complain number",
-
-    "complaint number",
-
-    "complain date",
-
-    "complaint date",
-
-    "pr no",
-
-    "pr date",
-
-    "je name",
-
-    "je mobile"
-
-  ];
-
-
-  let bestRow = 0;
-
-  let bestScore = 0;
-
-
-  const limit =
-    Math.min(
-      data.length,
-      20
-    );
-
-
-  for(
-    let r = 0;
-    r < limit;
-    r++
-  ){
-
-    const text =
-      data[r]
-        .map(x => normalize(x))
-        .join(" | ");
-
-
-    let score = 0;
-
-
-    keys.forEach(k => {
-
-      if(
-        text.includes(k)
-      ){
-
-        score++;
-      }
-
-    });
-
-
-    if(score > bestScore){
-
-      bestScore =
-        score;
-
-      bestRow =
-        r;
-    }
-  }
-
-
-  return bestRow;
-}
-
-
-/* =====================================================
-   LOAD CSV
-   ===================================================== */
-
-async function loadCSV(){
-
-  const url =
-    `https://docs.google.com/spreadsheets/d/` +
-    `${SHEET_ID}/export?format=csv` +
-    `&gid=${SHEET_GID}` +
-    `&t=${Date.now()}`;
-
-
-  const controller =
-    new AbortController();
-
-
-  const timeout =
-    setTimeout(
-      () => controller.abort(),
-      12000
-    );
-
-
-  try{
-
-    const response =
-      await fetch(
-        url,
-        {
-          method:"GET",
-          mode:"cors",
-          cache:"no-store",
-          signal:controller.signal
-        }
-      );
-
-
-    if(!response.ok){
-
-      throw new Error(
-        "Google CSV returned HTTP " +
-        response.status
-      );
-    }
-
-
-    const text =
-      await response.text();
-
-
-    if(
-      !text ||
-      text.length < 100
-    ){
-
-      throw new Error(
-        "Empty response from Google Sheet."
-      );
-    }
-
-
-    /*
-      If Google sends an HTML login/error page,
-      don't try to parse it as CSV.
-    */
-
-    if(
-      text.trim().startsWith("<!DOCTYPE") ||
-      text.trim().startsWith("<html")
-    ){
-
-      throw new Error(
-        "Google Sheet is not publicly readable."
-      );
-    }
-
-
-    return text;
-
-
-  }finally{
-
-    clearTimeout(timeout);
-  }
+   MESSAGE
+===================================================== */
+
+function showMessage(
+  text,
+  type=""
+){
+
+  message.className =
+    "message " + type;
+
+  message.innerHTML =
+    text;
 
 }
 
 
 /* =====================================================
-   GVIZ FALLBACK
-   ===================================================== */
+   LOAD GOOGLE SHEET
+   JSONP METHOD
+===================================================== */
 
-function loadGViz(){
+function loadSheet(){
 
   return new Promise(
-    (resolve,reject)=>{
+    function(resolve,reject){
+
+      /*
+       Already loaded
+      */
+
+      if(allRows.length){
+
+        resolve(allRows);
+
+        return;
+
+      }
+
 
       const callbackName =
-        "__prSearch_" +
-        Date.now() +
-        "_" +
-        Math.floor(
-          Math.random()*10000
-        );
+        "transformerCallback_" +
+        Date.now();
 
 
-      let finished =
-        false;
-
-
-      const script =
-        document.createElement("script");
-
+      /*
+       Timeout
+      */
 
       const timeout =
         setTimeout(
-          () => {
+          function(){
 
-            if(finished) return;
+            delete window[
+              callbackName
+            ];
 
-            finished = true;
 
-            cleanup();
+            const oldScript =
+              document.getElementById(
+                "googleSheetLoader"
+              );
+
+
+            if(oldScript){
+              oldScript.remove();
+            }
+
 
             reject(
               new Error(
-                "Google connection timed out."
+                "Google Sheet loading timed out."
               )
             );
 
           },
-          12000
+          30000
         );
 
 
-      function cleanup(){
-
-        clearTimeout(timeout);
-
-        try{
-          delete window[callbackName];
-        }catch(e){}
-
-        script.remove();
-      }
-
+      /*
+       GOOGLE CALLBACK
+      */
 
       window[callbackName] =
         function(data){
 
-          if(finished) return;
+          clearTimeout(timeout);
 
-          finished = true;
-
-          cleanup();
 
           try{
 
@@ -454,8 +609,9 @@ function loadGViz(){
             ){
 
               throw new Error(
-                "Invalid Google Sheet response."
+                "Invalid response from Google Sheet."
               );
+
             }
 
 
@@ -463,85 +619,193 @@ function loadGViz(){
               data.table;
 
 
-            const cols =
-              table.cols || [];
+            /*
+             HEADERS
+            */
 
+            headers =
+              table.cols.map(
+                function(column,index){
 
-            const header =
-              cols.map(
-                c =>
-                c.label || ""
+                  return (
+                    column.label ||
+                    column.id ||
+                    "Column " +
+                    (index + 1)
+                  );
+
+                }
               );
 
 
-            const body =
-              (table.rows || [])
-                .map(
-                  r =>
-                  cols.map(
-                    (_,i) =>
-                    r.c &&
-                    r.c[i] &&
-                    r.c[i].v != null
-                      ? r.c[i].v
-                      : ""
-                  )
-                );
+            /*
+             ROWS
+            */
+
+            allRows =
+              table.rows.map(
+                function(row){
+
+                  const cells =
+                    headers.map(
+                      function(
+                        header,
+                        index
+                      ){
+
+                        const cell =
+                          row.c &&
+                          row.c[index];
 
 
-            resolve({
-              headers:header,
-              rows:body
-            });
+                        if(!cell){
+                          return "";
+                        }
 
 
-          }catch(err){
+                        /*
+                         Formatted value first.
+                        */
 
-            reject(err);
+                        if(
+                          cell.f !== undefined
+                        ){
+
+                          return cell.f;
+
+                        }
+
+
+                        if(
+                          cell.v !== undefined
+                        ){
+
+                          return cell.v;
+
+                        }
+
+
+                        return "";
+
+                      }
+                    );
+
+
+                  const object = {
+
+                    __cells:
+                      cells
+
+                  };
+
+
+                  headers.forEach(
+                    function(
+                      header,
+                      index
+                    ){
+
+                      object[header] =
+                        cells[index];
+
+                    }
+                  );
+
+
+                  return object;
+
+                }
+              );
+
+
+            delete window[
+              callbackName
+            ];
+
+
+            const script =
+              document.getElementById(
+                "googleSheetLoader"
+              );
+
+
+            if(script){
+              script.remove();
+            }
+
+
+            resolve(allRows);
+
+
+          }
+          catch(error){
+
+            delete window[
+              callbackName
+            ];
+
+            reject(error);
+
           }
 
         };
 
 
-      const tqx =
-        encodeURIComponent(
-          `out:json;responseHandler:${callbackName}`
+      /*
+       GOOGLE VISUALIZATION URL
+      */
+
+      const url =
+        "https://docs.google.com/spreadsheets/d/" +
+        SHEET_ID +
+        "/gviz/tq" +
+        "?gid=" +
+        SHEET_GID +
+        "&tqx=out:json;responseHandler:" +
+        callbackName;
+
+
+      /*
+       SCRIPT
+      */
+
+      const script =
+        document.createElement(
+          "script"
         );
 
 
-      const sheet =
-        encodeURIComponent(
-          SHEET_NAME
-        );
-
+      script.id =
+        "googleSheetLoader";
 
       script.src =
-        `https://docs.google.com/spreadsheets/d/` +
-        `${SHEET_ID}/gviz/tq` +
-        `?tqx=${tqx}` +
-        `&sheet=${sheet}` +
-        `&t=${Date.now()}`;
+        url;
 
 
       script.onerror =
         function(){
 
-          if(finished) return;
+          clearTimeout(timeout);
 
-          finished = true;
+          delete window[
+            callbackName
+          ];
 
-          cleanup();
+          script.remove();
+
 
           reject(
             new Error(
-              "Google GViz connection failed."
+              "Google Sheet could not be accessed."
             )
           );
 
         };
 
 
-      document.head.appendChild(script);
+      document.body.appendChild(
+        script
+      );
 
     }
   );
@@ -550,967 +814,301 @@ function loadGViz(){
 
 
 /* =====================================================
-   OPEN SHEET FALLBACK
-   ===================================================== */
+   GET FIELD
+===================================================== */
 
-async function loadOpenSheet(){
+function getField(
+  row,
+  names
+){
 
-  const url =
-    `https://opensheet.elk.sh/` +
-    `${SHEET_ID}/` +
-    `${encodeURIComponent(SHEET_NAME)}`;
+  for(
+    const wanted of names
+  ){
 
+    const found =
+      headers.find(
+        function(header){
 
-  const controller =
-    new AbortController();
+          return (
+            normalize(header) ===
+            normalize(wanted)
+          );
 
-
-  const timeout =
-    setTimeout(
-      () => controller.abort(),
-      12000
-    );
-
-
-  try{
-
-    const response =
-      await fetch(
-        url,
-        {
-          cache:"no-store",
-          signal:controller.signal
         }
       );
 
 
-    if(!response.ok){
-
-      throw new Error(
-        "OpenSheet HTTP " +
-        response.status
-      );
-    }
-
-
-    const data =
-      await response.json();
-
-
     if(
-      !Array.isArray(data) ||
-      !data.length
+      found &&
+      row[found] !== undefined
     ){
 
-      throw new Error(
-        "OpenSheet returned no records."
-      );
+      return row[found];
+
     }
 
-
-    const header =
-      Object.keys(
-        data[0]
-      );
-
-
-    const body =
-      data.map(
-        item =>
-        header.map(
-          h =>
-          item[h] ?? ""
-        )
-      );
-
-
-    return {
-      headers:header,
-      rows:body
-    };
-
-
-  }finally{
-
-    clearTimeout(timeout);
   }
+
+  return "";
 
 }
 
 
 /* =====================================================
-   PROCESS CSV DATA
-   ===================================================== */
+   MAIN FIELD HELPERS
+===================================================== */
 
-function processCSV(text){
+function getPlace(row){
 
-  const data =
-    parseCSV(text);
-
-
-  if(!data.length){
-
-    throw new Error(
-      "PR SEARCH contains no readable data."
-    );
-  }
-
-
-  const headerRow =
-    findHeaderRow(data);
-
-
-  headers =
-    data[headerRow]
-      .map(
-        (h,i) =>
-          String(h || "").trim() ||
-          `Column ${i+1}`
-      );
-
-
-  rows =
-    data
-      .slice(headerRow + 1)
-      .filter(
-        row =>
-        row.some(
-          cell =>
-          String(cell ?? "").trim() !== ""
-        )
-      );
-
-
-  if(!rows.length){
-
-    throw new Error(
-      "No records found in PR SEARCH."
-    );
-  }
+  return getField(
+    row,
+    [
+      "PLACE OF DAMAGE",
+      "PLACE",
+      "DAMAGE PLACE"
+    ]
+  );
 
 }
 
 
-/* =====================================================
-   LOAD DATA
-   ===================================================== */
+function getPR(row){
 
-async function loadData(){
-
-  ready = false;
-
-
-  status.textContent =
-    "Loading PR SEARCH...";
-
-
-  message.className =
-    "message loading";
-
-
-  message.innerHTML =
-    `<span class="spinner"></span>
-     Loading records...`;
-
-
-  /*
-    METHOD 1
-    Direct Google CSV
-  */
-
-  try{
-
-    const csv =
-      await loadCSV();
-
-    processCSV(csv);
-
-    setReady();
-
-    return;
-
-  }catch(error){
-
-    console.warn(
-      "CSV failed:",
-      error
-    );
-  }
-
-
-  /*
-    METHOD 2
-    Google GViz
-  */
-
-  try{
-
-    const data =
-      await loadGViz();
-
-
-    headers =
-      data.headers;
-
-
-    rows =
-      data.rows
-        .filter(
-          row =>
-          row.some(
-            x =>
-            String(x).trim() !== ""
-          )
-        );
-
-
-    if(!headers.length){
-
-      throw new Error(
-        "No headers returned."
-      );
-    }
-
-
-    setReady();
-
-    return;
-
-  }catch(error){
-
-    console.warn(
-      "GViz failed:",
-      error
-    );
-  }
-
-
-  /*
-    METHOD 3
-    OpenSheet
-  */
-
-  try{
-
-    const data =
-      await loadOpenSheet();
-
-
-    headers =
-      data.headers;
-
-
-    rows =
-      data.rows;
-
-
-    setReady();
-
-    return;
-
-  }catch(error){
-
-    console.warn(
-      "OpenSheet failed:",
-      error
-    );
-  }
-
-
-  /*
-    ALL METHODS FAILED
-  */
-
-  ready = false;
-
-
-  status.textContent =
-    "Connection failed";
-
-
-  status.className =
-    "status error";
-
-
-  message.className =
-    "message error";
-
-
-  message.innerHTML = `
-    <b>Unable to load PR SEARCH.</b>
-    <br><br>
-    Please make sure the Google Sheet is
-    <b>Anyone with the link → Viewer</b>.
-    <br><br>
-    Then tap the page refresh button.
-  `;
+  return getField(
+    row,
+    [
+      "PR NO",
+      "PR NUMBER",
+      "PRNO"
+    ]
+  );
 
 }
 
 
-/* =====================================================
-   READY
-   ===================================================== */
+function getPRDate(row){
 
-function setReady(){
+  return getField(
+    row,
+    [
+      "PR DATE",
+      "PRDATE"
+    ]
+  );
 
-  ready = true;
-
-
-  status.textContent =
-    `${rows.length.toLocaleString()} records • Ready`;
-
-
-  status.className =
-    "status ready";
+}
 
 
-  message.className =
-    "message";
+function getComplaint(row){
+
+  return getField(
+    row,
+    [
+      "COMPLAIN NUMBER",
+      "COMPLAINT NUMBER",
+      "COMPLAIN NO",
+      "COMPLAINT NO"
+    ]
+  );
+
+}
 
 
-  message.textContent =
-    "Enter PR / Complaint Number to search.";
+function getIssueDate(row){
+
+  return getField(
+    row,
+    [
+      "ISSUE DATE",
+      "ISSUED DATE"
+    ]
+  );
+
+}
 
 
-  console.log(
-    "PR SEARCH loaded:",
-    rows.length
+function getReplacementDate(row){
+
+  return getField(
+    row,
+    [
+      "REPLACEMENT DATE",
+      "TX REPLACEMENT DATE"
+    ]
+  );
+
+}
+
+
+function getDriver(row){
+
+  return getField(
+    row,
+    [
+      "DRIVER NAME",
+      "DRIVER"
+    ]
+  );
+
+}
+
+
+function getDriverMobile(row){
+
+  return getField(
+    row,
+    [
+      "DRIVER MOBILE",
+      "DRIVER MOBILE NO",
+      "DRIVER PHONE"
+    ]
   );
 
 }
 
 
 /* =====================================================
-   FIND COLUMN
-   ===================================================== */
+   SEARCH ALL COLUMNS
+===================================================== */
 
-function findColumn(names){
+function searchRows(
+  rows,
+  query
+){
 
-  for(
-    const name of names
-  ){
-
-    const wanted =
-      normalize(name);
+  const q =
+    normalize(query);
 
 
-    const index =
-      headers.findIndex(
-        h =>
-        normalize(h) === wanted
+  return rows.filter(
+    function(row){
+
+      return row.__cells.some(
+        function(cell){
+
+          return normalize(cell)
+            .includes(q);
+
+        }
       );
 
-
-    if(index !== -1){
-
-      return index;
     }
-  }
+  );
 
-
-  return -1;
 }
 
 
 /* =====================================================
-   SEARCH
-   ===================================================== */
+   DATE VALUE
+===================================================== */
 
-function search(){
-
-  if(!ready){
-
-    message.className =
-      "message loading";
-
-
-    message.innerHTML =
-      `<span class="spinner"></span>
-       PR SEARCH is still loading...`;
-
-    return;
-  }
-
-
-  const value =
-    input.value.trim();
-
+function dateValue(value){
 
   if(!value){
-
-    results.innerHTML = "";
-
-
-    message.className =
-      "message";
-
-
-    message.textContent =
-      "Enter PR / Complaint Number to search.";
-
-
-    return;
+    return 0;
   }
 
 
-  const q =
-    compact(value);
+  const text =
+    String(value).trim();
 
 
-  const found =
-    rows.filter(
-      row =>
-      row.some(
-        cell =>
-        compact(cell)
-          .includes(q)
-      )
+  let date =
+    new Date(text);
+
+
+  if(!isNaN(date.getTime())){
+
+    return date.getTime();
+
+  }
+
+
+  const match =
+    text.match(
+      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/
     );
 
 
-  renderResults(found);
-}
+  if(match){
+
+    let day =
+      Number(match[1]);
+
+    let month =
+      Number(match[2]) - 1;
+
+    let year =
+      Number(match[3]);
 
 
-/* =====================================================
-   STATUS
-   ===================================================== */
-
-function getStatus(row){
-
-  const replacementIndex =
-    findColumn([
-      "REPLACEMENT DATE",
-      "Replacement Date"
-    ]);
+    if(year < 100){
+      year += 2000;
+    }
 
 
-  const issueIndex =
-    findColumn([
-      "ISSUE DATE",
-      "Issue Date"
-    ]);
-
-
-  const driverIndex =
-    findColumn([
-      "DRIVER NAME",
-      "Driver Name"
-    ]);
-
-
-  const mobileIndex =
-    findColumn([
-      "DRIVER MOBILE",
-      "Driver Mobile"
-    ]);
-
-
-  const replacement =
-    replacementIndex >= 0
-      ? String(
-          row[replacementIndex] || ""
-        ).trim()
-      : "";
-
-
-  const issue =
-    issueIndex >= 0
-      ? String(
-          row[issueIndex] || ""
-        ).trim()
-      : "";
-
-
-  const driver =
-    driverIndex >= 0
-      ? String(
-          row[driverIndex] || ""
-        ).trim()
-      : "";
-
-
-  const mobile =
-    mobileIndex >= 0
-      ? String(
-          row[mobileIndex] || ""
-        ).trim()
-      : "";
-
-
-  if(replacement){
-
-    return {
-
-      type:"installed",
-
-      title:
-        "🎉 Congratulations! Your Transformer is installed.",
-
-      detail:
-        `Replacement Date: ${
-          escapeHTML(replacement)
-        }`
-    };
+    return new Date(
+      year,
+      month,
+      day
+    ).getTime();
 
   }
 
 
-  if(issue){
-
-    return {
-
-      type:"issued",
-
-      title:
-        "⚡ Your Transformer is issued by Workshop.",
-
-      detail:
-        `Issue Date: ${
-          escapeHTML(issue)
-        }` +
-
-        (
-          driver
-            ? `<br>Driver: ${
-                escapeHTML(driver)
-              }`
-            : ""
-        ) +
-
-        (
-          mobile
-            ? `<br>Mobile: ${
-                escapeHTML(mobile)
-              }`
-            : ""
-        ) +
-
-        `<br><b>
-          Please contact Driver for Installation.
-        </b>`
-    };
-
-  }
-
-
-  return {
-
-    type:"pending",
-
-    title:
-      "Transformer replacement pending.",
-
-    detail:
-      "No Issue Date / Replacement Date found."
-  };
+  return 0;
 
 }
 
 
 /* =====================================================
    REPEATED DAMAGE HISTORY
-   ===================================================== */
+   BASED ON PLACE OF DAMAGE
+===================================================== */
 
-function getHistory(currentRow){
+function getHistory(row){
 
-  const placeIndex =
-    findColumn([
-      "PLACE OF DAMAGE",
-      "Place of Damage"
-    ]);
+  const currentPlace =
+    normalize(
+      getPlace(row)
+    );
 
 
-  if(placeIndex === -1){
-
+  if(!currentPlace){
     return [];
   }
-
-
-  const place =
-    compact(
-      currentRow[placeIndex]
-    );
-
-
-  if(!place){
-
-    return [];
-  }
-
-
-  const matches =
-    rows.filter(
-      row =>
-      compact(
-        row[placeIndex]
-      ) === place
-    );
-
-
-  if(matches.length <= 1){
-
-    return matches;
-  }
-
-
-  const dateIndex =
-    findColumn([
-      "PR DATE",
-      "PR Date",
-      "DATE OF DAMAGE",
-      "Date of Damage"
-    ]);
-
-
-  matches.sort(
-    (a,b)=>{
-
-      if(dateIndex === -1){
-
-        return 0;
-      }
-
-
-      const da =
-        parseDateValue(
-          a[dateIndex]
-        );
-
-
-      const db =
-        parseDateValue(
-          b[dateIndex]
-        );
-
-
-      return da - db;
-    }
-  );
-
-
-  return matches;
-}
-
-
-/* =====================================================
-   DATE PARSER
-   ===================================================== */
-
-function parseDateValue(value){
-
-  const text =
-    String(value || "").trim();
-
-
-  if(!text){
-
-    return 0;
-  }
-
-
-  /*
-    DD.MM.YYYY
-  */
-
-  const m =
-    text.match(
-      /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
-    );
-
-
-  if(m){
-
-    return new Date(
-      Number(m[3]),
-      Number(m[2])-1,
-      Number(m[1])
-    ).getTime();
-  }
-
-
-  const d =
-    new Date(text);
-
-
-  return isNaN(d.getTime())
-    ? 0
-    : d.getTime();
-}
-
-
-/* =====================================================
-   ORDINAL
-   ===================================================== */
-
-function ordinal(n){
-
-  if(n === 1) return "First";
-
-  if(n === 2) return "Second";
-
-  if(n === 3) return "Third";
-
-  if(n === 4) return "Fourth";
-
-  if(n === 5) return "Fifth";
-
-  if(n === 6) return "Sixth";
-
-  if(n === 7) return "Seventh";
-
-  if(n === 8) return "Eighth";
-
-  if(n === 9) return "Ninth";
-
-  if(n === 10) return "Tenth";
-
-  return n + "th";
-}
-
-
-/* =====================================================
-   RENDER RESULTS
-   ===================================================== */
-
-function renderResults(found){
-
-  results.innerHTML = "";
-
-
-  if(!found.length){
-
-    message.className =
-      "message";
-
-
-    message.innerHTML = `
-      <b>No record found.</b>
-      <br>
-      <span style="font-size:10px;color:#888">
-        Try PR No, Complaint No, DID No,
-        Place of Damage or another value.
-      </span>
-    `;
-
-    return;
-  }
-
-
-  message.className =
-    "message";
-
-
-  message.textContent =
-    `${found.length}
-     matching record${found.length > 1 ? "s" : ""}
-     found`;
-
-
-  /*
-    Maximum 50 results on screen.
-  */
-
-  found
-    .slice(0,50)
-    .forEach(
-      row =>
-      renderCard(row)
-    );
-
-
-  if(found.length > 50){
-
-    const more =
-      document.createElement("div");
-
-
-    more.className =
-      "message";
-
-
-    more.textContent =
-      "Showing first 50 matching records.";
-
-    results.appendChild(more);
-  }
-
-}
-
-
-/* =====================================================
-   RENDER CARD
-   ===================================================== */
-
-function renderCard(row){
-
-  const card =
-    document.createElement("div");
-
-
-  card.className =
-    "card";
-
-
-  const prIndex =
-    findColumn([
-      "PR NO",
-      "PR No",
-      "PR NUMBER"
-    ]);
-
-
-  const prDateIndex =
-    findColumn([
-      "PR DATE",
-      "PR Date"
-    ]);
-
-
-  const prNo =
-    prIndex >= 0
-      ? row[prIndex]
-      : "";
-
-
-  const prDate =
-    prDateIndex >= 0
-      ? row[prDateIndex]
-      : "";
 
 
   const history =
-    getHistory(row);
+    allRows.filter(
+      function(item){
+
+        return (
+          normalize(
+            getPlace(item)
+          ) === currentPlace
+        );
+
+      }
+    );
 
 
-  const repeated =
-    history.length > 1;
+  history.sort(
+    function(a,b){
+
+      const dateA =
+        dateValue(
+          getPRDate(a) ||
+          getField(
+            a,
+            [
+              "DATE OF DAMAGE"
+            ]
+          )
+        );
 
 
-  const statusData =
-    getStatus(row);
-
-
-  let html = `
-
-    <div class="card-head">
-
-      <div>
-
-        <div class="pr-number">
-          PR No:
-          ${escapeHTML(
-            prNo || "—"
-          )}
-        </div>
-
-        <div class="pr-date">
-          PR Date:
-          ${escapeHTML(
-            prDate || "—"
-          )}
-        </div>
-
-      </div>
-
-
-      <div class="
-        badge
-        ${statusData.type}
-      ">
-
-        ${
-          statusData.type === "installed"
-            ? "INSTALLED"
-            : statusData.type === "issued"
-              ? "ISSUED"
-              : "PENDING"
-        }
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  /*
-    STATUS
-  */
-
-  if(
-    statusData.type ===
-    "installed"
-  ){
-
-    html += `
-
-      <div class="alert ok">
-
-        ${statusData.title}
-
-        <br>
-
-        ${statusData.detail}
-
-      </div>
-
-    `;
-
-  }
-  else if(
-    statusData.type ===
-    "issued"
-  ){
-
-    html += `
-
-      <div class="alert issue">
-
-        ${statusData.title}
-
-        <br>
-
-        ${statusData.detail}
-
-      </div>
-
-    `;
-
-  }
-  else{
-
-    html += `
-
-      <div class="alert">
-
-        ${statusData.title}
-
-        <br>
-
-        ${statusData.detail}
-
-      </div>
-
-    `;
-  }
-
-
-  /*
-    REPEATED DAMAGE
-  */
-
-  if(repeated){
-
-    html += `
-
-      <div class="repeat-alert">
-
-        ⚠️ It Damaged
-        ${history.length}
-        Times.
-
-        <br>
-
-        Ple
+      const dateB =
+        dateValue(
+          get

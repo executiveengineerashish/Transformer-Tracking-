@@ -1,16 +1,33 @@
-// ==========================================
+// ======================================================
 // PR SEARCH
-// Google Sheet tab: PR Search
+// ======================================================
 //
-// Sheet loads immediately in BACKGROUND.
-// Full data is NOT displayed.
+// Google Sheet:
+// PR Search
 //
-// Search works on EVERY ROW + EVERY COLUMN.
-// ==========================================
+// Behaviour:
+//
+// 1. Sheet loads immediately in background.
+// 2. NO records are displayed initially.
+// 3. User enters PR/Complaint Number.
+// 4. Search checks EVERY ROW.
+// 5. Search checks EVERY COLUMN.
+// 6. Results appear immediately.
+// 7. No localStorage is used.
+// 8. Therefore no "Storage quota exceeded" error.
+// 9. Repeated damage is checked using Place of Damage.
+// 10. Issue Date / Replacement Date messages are shown.
+//
+// ======================================================
 
+
+// ======================================================
+// GOOGLE SHEET
+// ======================================================
 
 const SHEET_ID =
   "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+
 
 const SHEET_GID =
   "1464518527";
@@ -20,54 +37,65 @@ const CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 
-// ==========================================
+// ======================================================
 // ELEMENTS
-// ==========================================
-
-const el = (id) =>
-  document.getElementById(id);
-
+// ======================================================
 
 const subtitle =
-  el("subtitle");
+  document.getElementById("subtitle");
+
 
 const refreshBtn =
-  el("refreshBtn");
+  document.getElementById("refreshBtn");
+
 
 const qInput =
-  el("q");
+  document.getElementById("q");
+
 
 const searchBtn =
-  el("searchBtn");
+  document.getElementById("searchBtn");
 
-const errorBox =
-  el("error");
 
 const resultsSummary =
-  el("resultsSummary");
+  document.getElementById("resultsSummary");
+
 
 const prevBtn =
-  el("prevBtn");
+  document.getElementById("prevBtn");
+
 
 const nextBtn =
-  el("nextBtn");
+  document.getElementById("nextBtn");
 
-const tableWrap =
-  el("tableWrap");
 
-const thead =
-  el("thead");
+const pager =
+  document.getElementById("pager");
 
-const tbody =
-  el("tbody");
 
 const mobileResults =
-  el("mobileResults");
+  document.getElementById("mobileResults");
 
 
-// ==========================================
-// DATA
-// ==========================================
+const tableWrap =
+  document.getElementById("tableWrap");
+
+
+const thead =
+  document.getElementById("thead");
+
+
+const tbody =
+  document.getElementById("tbody");
+
+
+const errorBox =
+  document.getElementById("error");
+
+
+// ======================================================
+// DATA VARIABLES
+// ======================================================
 
 let headers = [];
 
@@ -77,7 +105,7 @@ let filtered = [];
 
 let offset = 0;
 
-const limit = 50;
+const PAGE_SIZE = 50;
 
 let sheetLoaded = false;
 
@@ -86,9 +114,9 @@ let loading = false;
 let searchTimer = null;
 
 
-// ==========================================
+// ======================================================
 // NORMALIZE
-// ==========================================
+// ======================================================
 
 function normalize(value) {
 
@@ -99,21 +127,9 @@ function normalize(value) {
 }
 
 
-// ==========================================
-// SUBTITLE
-// ==========================================
-
-function setSubtitle(text) {
-
-  subtitle.textContent =
-    text;
-
-}
-
-
-// ==========================================
-// ERROR
-// ==========================================
+// ======================================================
+// SHOW ERROR
+// ======================================================
 
 function showError(message) {
 
@@ -128,137 +144,157 @@ function showError(message) {
 }
 
 
-// ==========================================
+// ======================================================
+// SET SUBTITLE
+// ======================================================
+
+function setSubtitle(text) {
+
+  subtitle.textContent =
+    text;
+
+}
+
+
+// ======================================================
 // CSV PARSER
-// ==========================================
+// ======================================================
 
 function parseCSV(text) {
 
-  const output = [];
+  const result = [];
 
   let row = [];
 
-  let current = "";
-
-  let i = 0;
+  let value = "";
 
   let inQuotes = false;
 
 
-  while (i < text.length) {
+  for (
+    let i = 0;
+    i < text.length;
+    i++
+  ) {
 
     const ch =
       text[i];
 
 
+    // ------------------------------------------
+    // INSIDE QUOTES
+    // ------------------------------------------
+
     if (inQuotes) {
 
       if (ch === '"') {
 
-        const next =
-          text[i + 1];
+        if (
+          text[i + 1] === '"'
+        ) {
 
+          value += '"';
 
-        if (next === '"') {
+          i++;
 
-          current += '"';
+        } else {
 
-          i += 2;
+          inQuotes = false;
 
-          continue;
         }
 
+      } else {
 
-        inQuotes = false;
+        value += ch;
 
-        i++;
-
-        continue;
       }
-
-
-      current += ch;
-
-      i++;
 
       continue;
     }
 
+
+    // ------------------------------------------
+    // START QUOTES
+    // ------------------------------------------
 
     if (ch === '"') {
 
       inQuotes = true;
 
-      i++;
-
       continue;
     }
 
+
+    // ------------------------------------------
+    // COMMA
+    // ------------------------------------------
 
     if (ch === ",") {
 
-      row.push(current);
+      row.push(value);
 
-      current = "";
-
-      i++;
+      value = "";
 
       continue;
     }
 
+
+    // ------------------------------------------
+    // NEW LINE
+    // ------------------------------------------
 
     if (ch === "\n") {
 
-      row.push(current);
+      row.push(value);
 
-      output.push(row);
+      result.push(row);
 
       row = [];
 
-      current = "";
-
-      i++;
+      value = "";
 
       continue;
     }
 
+
+    // ------------------------------------------
+    // IGNORE CR
+    // ------------------------------------------
 
     if (ch === "\r") {
 
-      i++;
-
       continue;
     }
 
 
-    current += ch;
-
-    i++;
+    value += ch;
   }
 
 
+  // Last row
+
   if (
-    current !== "" ||
+    value !== "" ||
     row.length > 0
   ) {
 
-    row.push(current);
+    row.push(value);
 
-    output.push(row);
+    result.push(row);
   }
 
 
-  return output;
+  return result;
 }
 
 
-// ==========================================
-// HEADER DETECTION
-// ==========================================
+// ======================================================
+// DETECT HEADER
+// ======================================================
 
 function detectHeaderRow(records) {
 
-  const count =
+  const max =
     Math.min(
       records.length,
       15
@@ -272,18 +308,19 @@ function detectHeaderRow(records) {
 
   for (
     let i = 0;
-    i < count;
+    i < max;
     i++
   ) {
 
-    const currentRow =
+    const current =
       records[i] || [];
 
 
     const score =
-      currentRow.filter(
-        (cell) =>
-          normalize(cell).length > 0
+      current.filter(
+        cell =>
+          normalize(cell)
+            .length > 0
       ).length;
 
 
@@ -298,15 +335,13 @@ function detectHeaderRow(records) {
   }
 
 
-  return bestScore >= 3
-    ? bestIndex
-    : 0;
+  return bestIndex;
 }
 
 
-// ==========================================
+// ======================================================
 // CLEAN DATA
-// ==========================================
+// ======================================================
 
 function cleanData(records) {
 
@@ -315,39 +350,47 @@ function cleanData(records) {
 
 
   const headerRow =
-    (records[headerIndex] || [])
-      .map(
-        (header, index) => {
+    (
+      records[
+        headerIndex
+      ] || []
+    ).map(
+      (
+        header,
+        index
+      ) => {
 
-          const value =
-            String(
-              header ?? ""
-            ).trim();
+        const text =
+          String(
+            header ?? ""
+          ).trim();
 
 
-          return value
-            ? value
-            : `Column ${index + 1}`;
-        }
-      );
+        return text
+          ? text
+          : `Column ${index + 1}`;
+      }
+    );
 
 
   const data =
     records
-      .slice(headerIndex + 1)
-
+      .slice(
+        headerIndex + 1
+      )
       .map(
-        (record) =>
-          record.map(
-            (cell) =>
-              String(cell ?? "")
+        row =>
+          row.map(
+            cell =>
+              String(
+                cell ?? ""
+              )
           )
       )
-
       .filter(
-        (record) =>
-          record.some(
-            (cell) =>
+        row =>
+          row.some(
+            cell =>
               normalize(cell)
           )
       );
@@ -355,26 +398,32 @@ function cleanData(records) {
 
   return {
 
-    headerRow,
+    headers:
+      headerRow,
 
-    data
+    rows:
+      data
 
   };
 }
 
 
-// ==========================================
+// ======================================================
 // FETCH GOOGLE SHEET
 //
 // NO LOCAL STORAGE
 // NO CACHE
-// ==========================================
+//
+// This prevents the previous:
+// "exceeded the quota"
+// error.
+// ======================================================
 
-async function fetchSheetCSV() {
+async function fetchSheet() {
 
   const url =
     CSV_URL +
-    "&t=" +
+    "&_=" +
     Date.now();
 
 
@@ -388,7 +437,9 @@ async function fetchSheetCSV() {
     );
 
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
 
     throw new Error(
       `Google Sheet fetch failed: ${response.status}`
@@ -396,13 +447,12 @@ async function fetchSheetCSV() {
   }
 
 
-  const csvText =
+  const text =
     await response.text();
 
 
   if (
-    !csvText ||
-    csvText.trim().length === 0
+    !text.trim()
   ) {
 
     throw new Error(
@@ -411,30 +461,27 @@ async function fetchSheetCSV() {
   }
 
 
-  return {
-
-    csvText,
-
-    fetchedAt:
-      Date.now()
-
-  };
+  return text;
 }
 
 
-// ==========================================
-// PRELOAD SHEET
+// ======================================================
+// LOAD SHEET IN BACKGROUND
 //
-// Loads immediately in background.
+// VERY IMPORTANT:
 //
-// DOES NOT DISPLAY ALL DATA.
-// ==========================================
+// We DO NOT call renderPage()
+// after loading.
+//
+// Therefore the 11,000+ records
+// will NOT appear automatically.
+// ======================================================
 
 async function preloadSheet() {
 
   if (
-    sheetLoaded ||
-    loading
+    loading ||
+    sheetLoaded
   ) {
 
     return;
@@ -452,17 +499,12 @@ async function preloadSheet() {
 
   try {
 
-    const {
-      csvText,
-      fetchedAt
-    } =
-      await fetchSheetCSV();
+    const csvText =
+      await fetchSheet();
 
 
     const records =
-      parseCSV(
-        csvText
-      );
+      parseCSV(csvText);
 
 
     if (
@@ -470,30 +512,38 @@ async function preloadSheet() {
     ) {
 
       throw new Error(
-        "No records received from Google Sheet."
+        "No data received from Google Sheet."
       );
     }
 
 
     const cleaned =
-      cleanData(
-        records
-      );
+      cleanData(records);
 
 
     headers =
-      cleaned.headerRow;
+      cleaned.headers;
 
 
     rows =
-      cleaned.data;
+      cleaned.rows;
 
 
-    sheetLoaded = true;
+    sheetLoaded =
+      true;
 
 
-    // IMPORTANT:
-    // Do NOT display complete data.
+    // ==================================================
+    // IMPORTANT
+    //
+    // DO NOT:
+    //
+    // filtered = rows;
+    // renderPage();
+    //
+    // This is exactly what caused all data
+    // to appear previously.
+    // ==================================================
 
     filtered = [];
 
@@ -503,13 +553,20 @@ async function preloadSheet() {
     mobileResults.innerHTML =
       "";
 
+
     tbody.innerHTML =
       "";
+
 
     thead.innerHTML =
       "";
 
+
     tableWrap.style.display =
+      "none";
+
+
+    pager.style.display =
       "none";
 
 
@@ -518,16 +575,13 @@ async function preloadSheet() {
 
 
     setSubtitle(
-      `${
-        rows.length.toLocaleString()
-      } records loaded • Ready to search`
+      `${rows.length.toLocaleString()} records • Ready to search`
     );
 
 
   } catch (error) {
 
     console.error(
-      "PR Search loading error:",
       error
     );
 
@@ -547,31 +601,20 @@ async function preloadSheet() {
   } finally {
 
     loading = false;
+
   }
 }
 
 
-// ==========================================
+// ======================================================
 // FIND COLUMN
-// ==========================================
+// ======================================================
 
-function findColumnByNames(
-  names
-) {
+function findColumn(names) {
 
   const wanted =
     names.map(
-      (name) =>
-        normalize(name)
-          .replace(
-            /[_-]/g,
-            " "
-          )
-          .replace(
-            /\s+/g,
-            " "
-          )
-          .trim()
+      normalize
     );
 
 
@@ -586,16 +629,7 @@ function findColumnByNames(
     const header =
       normalize(
         headers[i]
-      )
-        .replace(
-          /[_-]/g,
-          " "
-        )
-        .replace(
-          /\s+/g,
-          " "
-        )
-        .trim();
+      );
 
 
     if (
@@ -620,27 +654,19 @@ function findColumnByNames(
     const header =
       normalize(
         headers[i]
-      )
-        .replace(
-          /[_-]/g,
-          " "
-        )
-        .replace(
-          /\s+/g,
-          " "
-        );
+      );
 
 
-    if (
-      wanted.some(
-        (name) =>
-          header.includes(
-            name
-          )
-      )
+    for (
+      const name of wanted
     ) {
 
-      return i;
+      if (
+        header.includes(name)
+      ) {
+
+        return i;
+      }
     }
   }
 
@@ -649,42 +675,33 @@ function findColumnByNames(
 }
 
 
-// ==========================================
-// PLACE OF DAMAGE COLUMN
-// ==========================================
+// ======================================================
+// PLACE OF DAMAGE
+// ======================================================
 
-function findPlaceColumn() {
+function getPlaceColumn() {
 
-  const names = [
+  let index =
+    findColumn([
 
-    "place of damage",
+      "place of damage",
+      "placeofdamage",
+      "damage place",
+      "damaged place",
+      "place damaged"
 
-    "placeofdamage",
-
-    "damage place",
-
-    "damaged place",
-
-    "place damaged"
-
-  ];
-
-
-  const found =
-    findColumnByNames(
-      names
-    );
+    ]);
 
 
   if (
-    found >= 0
+    index >= 0
   ) {
 
-    return found;
+    return index;
   }
 
 
-  // Flexible search
+  // Flexible detection
 
   for (
     let i = 0;
@@ -692,19 +709,15 @@ function findPlaceColumn() {
     i++
   ) {
 
-    const header =
+    const h =
       normalize(
         headers[i]
-      )
-        .replace(
-          /[_-]/g,
-          " "
-        );
+      );
 
 
     if (
-      header.includes("place") &&
-      header.includes("damage")
+      h.includes("place") &&
+      h.includes("damage")
     ) {
 
       return i;
@@ -716,74 +729,65 @@ function findPlaceColumn() {
 }
 
 
-// ==========================================
-// ISSUE DATE COLUMN
-// ==========================================
+// ======================================================
+// ISSUE DATE
+// ======================================================
 
-function findIssueDateColumn() {
+function getIssueDateColumn() {
 
-  return findColumnByNames([
+  return findColumn([
 
     "issue date",
-
     "issued date",
-
+    "issue_date",
     "issuedate",
-
     "tx issue date",
-
     "transformer issue date",
-
     "date of issue"
 
   ]);
 }
 
 
-// ==========================================
-// REPLACEMENT DATE COLUMN
-// ==========================================
+// ======================================================
+// REPLACEMENT DATE
+// ======================================================
 
-function findReplacementDateColumn() {
+function getReplacementDateColumn() {
 
-  return findColumnByNames([
+  return findColumn([
 
     "replacement date",
-
+    "replacement_date",
     "replacementdate",
-
     "tx replacement date",
-
     "transformer replacement date",
-
     "date of replacement"
 
   ]);
 }
 
 
-// ==========================================
+// ======================================================
 // TRANSFORMER STATUS
-// ==========================================
+// ======================================================
 
-function getTransformerStatus(
-  row
-) {
+function getTransformerStatus(row) {
 
-  const replacementColumn =
-    findReplacementDateColumn();
+  const replacementIndex =
+    getReplacementDateColumn();
 
 
-  const issueColumn =
-    findIssueDateColumn();
+  const issueIndex =
+    getIssueDateColumn();
 
 
   const replacementDate =
-    replacementColumn >= 0
+    replacementIndex >= 0
 
       ? String(
           row[
-            replacementColumn
+            replacementIndex
           ] ?? ""
         ).trim()
 
@@ -791,18 +795,18 @@ function getTransformerStatus(
 
 
   const issueDate =
-    issueColumn >= 0
+    issueIndex >= 0
 
       ? String(
           row[
-            issueColumn
+            issueIndex
           ] ?? ""
         ).trim()
 
       : "";
 
 
-  // Replacement date has priority
+  // Replacement has priority
 
   if (
     replacementDate
@@ -819,8 +823,6 @@ function getTransformerStatus(
     };
   }
 
-
-  // Issue date
 
   if (
     issueDate
@@ -850,23 +852,22 @@ function getTransformerStatus(
 }
 
 
-// ==========================================
-// REPEATED DAMAGE CHECK
+// ======================================================
+// REPEATED DAMAGE
 //
-// SAME PLACE OF DAMAGE
-// ACROSS COMPLETE PR SEARCH SHEET
-// ==========================================
+// Same PLACE OF DAMAGE
+// appearing in multiple records.
+//
+// ======================================================
 
-function getRepeatedDamageStatus(
-  row
-) {
+function getRepeatedDamage(row) {
 
-  const placeColumn =
-    findPlaceColumn();
+  const placeIndex =
+    getPlaceColumn();
 
 
   if (
-    placeColumn < 0
+    placeIndex < 0
   ) {
 
     return {
@@ -887,12 +888,14 @@ function getRepeatedDamageStatus(
   const place =
     normalize(
       row[
-        placeColumn
+        placeIndex
       ] ?? ""
     );
 
 
-  if (!place) {
+  if (
+    !place
+  ) {
 
     return {
 
@@ -912,27 +915,26 @@ function getRepeatedDamageStatus(
   let count = 0;
 
 
-  rows.forEach(
-    (otherRow) => {
+  for (
+    const otherRow of rows
+  ) {
 
-      const otherPlace =
-        normalize(
-          otherRow[
-            placeColumn
-          ] ?? ""
-        );
+    const otherPlace =
+      normalize(
+        otherRow[
+          placeIndex
+        ] ?? ""
+      );
 
 
-      if (
-        otherPlace ===
-        place
-      ) {
+    if (
+      otherPlace ===
+      place
+    ) {
 
-        count++;
-      }
-
+      count++;
     }
-  );
+  }
 
 
   if (
@@ -966,32 +968,30 @@ function getRepeatedDamageStatus(
 }
 
 
-// ==========================================
-// CREATE STATUS MESSAGES
-// ==========================================
+// ======================================================
+// STATUS DISPLAY
+// ======================================================
 
-function createStatusMessage(
-  row
-) {
+function createStatus(row) {
 
-  const container =
+  const box =
     document.createElement(
       "div"
     );
 
 
-  // ========================================
-  // TRANSFORMER STATUS
-  // ========================================
-
-  const transformerStatus =
+  const transformer =
     getTransformerStatus(
       row
     );
 
 
+  // ==================================================
+  // INSTALLED
+  // ==================================================
+
   if (
-    transformerStatus.type ===
+    transformer.type ===
     "installed"
   ) {
 
@@ -1002,16 +1002,18 @@ function createStatusMessage(
 
 
     message.className =
-      "statusMessage statusInstalled";
+      "status installed";
 
 
     message.innerHTML =
-      `🎉 Congratulations!<br>
-       Your Transformer is installed.`;
+      `
+      🎉 Congratulations!<br>
+      Your Transformer is installed.
+      `;
 
 
     if (
-      transformerStatus.date
+      transformer.date
     ) {
 
       const date =
@@ -1020,20 +1022,18 @@ function createStatusMessage(
         );
 
 
+      date.style.marginTop =
+        "5px";
+
       date.style.fontSize =
         "12px";
 
       date.style.fontWeight =
         "500";
 
-      date.style.marginTop =
-        "5px";
-
 
       date.textContent =
-        `Replacement Date: ${
-          transformerStatus.date
-        }`;
+        `Replacement Date: ${transformer.date}`;
 
 
       message.appendChild(
@@ -1042,14 +1042,18 @@ function createStatusMessage(
     }
 
 
-    container.appendChild(
+    box.appendChild(
       message
     );
   }
 
 
+  // ==================================================
+  // ISSUED
+  // ==================================================
+
   else if (
-    transformerStatus.type ===
+    transformer.type ===
     "issued"
   ) {
 
@@ -1060,16 +1064,18 @@ function createStatusMessage(
 
 
     message.className =
-      "statusMessage statusIssued";
+      "status issued";
 
 
     message.innerHTML =
-      `⚡ Your Transformer has been issued by Workshop.<br>
-       Please contact the driver for installation.`;
+      `
+      ⚡ Your Transformer is issued by Workshop.<br>
+      Please contact Driver for installation.
+      `;
 
 
     if (
-      transformerStatus.date
+      transformer.date
     ) {
 
       const date =
@@ -1078,20 +1084,18 @@ function createStatusMessage(
         );
 
 
+      date.style.marginTop =
+        "5px";
+
       date.style.fontSize =
         "12px";
 
       date.style.fontWeight =
         "500";
 
-      date.style.marginTop =
-        "5px";
-
 
       date.textContent =
-        `Issue Date: ${
-          transformerStatus.date
-        }`;
+        `Issue Date: ${transformer.date}`;
 
 
       message.appendChild(
@@ -1100,24 +1104,24 @@ function createStatusMessage(
     }
 
 
-    container.appendChild(
+    box.appendChild(
       message
     );
   }
 
 
-  // ========================================
+  // ==================================================
   // REPEATED DAMAGE
-  // ========================================
+  // ==================================================
 
-  const repeatedStatus =
-    getRepeatedDamageStatus(
+  const repeated =
+    getRepeatedDamage(
       row
     );
 
 
   if (
-    repeatedStatus.type ===
+    repeated.type ===
     "notRepeated"
   ) {
 
@@ -1128,21 +1132,21 @@ function createStatusMessage(
 
 
     message.className =
-      "statusMessage statusNotRepeated";
+      "status notRepeated";
 
 
-    message.innerHTML =
-      `✅ Not a repeated damage`;
+    message.textContent =
+      "✅ Not a repeated damage";
 
 
-    container.appendChild(
+    box.appendChild(
       message
     );
   }
 
 
   else if (
-    repeatedStatus.type ===
+    repeated.type ===
     "repeated"
   ) {
 
@@ -1153,39 +1157,42 @@ function createStatusMessage(
 
 
     message.className =
-      "statusMessage statusRepeated";
+      "status repeated";
 
 
     const times =
-      repeatedStatus.count === 2
+      repeated.count === 2
 
         ? "2 times"
 
-        : `${repeatedStatus.count} times`;
+        : `${repeated.count} times`;
 
 
     message.innerHTML =
-      `⚠️ It Damaged ${times}.<br>
-       Please Ensure Increasing Capacity if Overloaded.`;
+      `
+      ⚠️ It Damaged ${times}.<br>
+      Please Ensure Increasing Capacity if Overloaded.
+      `;
 
 
-    container.appendChild(
+    box.appendChild(
       message
     );
   }
 
 
-  return container;
+  return box;
 }
 
 
-// ==========================================
+// ======================================================
 // SEARCH
 //
-// Searches EVERY ROW + EVERY COLUMN
-// ==========================================
+// EVERY ROW
+// EVERY COLUMN
+// ======================================================
 
-function applySearch() {
+function searchData() {
 
   const query =
     normalize(
@@ -1193,9 +1200,13 @@ function applySearch() {
     );
 
 
-  // Empty search
+  // -----------------------------------------------
+  // EMPTY SEARCH
+  // -----------------------------------------------
 
-  if (!query) {
+  if (
+    !query
+  ) {
 
     filtered = [];
 
@@ -1215,6 +1226,10 @@ function applySearch() {
       "none";
 
 
+    pager.style.display =
+      "none";
+
+
     resultsSummary.textContent =
       "Enter PR / Complaint Number to search.";
 
@@ -1223,10 +1238,13 @@ function applySearch() {
   }
 
 
-  // If background loading
-  // is not finished yet
+  // -----------------------------------------------
+  // DATA NOT READY
+  // -----------------------------------------------
 
-  if (!sheetLoaded) {
+  if (
+    !sheetLoaded
+  ) {
 
     resultsSummary.textContent =
       loading
@@ -1238,44 +1256,37 @@ function applySearch() {
   }
 
 
-  // ========================================
-  // SEARCH COMPLETE SHEET
-  // ========================================
+  // -----------------------------------------------
+  // SEARCH EVERY ROW
+  // AND EVERY COLUMN
+  // -----------------------------------------------
 
   filtered =
     rows.filter(
-      (row) => {
-
-        return row.some(
-          (cell) => {
-
-            return normalize(
+      row =>
+        row.some(
+          cell =>
+            normalize(
               cell
             ).includes(
               query
-            );
-
-          }
-        );
-
-      }
+            )
+        )
     );
 
 
   offset = 0;
 
 
-  renderPage();
+  renderResults();
 }
 
 
-// ==========================================
-// MOBILE CARDS
-// ==========================================
+// ======================================================
+// RENDER MOBILE
+// ======================================================
 
-function renderMobileCards(
-  page
-) {
+function renderMobile(page) {
 
   mobileResults.innerHTML =
     "";
@@ -1284,7 +1295,7 @@ function renderMobileCards(
   page.forEach(
     (
       row,
-      rowIndex
+      index
     ) => {
 
       const card =
@@ -1297,20 +1308,20 @@ function renderMobileCards(
         "dataCard";
 
 
-      // Status
+      // Status messages
 
-      const statusBox =
-        createStatusMessage(
+      const status =
+        createStatus(
           row
         );
 
 
       if (
-        statusBox.children.length
+        status.children.length
       ) {
 
         card.appendChild(
-          statusBox
+          status
         );
       }
 
@@ -1324,14 +1335,12 @@ function renderMobileCards(
 
 
       title.className =
-        "dataCardTitle";
+        "cardTitle";
 
 
       title.textContent =
         `Transformer Record ${
-          offset +
-          rowIndex +
-          1
+          offset + index + 1
         }`;
 
 
@@ -1340,7 +1349,7 @@ function renderMobileCards(
       );
 
 
-      // All non-empty fields
+      // All columns
 
       headers.forEach(
         (
@@ -1355,7 +1364,9 @@ function renderMobileCards(
 
 
           if (
-            !String(value).trim()
+            !String(
+              value
+            ).trim()
           ) {
 
             return;
@@ -1386,17 +1397,17 @@ function renderMobileCards(
             header;
 
 
-          const dataValue =
+          const valueElement =
             document.createElement(
               "span"
             );
 
 
-          dataValue.className =
+          valueElement.className =
             "dataValue";
 
 
-          dataValue.textContent =
+          valueElement.textContent =
             value;
 
 
@@ -1406,7 +1417,7 @@ function renderMobileCards(
 
 
           item.appendChild(
-            dataValue
+            valueElement
           );
 
 
@@ -1427,13 +1438,11 @@ function renderMobileCards(
 }
 
 
-// ==========================================
-// DESKTOP TABLE
-// ==========================================
+// ======================================================
+// RENDER DESKTOP
+// ======================================================
 
-function renderTable(
-  page
-) {
+function renderDesktop(page) {
 
   thead.innerHTML =
     "";
@@ -1460,7 +1469,7 @@ function renderTable(
 
 
   headers.forEach(
-    (header) => {
+    header => {
 
       const th =
         document.createElement(
@@ -1479,317 +1488,4 @@ function renderTable(
   );
 
 
-  thead.appendChild(
-    headerRow
-  );
-
-
-  page.forEach(
-    (row) => {
-
-      const tr =
-        document.createElement(
-          "tr"
-        );
-
-
-      headers.forEach(
-        (
-          _header,
-          index
-        ) => {
-
-          const td =
-            document.createElement(
-              "td"
-            );
-
-
-          td.textContent =
-            row[index] ?? "";
-
-
-          tr.appendChild(
-            td
-          );
-        }
-      );
-
-
-      tbody.appendChild(
-        tr
-      );
-    }
-  );
-
-
-  tableWrap.style.display =
-    "block";
-}
-
-
-// ==========================================
-// RENDER PAGE
-// ==========================================
-
-function renderPage() {
-
-  const page =
-    filtered.slice(
-      offset,
-      offset + limit
-    );
-
-
-  if (
-    filtered.length === 0
-  ) {
-
-    resultsSummary.textContent =
-      "No records found.";
-
-  } else {
-
-    resultsSummary.textContent =
-      `Showing ${
-        offset + 1
-      }–${
-        Math.min(
-          filtered.length,
-          offset + page.length
-        )
-      } of ${
-        filtered.length
-      }`;
-  }
-
-
-  prevBtn.disabled =
-    offset === 0;
-
-
-  nextBtn.disabled =
-    offset + limit >=
-    filtered.length;
-
-
-  renderMobileCards(
-    page
-  );
-
-
-  renderTable(
-    page
-  );
-}
-
-
-// ==========================================
-// REFRESH
-//
-// Refresh downloads sheet again,
-// but still does NOT display all data.
-// ==========================================
-
-async function refreshApp() {
-
-  headers = [];
-
-  rows = [];
-
-  filtered = [];
-
-  offset = 0;
-
-  sheetLoaded = false;
-
-
-  mobileResults.innerHTML =
-    "";
-
-  tbody.innerHTML =
-    "";
-
-  thead.innerHTML =
-    "";
-
-  tableWrap.style.display =
-    "none";
-
-
-  showError("");
-
-
-  setSubtitle(
-    "Refreshing PR Search…"
-  );
-
-
-  resultsSummary.textContent =
-    "Preparing search…";
-
-
-  await preloadSheet();
-
-
-  // If user already entered
-  // a search value, show result
-  // after refresh.
-
-  if (
-    qInput.value.trim()
-  ) {
-
-    applySearch();
-  }
-}
-
-
-// ==========================================
-// SEARCH BUTTON
-// ==========================================
-
-searchBtn.addEventListener(
-  "click",
-  () => {
-
-    applySearch();
-
-  }
-);
-
-
-// ==========================================
-// AUTOMATIC SEARCH
-//
-// Search after user stops typing
-// for 250 milliseconds.
-// ==========================================
-
-qInput.addEventListener(
-  "input",
-  () => {
-
-    clearTimeout(
-      searchTimer
-    );
-
-
-    searchTimer =
-      setTimeout(
-        () => {
-
-          applySearch();
-
-        },
-        250
-      );
-
-  }
-);
-
-
-// ==========================================
-// ENTER KEY
-// ==========================================
-
-qInput.addEventListener(
-  "keydown",
-  (event) => {
-
-    if (
-      event.key ===
-      "Enter"
-    ) {
-
-      clearTimeout(
-        searchTimer
-      );
-
-
-      applySearch();
-    }
-
-  }
-);
-
-
-// ==========================================
-// PREVIOUS
-// ==========================================
-
-prevBtn.addEventListener(
-  "click",
-  () => {
-
-    offset =
-      Math.max(
-        0,
-        offset - limit
-      );
-
-
-    renderPage();
-
-  }
-);
-
-
-// ==========================================
-// NEXT
-// ==========================================
-
-nextBtn.addEventListener(
-  "click",
-  () => {
-
-    offset =
-      Math.min(
-        filtered.length,
-        offset + limit
-      );
-
-
-    renderPage();
-
-  }
-);
-
-
-// ==========================================
-// REFRESH
-// ==========================================
-
-refreshBtn.addEventListener(
-  "click",
-  () => {
-
-    refreshApp();
-
-  }
-);
-
-
-// ==========================================
-// INITIAL SCREEN
-//
-// START BACKGROUND LOADING
-// BUT SHOW NO RECORDS.
-// ==========================================
-
-setSubtitle(
-  "Loading PR Search data…"
-);
-
-
-resultsSummary.textContent =
-  "Preparing search…";
-
-
-// IMPORTANT:
-// This loads the sheet immediately
-// in the background.
-//
-// It does NOT display all records.
-
-preloadSheet();
+  thead.appendChi

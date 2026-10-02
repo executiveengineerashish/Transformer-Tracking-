@@ -1,361 +1,689 @@
-const ID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
-const G="1464518527";
+const SHEET_ID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+const SHEET_GID="1464518527";
 
-let A=[],tm;
+let ALL=[];
+let timer=null;
 
-const $=x=>document.getElementById(x);
-const V=x=>String(x??"").trim();
-const N=x=>V(x).toLowerCase().replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
-const L=x=>N(V(x).replace(/[0-9]/g,""));
-const K=x=>N(x).replace("kva","");
-const E=x=>V(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-function D(x){
+/* ================= BASIC ================= */
+
+const $=id=>document.getElementById(id);
+
+const clean=x=>String(x??"").trim();
+
+const norm=x=>
+ String(x??"")
+ .toLowerCase()
+ .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
+
+function escapeHTML(x){
+ return String(x??"")
+ .replace(/&/g,"&amp;")
+ .replace(/</g,"&lt;")
+ .replace(/>/g,"&gt;")
+ .replace(/"/g,"&quot;")
+ .replace(/'/g,"&#039;");
+}
+
+
+/* ================= LOCATION ================= */
+
+function locationKey(x){
+
+ return norm(
+   String(x??"")
+   .replace(/[0-9]+/g," ")
+   .replace(/[\(\)\[\]\{\}]/g," ")
+ );
+
+}
+
+
+/* ================= CAPACITY ================= */
+
+function capacityKey(x){
+
+ return String(x??"")
+ .toLowerCase()
+ .replace(/kva/g,"")
+ .replace(/[^0-9.]/g,"")
+ .trim();
+
+}
+
+
+/* ================= DATE ================= */
+
+function parseDate(x){
+
  if(!x)return null;
- let s=V(x),m=s.match(/Date\(\s*(\d+),\s*(\d+),\s*(\d+)/);
- if(m)return new Date(+m[1],+m[2],+m[3]);
- m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
- if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+
+ let s=String(x).trim();
+
+ let m=s.match(
+  /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
+ );
+
+ if(m)
+  return new Date(+m[1],+m[2],+m[3]);
+
+ m=s.match(
+  /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
+ );
+
+ if(m)
+  return new Date(+m[3],+m[2]-1,+m[1]);
+
  let d=new Date(s);
+
  return isNaN(d.getTime())?null:d;
 }
 
-function currentMonth(x){
- let d=D(x),n=new Date();
- return d&&d.getFullYear()==n.getFullYear()&&d.getMonth()==n.getMonth();
+
+function sameMonth(x){
+
+ let d=parseDate(x);
+ let n=new Date();
+
+ return d &&
+ d.getFullYear()===n.getFullYear() &&
+ d.getMonth()===n.getMonth();
 }
 
 
-/* ================= LOAD ================= */
+/* ================= LOAD SHEET ================= */
 
-function load(){
+function loadSheet(){
 
- $("searchStatus").textContent="Loading transformer records...";
+ const status=$("searchStatus");
 
- let cb="TT"+Date.now();
+ if(status)
+  status.textContent="Loading transformer records...";
 
- window[cb]=r=>{
+ const callback="transformer_"+Date.now();
+
+ window[callback]=function(response){
 
   try{
 
-   A=(r.table.rows||[]).map((z,i)=>{
+   const rows=response.table.rows||[];
 
-    let a=Array.from(
-     {length:24},
-     (_,j)=>z.c?.[j]?.f??z.c?.[j]?.v??""
-    );
+   ALL=[];
 
-    a.row=i+4;
-    a.s=N(a.join(" "));
+   /*
+    A:X = 24 columns
 
-    return a;
+    IMPORTANT:
+    gviz range A3:X with headers=1
+    returns row 4 as first data row.
+   */
 
-   }).filter(x=>x.some(V));
+   rows.forEach(function(row,index){
 
-   dashboard();
+    let record=[];
 
-   $("searchStatus").textContent=
-    A.length.toLocaleString("en-IN")+
-    " transformer records loaded • Search ready";
+    for(let i=0;i<24;i++){
 
-  }catch(e){
+     let cell=row.c?.[i];
 
-   console.error(e);
-   $("searchStatus").textContent=
-    "Error reading PR SEARCH data";
+     if(!cell){
+      record.push("");
+      continue;
+     }
+
+     record.push(
+      cell.f!==undefined?
+      String(cell.f):
+      cell.v!==undefined?
+      String(cell.v):
+      ""
+     );
+
+    }
+
+    if(!record.some(clean))
+     return;
+
+    record.__row=index+4;
+
+    record.__search=norm(record.join(" "));
+
+    ALL.push(record);
+
+   });
+
+
+   buildDashboard();
+
+   if(status){
+
+    status.textContent=
+     ALL.length.toLocaleString("en-IN")+
+     " transformer records loaded • Search ready";
+
+   }
+
+  }catch(error){
+
+   console.error(error);
+
+   if(status){
+
+    status.textContent=
+     "Error reading PR SEARCH data";
+
+    status.classList.add("error");
+
+   }
+
+  }
+
+  try{
+   delete window[callback];
+  }catch(e){}
+
+ };
+
+
+ const old=$("googleSheetScript");
+
+ if(old)
+  old.remove();
+
+
+ const script=document.createElement("script");
+
+ script.id="googleSheetScript";
+
+ script.src=
+ "https://docs.google.com/spreadsheets/d/"+
+ SHEET_ID+
+ "/gviz/tq"+
+ "?gid="+SHEET_GID+
+ "&range=A3:X"+
+ "&headers=1"+
+ "&tqx=out%3Ajson%3BresponseHandler%3A"+
+ callback+
+ "&_="+Date.now();
+
+ script.onerror=function(){
+
+  if(status){
+
+   status.textContent=
+    "Google Sheet connection failed. Refresh page.";
+
+   status.classList.add("error");
 
   }
 
  };
 
- let old=$("googleSheetScript");
- if(old)old.remove();
+ document.head.appendChild(script);
 
- let s=document.createElement("script");
-
- s.id="googleSheetScript";
-
- s.src=
- "https://docs.google.com/spreadsheets/d/"+ID+
- "/gviz/tq?gid="+G+
- "&range=A3:X"+
- "&headers=1"+
- "&tqx=out:json;responseHandler:"+cb+
- "&_="+Date.now();
-
- document.head.appendChild(s);
 }
 
 
 /* ================= DASHBOARD ================= */
 
-function dashboard(){
+function buildDashboard(){
 
- let n=new Date();
+ if(!ALL.length)return;
 
- let r=A.filter(x=>currentMonth(x[13]));
-
- let issued=r.filter(x=>V(x[17])).length;
-
- let pending=r.filter(x=>!V(x[17]));
-
- $("dashTotal").textContent=r.length;
- $("dashIssued").textContent=issued;
- $("dashPending").textContent=pending.length;
-
- $("dashboardMonth").textContent=
-  n.toLocaleString("en-IN",{
-   month:"long",
-   year:"numeric"
-  });
+ const now=new Date();
 
 
- /* WORKSHOP */
+ /* CURRENT MONTH = PR DATE N = index 13 */
 
- let W={};
-
- pending.forEach(x=>{
-  let w=V(x[1])||"OTHER";
-  W[w]=(W[w]||0)+1;
- });
-
- let ws=Object.entries(W).sort((a,b)=>b[1]-a[1]);
- let wm=ws[0]?.[1]||1;
-
- $("workshopDashboard").innerHTML=
- ws.map(x=>
- `<div class="dashboard-row">
-  <div class="dashboard-row-title">
-   <span>${E(x[0])}</span>
-   <span>${x[1]}</span>
-  </div>
-  <div class="dashboard-bar-bg">
-   <div class="dashboard-bar"
-        style="width:${x[1]/wm*100}%"></div>
-  </div>
- </div>`
- ).join("")||"No pending transformer";
+ const monthRecords=
+  ALL.filter(x=>sameMonth(x[13]));
 
 
- /* CAPACITY */
+ /* STATUS */
 
- let C={};
+ let issued=0;
+ let pendingIssue=0;
+ let replacementPending=0;
+ let returnPending=0;
 
- pending.forEach(x=>{
-  let c=V(x[9])||"Unknown";
-  C[c]=(C[c]||0)+1;
- });
+ monthRecords.forEach(function(x){
 
- $("capacityDashboard").innerHTML=
- `<div class="capacity-grid">`+
- Object.entries(C)
- .sort((a,b)=>parseFloat(a[0])-parseFloat(b[0]))
- .map(x=>
- `<div class="capacity-box">
-   <span>${E(x[0])} kVA</span>
-   <strong>${x[1]}</strong>
-  </div>`
- ).join("")+
- `</div>`;
+  const issue=clean(x[17]);       // R
+  const replacement=clean(x[20]); // U
+  const returned=clean(x[22]);    // W
 
+  if(!issue){
 
- /* AGEING */
+   pendingIssue++;
 
- let a24=0,a72=0,a7=0;
+  }else{
 
- pending.forEach(x=>{
+   issued++;
 
-  let d=D(x[13]);
+   if(!replacement){
 
-  if(!d)return;
+    replacementPending++;
 
-  let days=(n-d)/86400000;
+   }else if(!returned){
 
-  if(days>1)a24++;
-  if(days>3)a72++;
-  if(days>7)a7++;
+    returnPending++;
 
- });
+   }
 
- $("ageingDashboard").innerHTML=
- `<div class="ageing-grid">
-
-  <div class="ageing-box">
-   <div>&gt; 1 Day</div>
-   <strong>${a24}</strong>
-  </div>
-
-  <div class="ageing-box">
-   <div>&gt; 3 Days</div>
-   <strong>${a72}</strong>
-  </div>
-
-  <div class="ageing-box">
-   <div>&gt; 7 Days</div>
-   <strong>${a7}</strong>
-  </div>
-
- </div>`;
-
-
- /* REPEATED DAMAGE */
-
- let H={};
-
- A.forEach(x=>{
-
-  let place=L(x[7]);
-  let capacity=K(x[9]);
-
-  if(!place||!capacity)return;
-
-  let key=place+"|"+capacity;
-
-  if(!H[key])H[key]=[];
-
-  H[key].push(x);
+  }
 
  });
 
 
- let repeated=Object.values(H)
-  .filter(x=>x.length>1)
-  .sort((a,b)=>b.length-a.length);
+ if($("dashTotal"))
+  $("dashTotal").textContent=monthRecords.length;
+
+ if($("dashIssued"))
+  $("dashIssued").textContent=issued;
+
+ if($("dashPending"))
+  $("dashPending").textContent=pendingIssue;
+
+ if($("dashReplacement"))
+  $("dashReplacement").textContent=replacementPending;
+
+ if($("dashReturn"))
+  $("dashReturn").textContent=returnPending;
 
 
- $("repeatedDashboard").innerHTML=
+ if($("dashboardMonth"))
+  $("dashboardMonth").textContent=
+   now.toLocaleString("en-IN",{
+    month:"long",
+    year:"numeric"
+   });
 
- repeated.length?
 
- repeated.map(x=>{
+ /* ================= WORKSHOP ================= */
 
-  let q=x[0];
+ let workshop={};
 
-  return `<div class="repeated-dashboard-item">
+ monthRecords.forEach(function(x){
 
-   <div class="repeated-dashboard-title">
-    🔄 ${E(q[7])} — ${x.length} Times
+  if(!clean(x[17])){
+
+   let w=clean(x[1])||"OTHER";
+
+   workshop[w]=(workshop[w]||0)+1;
+
+  }
+
+ });
+
+ let wlist=
+  Object.entries(workshop)
+  .sort((a,b)=>b[1]-a[1]);
+
+ let wmax=wlist[0]?.[1]||1;
+
+ if($("workshopDashboard")){
+
+  $("workshopDashboard").innerHTML=
+   wlist.map(function(x){
+
+    let width=(x[1]/wmax)*100;
+
+    return `
+    <div class="dashboard-row">
+
+     <div class="dashboard-row-title">
+      <span>${escapeHTML(x[0])}</span>
+      <span>${x[1]}</span>
+     </div>
+
+     <div class="dashboard-bar-bg">
+      <div class="dashboard-bar"
+           style="width:${width}%">
+      </div>
+     </div>
+
+    </div>`;
+
+   }).join("")||
+
+   `<div class="no-dashboard-data">
+     No pending transformer
+    </div>`;
+
+ }
+
+
+ /* ================= CAPACITY ================= */
+
+ let capacity={};
+
+ monthRecords.forEach(function(x){
+
+  if(!clean(x[17])){
+
+   let c=clean(x[9])||"Unknown";
+
+   capacity[c]=(capacity[c]||0)+1;
+
+  }
+
+ });
+
+ if($("capacityDashboard")){
+
+  let list=
+   Object.entries(capacity)
+   .sort((a,b)=>{
+    let aa=parseFloat(a[0])||0;
+    let bb=parseFloat(b[0])||0;
+    return aa-bb;
+   });
+
+  $("capacityDashboard").innerHTML=
+   `<div class="capacity-grid">`+
+
+   list.map(function(x){
+
+    return `
+    <div class="capacity-box">
+
+     <span>${escapeHTML(x[0])} kVA</span>
+
+     <strong>${x[1]}</strong>
+
+    </div>`;
+
+   }).join("")+
+
+   `</div>`;
+
+ }
+
+
+ /* ================= AGEING ================= */
+
+ let age24=0;
+ let age72=0;
+ let age7=0;
+
+ monthRecords.forEach(function(x){
+
+  if(!clean(x[17])){
+
+   let d=parseDate(x[13]);
+
+   if(!d)return;
+
+   let days=
+    (now.getTime()-d.getTime())/
+    86400000;
+
+   if(days>1)age24++;
+   if(days>3)age72++;
+   if(days>7)age7++;
+
+  }
+
+ });
+
+
+ if($("ageingDashboard")){
+
+  $("ageingDashboard").innerHTML=`
+
+  <div class="ageing-grid">
+
+   <div class="ageing-box">
+    <div>&gt; 1 Day</div>
+    <strong>${age24}</strong>
    </div>
 
-   <div class="repeated-dashboard-detail">
-    Capacity: <b>${E(q[9])} kVA</b>
+   <div class="ageing-box">
+    <div>&gt; 3 Days</div>
+    <strong>${age72}</strong>
+   </div>
+
+   <div class="ageing-box">
+    <div>&gt; 7 Days</div>
+    <strong>${age7}</strong>
    </div>
 
   </div>`;
 
- }).join("")
+ }
 
- :
 
- "No repeated damage found";
+ /* ================= TODAY ACTION ================= */
+
+ if($("action24"))
+  $("action24").textContent=age24;
+
+ if($("action72"))
+  $("action72").textContent=age72;
+
+ if($("action7"))
+  $("action7").textContent=age7;
+
+
+ /* ================= REPEATED DAMAGE ================= */
+
+ let groups={};
+
+ ALL.forEach(function(x){
+
+  let location=locationKey(x[7]);
+  let capacity=capacityKey(x[9]);
+
+  if(!location||!capacity)return;
+
+  let key=location+"|"+capacity;
+
+  if(!groups[key])
+   groups[key]=[];
+
+  groups[key].push(x);
+
+ });
+
+
+ let repeated=
+  Object.values(groups)
+  .filter(x=>x.length>1)
+  .sort((a,b)=>b.length-a.length);
+
+
+ if($("repeatedDashboard")){
+
+  $("repeatedDashboard").innerHTML=
+
+   repeated.length?
+
+   repeated.map(function(x){
+
+    return `
+    <div class="repeated-dashboard-item">
+
+     <div class="repeated-dashboard-title">
+      🔄 ${escapeHTML(x[0][7])}
+      — ${x.length} Times
+     </div>
+
+     <div class="repeated-dashboard-detail">
+      Capacity:
+      <b>${escapeHTML(x[0][9])} kVA</b>
+     </div>
+
+    </div>`;
+
+   }).join(""):
+
+   `<div class="no-dashboard-data">
+     No repeated damage found
+    </div>`;
+
+ }
 
 }
 
 
 /* ================= SEARCH ================= */
 
-function search(){
+function searchRecords(){
 
- let q=N($("searchInput").value);
+ const input=$("searchInput");
+
+ const results=$("results");
+
+ if(!input||!results)return;
+
+ const q=norm(input.value);
 
  if(!q){
-  $("results").innerHTML="";
+
+  results.innerHTML="";
   return;
+
  }
 
- let r=A.filter(x=>x.s.includes(q));
 
- $("results").innerHTML=
+ const found=
+  ALL.filter(x=>
+   x.__search.includes(q)
+  );
 
- r.length?
 
- `<div class="result-count">
-   ${r.length} records found
-  </div>`+
+ if(!found.length){
 
- r.map((x,i)=>card(x,i+1)).join("")
+  results.innerHTML=
+   `<div class="no-results">
+     No record found
+    </div>`;
 
- :
+  return;
 
- `<div class="no-results">
-   No record found
-  </div>`;
+ }
+
+
+ results.innerHTML=
+  `<div class="result-count">
+    ${found.length.toLocaleString("en-IN")}
+    records found
+   </div>`+
+
+  found.map(function(x,i){
+
+   return buildCard(x,i+1);
+
+  }).join("");
+
 }
 
 
 /* ================= CARD ================= */
 
-function card(x,n){
+function buildCard(x,number){
 
  /*
- PLACE = H = 7
- CAPACITY = J = 9
- ISSUE = R = 17
- DRIVER = S = 18
- MOBILE = T = 19
- REPLACEMENT = U = 20
+ A SN
+ B Workshop
+ C Division
+ D Subdivision
+ E Substation
+ F Feeder
+ G Date of Damage
+ H Place
+ I DID
+ J Capacity
+ K Complaint
+ L Complaint Date
+ M PR No
+ N PR Date
+ O JE
+ P JE Mobile
+ Q Firm
+ R Issue Date
+ S Driver
+ T Driver Mobile
+ U Replacement Date
+ V Time
+ W TX Return
+ X Observation
  */
 
- let issue=V(x[17]);
- let replacement=V(x[20]);
 
- let s="";
+ const issue=clean(x[17]);
+ const replacement=clean(x[20]);
+ const returned=clean(x[22]);
 
 
- /* INSTALLED */
+ let statusHTML="";
+
+
+ /* IMPORTANT:
+    CONGRATULATIONS ONLY IF U / REPLACEMENT DATE EXISTS
+ */
 
  if(replacement){
 
-  s=
-  `<div class="status-box status-installed">
+  statusHTML=`
+
+  <div class="status-box status-installed">
 
    <strong>
     ✓ Congratulations Your Transformer Installed
    </strong>
 
-   Replacement Date:
-   ${E(replacement)}
+   <div>
+    Replacement Date:
+    ${escapeHTML(replacement)}
+   </div>
 
   </div>`;
 
  }
 
-
- /* ISSUED */
-
  else if(issue){
 
-  s=
-  `<div class="status-box status-issued">
+  statusHTML=`
+
+  <div class="status-box status-issued">
 
    <strong>
     ✓ Your Transformer Issued by Workshop
    </strong>
 
-   Please Contact Driver for Installation
-
    <div>
-    Issue Date: ${E(issue)}
+    Please Contact Driver for Installation
    </div>
 
-   ${V(x[18])?
-    `<div>Driver: ${E(x[18])}</div>`:""}
+   <div>
+    Issue Date:
+    ${escapeHTML(issue)}
+   </div>
 
-   ${V(x[19])?
-    `<div>Mobile: ${E(x[19])}</div>
-     ${buttons(x)}`:""}
+   ${clean(x[18])?
+    `<div>
+      Driver:
+      ${escapeHTML(x[18])}
+     </div>`:""}
+
+   ${clean(x[19])?
+    `<div>
+      Mobile:
+      ${escapeHTML(x[19])}
+     </div>
+
+     ${driverButtons(x)}`:""}
 
   </div>`;
 
  }
 
-
- /* PENDING */
-
  else{
 
-  s=
-  `<div class="status-box status-pending">
+  statusHTML=`
+
+  <div class="status-box status-pending">
 
    <strong>
     ⚠ Transformer Pending to Issue
@@ -368,67 +696,103 @@ function card(x,n){
 
  /* ================= REPEATED ================= */
 
- let place=L(x[7]);
- let capacity=K(x[9]);
+ const location=
+  locationKey(x[7]);
 
- let h=A.filter(y=>
-  L(y[7])==place &&
-  K(y[9])==capacity
- );
-
- h.sort((a,b)=>
-  (D(a[13])||0)-
-  (D(b[13])||0)
- );
+ const capacity=
+  capacityKey(x[9]);
 
 
- let rep="";
+ let history=
+  ALL.filter(function(y){
 
- if(h.length>1){
+   return locationKey(y[7])===location &&
+          capacityKey(y[9])===capacity;
 
-  rep=
-  `<div class="repeated-box">
+  });
+
+
+ history.sort(function(a,b){
+
+  let da=
+   parseDate(a[13])||
+   parseDate(a[6])||
+   new Date(0);
+
+  let db=
+   parseDate(b[13])||
+   parseDate(b[6])||
+   new Date(0);
+
+  return da-db;
+
+ });
+
+
+ let repeatedHTML="";
+
+
+ if(history.length>1){
+
+  repeatedHTML=`
+
+  <div class="repeated-box">
 
    <div class="repeated-title">
-    ⚠ It Damaged ${h.length} times
+    ⚠ It Damaged ${history.length} times
    </div>
 
    <div class="repeated-warning">
     Please Ensure Increasing Capacity if Overloaded
    </div>
 
-   ${h.map((y,i)=>`
+   ${history.map(function(y,i){
+
+    let suffix=
+     i===0?"st":
+     i===1?"nd":
+     i===2?"rd":"th";
+
+    return `
 
     <div class="history-item">
 
      <div class="history-number">
-      ${i+1}${i==0?"st":i==1?"nd":i==2?"rd":"th"} Time
+      ${i+1}${suffix} Time
      </div>
 
      <div>
-      PR No: ${E(y[12]||"-")}
+      PR No:
+      ${escapeHTML(y[12]||"-")}
      </div>
 
      <div>
-      Date: ${E(y[13]||y[6]||"-")}
+      Date:
+      ${escapeHTML(
+       y[13]||
+       y[6]||
+       "-"
+      )}
      </div>
 
      <div>
-      Capacity: ${E(y[9]||"-")} kVA
+      Capacity:
+      ${escapeHTML(y[9]||"-")} kVA
      </div>
 
-    </div>
+    </div>`;
 
-   `).join("")}
+   }).join("")}
 
   </div>`;
 
  }
 
 
- /* ================= FIELDS ================= */
+ /* ================= DATA ================= */
 
- let names=[
+ const names=[
+  "SN",
   "Workshop",
   "Division",
   "Subdivision",
@@ -455,25 +819,28 @@ function card(x,n){
  ];
 
 
- let data=names.map((name,i)=>
+ let dataHTML="";
 
-  V(x[i])?
 
-  `<div class="data-row">
+ names.forEach(function(name,i){
+
+  if(!clean(x[i]))return;
+
+  dataHTML+=`
+
+  <div class="data-row">
 
    <div class="data-label">
     ${name}
    </div>
 
    <div class="data-value">
-    ${E(x[i])}
+    ${escapeHTML(x[i])}
    </div>
 
-  </div>`
+  </div>`;
 
-  :""
-
- ).join("");
+ });
 
 
  return `
@@ -481,16 +848,25 @@ function card(x,n){
  <div class="result-card">
 
   <div class="card-top">
-   <span>#${n}</span>
-   <span>Row ${x.row}</span>
+
+   <span>
+    #${number}
+   </span>
+
+   <span>
+    Row ${x.__row}
+   </span>
+
   </div>
 
-  ${s}
+  ${statusHTML}
 
-  ${rep}
+  ${repeatedHTML}
 
   <div class="data-section">
-   ${data}
+
+   ${dataHTML}
+
   </div>
 
  </div>`;
@@ -498,39 +874,43 @@ function card(x,n){
 }
 
 
-/* ================= BUTTONS ================= */
+/* ================= DRIVER BUTTONS ================= */
 
-function buttons(x){
+function driverButtons(x){
 
- let p=V(x[19]).replace(/\D/g,"");
+ let phone=
+  clean(x[19]).replace(/\D/g,"");
 
- if(p.length==10)p="91"+p;
+ if(phone.length===10)
+  phone="91"+phone;
 
- let msg=
- `Namaste ${V(x[18])||"Driver"} ji,
 
- Transformer PR No.: ${V(x[12])||"-"}
- Capacity: ${V(x[9])||"-"} kVA
- Place: ${V(x[7])||"-"}
- Workshop: ${V(x[1])||"-"}
+ let message=
+`Namaste ${clean(x[18])||"Driver"} ji,
 
- The transformer has been issued from Workshop.
- Please arrange installation and confirm the installation status.
+Transformer PR No.: ${clean(x[12])||"-"}
+Capacity: ${clean(x[9])||"-"} kVA
+Place: ${clean(x[7])||"-"}
+Workshop: ${clean(x[1])||"-"}
 
- Thank you.`;
+The transformer has been issued from Workshop. Please arrange installation and confirm the installation status.
+
+Thank you.`;
+
 
  return `
 
  <div class="driver-buttons">
 
   <a class="call-driver"
-     href="tel:${V(x[19])}">
+     href="tel:${clean(x[19])}">
    📞 CALL DRIVER
   </a>
 
   <a class="whatsapp-driver"
      target="_blank"
-     href="https://wa.me/${p}?text=${encodeURIComponent(msg)}">
+     rel="noopener"
+     href="https://wa.me/${phone}?text=${encodeURIComponent(message)}">
    💬 WHATSAPP
   </a>
 
@@ -541,18 +921,53 @@ function buttons(x){
 
 /* ================= START ================= */
 
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded",function(){
 
- $("searchBtn").onclick=search;
+ const input=$("searchInput");
 
- $("searchInput").oninput=()=>{
+ const button=$("searchBtn");
 
-  clearTimeout(tm);
 
-  tm=setTimeout(search,60);
+ if(button){
 
- };
+  button.addEventListener(
+   "click",
+   searchRecords
+  );
 
- load();
+ }
+
+
+ if(input){
+
+  input.addEventListener(
+   "keydown",
+   function(e){
+
+    if(e.key==="Enter")
+     searchRecords();
+
+   }
+  );
+
+
+  input.addEventListener(
+   "input",
+   function(){
+
+    clearTimeout(timer);
+
+    timer=setTimeout(
+     searchRecords,
+     70
+    );
+
+   }
+  );
+
+ }
+
+
+ loadSheet();
 
 });

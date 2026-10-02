@@ -2,31 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Transformer Tracking</title>
-
-<link rel="stylesheet" href="style.css?v=20261004">
+<link rel="stylesheet" href="style.css?v=20261005">
 </head>
 
 <body>
 
 <header class="app-header">
-
   <div class="header-icon">⚡</div>
-
   <div>
     <div class="app-title">Transformer Tracking</div>
     <div class="app-subtitle">PR / Complaint Search</div>
   </div>
-
 </header>
 
-
 <main>
-
-<!-- DASHBOARD -->
 
 <section class="dashboard">
 
@@ -37,7 +28,6 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
       <div id="dashboardMonth">Current Month</div>
     </div>
   </div>
-
 
   <div class="summary-grid">
 
@@ -77,10 +67,26 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     Loading...
   </div>
 
+
+  <div class="section-title">
+    Workshop-wise Ageing
+  </div>
+
+  <div id="ageingDashboard">
+    Loading...
+  </div>
+
+
+  <div class="section-title">
+    Workshop-wise Capacity Pendency
+  </div>
+
+  <div id="workshopCapacityDashboard">
+    Loading...
+  </div>
+
 </section>
 
-
-<!-- SEARCH -->
 
 <section class="search-card">
 
@@ -94,8 +100,7 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
       id="searchInput"
       type="text"
       autocomplete="off"
-      placeholder="Enter PR / Complaint Number"
-    >
+      placeholder="Enter PR / Complaint Number">
 
     <button id="searchBtn">
       SEARCH
@@ -110,19 +115,13 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 </section>
 
 
-<!-- RESULTS -->
-
 <section id="results"></section>
 
 </main>
 
+<footer>Transformer Tracking</footer>
 
-<footer>
-Transformer Tracking
-</footer>
-
-
-<script src="app.js?v=20261004"></script>
+<script src="app.js?v=20261005"></script>
 
 </body>
 </html>

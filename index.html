@@ -2,77 +2,1246 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1,
-  maximum-scale=1,user-scalable=no"
->
+<title>Transformer Tracking</title>
 
-<title>PR Search</title>
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
 
-<link rel="stylesheet" href="style.css">
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f4f4f4;
+  color:#222;
+}
+
+.app{
+  width:100%;
+  max-width:520px;
+  min-height:100vh;
+  margin:auto;
+  background:#f7f7f7;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#ff6a00,#e53900);
+  color:white;
+  padding:20px 18px 22px;
+  border-radius:0 0 22px 22px;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);
+}
+
+.title{
+  font-size:24px;
+  font-weight:700;
+  margin-bottom:5px;
+}
+
+.subtitle{
+  font-size:13px;
+  opacity:.9;
+}
+
+/* SEARCH */
+.searchBox{
+  background:white;
+  margin:-10px 14px 15px;
+  padding:14px;
+  border-radius:16px;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);
+}
+
+.label{
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:7px;
+  color:#444;
+}
+
+.searchRow{
+  display:flex;
+  gap:8px;
+}
+
+.searchInput{
+  flex:1;
+  min-width:0;
+  height:48px;
+  border:1px solid #ddd;
+  border-radius:12px;
+  padding:0 13px;
+  font-size:16px;
+  outline:none;
+  background:#fafafa;
+}
+
+.searchInput:focus{
+  border-color:#ff6500;
+  background:white;
+}
+
+.searchBtn{
+  width:105px;
+  border:0;
+  border-radius:12px;
+  background:#ef4b00;
+  color:white;
+  font-size:15px;
+  font-weight:700;
+}
+
+.searchBtn:active{
+  transform:scale(.97);
+}
+
+.searchBtn:disabled{
+  opacity:.6;
+}
+
+/* STATUS */
+.message{
+  margin:12px 15px;
+  padding:13px;
+  border-radius:12px;
+  text-align:center;
+  font-size:13px;
+  background:white;
+  color:#555;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.loading{
+  color:#e65100;
+}
+
+.error{
+  background:#fff0ee;
+  color:#b71c1c;
+}
+
+.success{
+  background:#edf9f0;
+  color:#176b2b;
+}
+
+/* RESULTS */
+.results{
+  padding:0 12px 25px;
+}
+
+.resultCount{
+  font-size:14px;
+  font-weight:700;
+  margin:12px 3px;
+  color:#444;
+}
+
+.card{
+  background:white;
+  border-radius:16px;
+  margin-bottom:14px;
+  overflow:hidden;
+  box-shadow:0 3px 12px rgba(0,0,0,.1);
+}
+
+.cardHead{
+  background:#fff3ec;
+  border-bottom:1px solid #f0ddd3;
+  padding:13px 14px;
+}
+
+.cardTitle{
+  font-size:18px;
+  font-weight:700;
+  color:#d84315;
+}
+
+.cardSub{
+  font-size:12px;
+  color:#777;
+  margin-top:3px;
+}
+
+.cardBody{
+  padding:13px 14px;
+}
+
+.row{
+  display:flex;
+  border-bottom:1px solid #eee;
+  padding:8px 0;
+  gap:8px;
+}
+
+.row:last-child{
+  border-bottom:0;
+}
+
+.key{
+  width:42%;
+  flex-shrink:0;
+  font-size:12px;
+  color:#777;
+  font-weight:600;
+}
+
+.value{
+  width:58%;
+  font-size:13px;
+  font-weight:600;
+  color:#222;
+  word-break:break-word;
+}
+
+/* STATUS BOX */
+.statusBox{
+  margin:12px 0 4px;
+  padding:12px;
+  border-radius:12px;
+  font-size:13px;
+  line-height:1.45;
+  font-weight:600;
+}
+
+.installed{
+  background:#e8f7ed;
+  color:#176b2b;
+  border-left:5px solid #2e9d4d;
+}
+
+.issued{
+  background:#fff4df;
+  color:#925600;
+  border-left:5px solid #f39c12;
+}
+
+.pending{
+  background:#fff0ee;
+  color:#a52316;
+  border-left:5px solid #e04432;
+}
+
+/* REPEATED */
+.repeatBox{
+  margin:12px 0 5px;
+  padding:12px;
+  border-radius:12px;
+  background:#fff8e1;
+  border-left:5px solid #ff9800;
+}
+
+.repeatTitle{
+  font-size:14px;
+  font-weight:700;
+  color:#d35400;
+  margin-bottom:8px;
+}
+
+.history{
+  font-size:12px;
+  line-height:1.7;
+  color:#444;
+}
+
+.historyItem{
+  border-top:1px dashed #ddd;
+  padding:5px 0;
+}
+
+/* DETAILS */
+details{
+  margin-top:10px;
+  border-top:1px solid #eee;
+  padding-top:9px;
+}
+
+summary{
+  cursor:pointer;
+  color:#d84315;
+  font-weight:700;
+  font-size:13px;
+}
+
+.allDetails{
+  margin-top:8px;
+}
+
+/* FOOTER */
+.footer{
+  text-align:center;
+  color:#999;
+  font-size:11px;
+  padding:10px 0 25px;
+}
+
+/* DESKTOP */
+@media(min-width:700px){
+  body{
+    background:#ddd;
+  }
+
+  .app{
+    box-shadow:0 0 25px rgba(0,0,0,.15);
+    min-height:100vh;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <header class="header">
+  <div class="header">
+    <div class="title">Transformer Tracking</div>
+    <div class="subtitle">PR / Complaint tracking system</div>
+  </div>
 
-    <div class="title">
-      PR Search
+  <div class="searchBox">
+
+    <div class="label">PR / Complaint Number</div>
+
+    <div class="searchRow">
+      <input
+        id="searchInput"
+        class="searchInput"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        placeholder="Enter PR / Complaint Number"
+      >
+
+      <button id="searchBtn" class="searchBtn">
+        SEARCH
+      </button>
     </div>
 
-    <div id="status" class="status">
-      Connecting to PR SEARCH...
-    </div>
+  </div>
 
-  </header>
+  <div id="message" class="message">
+    Enter PR / Complaint Number to search.
+  </div>
 
+  <div id="results" class="results"></div>
 
-  <main>
-
-    <div class="search-card">
-
-      <div class="search-label">
-        PR / Complaint Number
-      </div>
-
-      <div class="search-row">
-
-        <input
-          id="searchInput"
-          type="search"
-          placeholder="Enter PR / Complaint Number"
-          autocomplete="off"
-        >
-
-        <button id="searchBtn">
-          SEARCH
-        </button>
-
-      </div>
-
-      <div class="search-hint">
-        Search PR No, Complaint No, DID, Place, JE Name or any value
-      </div>
-
-    </div>
-
-
-    <div id="message" class="message">
-      Enter PR / Complaint Number to search.
-    </div>
-
-
-    <div id="results"></div>
-
-  </main>
+  <div class="footer">
+    Transformer Tracking
+  </div>
 
 </div>
 
-<script src="script.js"></script>
+<script>
 
-</body>
-</html>
+/* =========================================================
+   TRANSFORMER TRACKING
+   GOOGLE SHEET CONFIGURATION
+   ========================================================= */
+
+const SHEET_ID =
+"1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+
+const SHEET_GID =
+"1464518527";
+
+const SHEET_NAME =
+"PR SEARCH";
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
+const input =
+document.getElementById("searchInput");
+
+const searchBtn =
+document.getElementById("searchBtn");
+
+const message =
+document.getElementById("message");
+
+const results =
+document.getElementById("results");
+
+
+/* =========================================================
+   DATA
+   ========================================================= */
+
+let allRows = null;
+let headers = [];
+
+
+/* =========================================================
+   NORMALIZE SEARCH
+   Removes spaces, -, / etc.
+   ========================================================= */
+
+function normalize(value){
+
+  if(value === null || value === undefined){
+    return "";
+  }
+
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\-\/\\().,:_]/g,"");
+
+}
+
+
+/* =========================================================
+   CSV PARSER
+   ========================================================= */
+
+function parseCSV(text){
+
+  const data = [];
+  let row = [];
+  let cell = "";
+  let insideQuotes = false;
+
+  for(let i=0;i<text.length;i++){
+
+    const char = text[i];
+    const next = text[i+1];
+
+    if(char === '"' && insideQuotes && next === '"'){
+      cell += '"';
+      i++;
+      continue;
+    }
+
+    if(char === '"'){
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if(char === "," && !insideQuotes){
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+
+    if((char === "\n" || char === "\r") && !insideQuotes){
+
+      if(char === "\r" && next === "\n"){
+        i++;
+      }
+
+      row.push(cell);
+      cell = "";
+
+      if(row.some(x => String(x).trim() !== "")){
+        data.push(row);
+      }
+
+      row = [];
+      continue;
+    }
+
+    cell += char;
+  }
+
+  if(cell !== "" || row.length){
+    row.push(cell);
+  }
+
+  if(row.some(x => String(x).trim() !== "")){
+    data.push(row);
+  }
+
+  return data;
+}
+
+
+/* =========================================================
+   LOAD GOOGLE SHEET
+   IMPORTANT:
+   DATA IS NOT LOADED WHEN APP OPENS.
+   IT LOADS ONLY AFTER SEARCH.
+   ========================================================= */
+
+async function loadSheet(){
+
+  if(allRows){
+    return allRows;
+  }
+
+  const url =
+    "https://docs.google.com/spreadsheets/d/" +
+    SHEET_ID +
+    "/export?format=csv&gid=" +
+    SHEET_GID;
+
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(() => controller.abort(),20000);
+
+  try{
+
+    const response =
+      await fetch(url,{
+        method:"GET",
+        cache:"no-store",
+        signal:controller.signal
+      });
+
+    clearTimeout(timeout);
+
+    if(!response.ok){
+      throw new Error(
+        "Google Sheet returned HTTP " +
+        response.status
+      );
+    }
+
+    const text =
+      await response.text();
+
+    if(
+      text.includes("<html") ||
+      text.includes("<!DOCTYPE")
+    ){
+      throw new Error(
+        "Google Sheet is not publicly accessible."
+      );
+    }
+
+    const parsed =
+      parseCSV(text);
+
+    if(!parsed.length){
+      throw new Error(
+        "No data found in PR SEARCH."
+      );
+    }
+
+    headers =
+      parsed[0].map((h,i) =>
+        String(h || ("Column " + (i+1))).trim()
+      );
+
+    allRows =
+      parsed.slice(1).map(row => {
+
+        const obj = {};
+
+        headers.forEach((header,index) => {
+          obj[header] =
+            row[index] !== undefined
+            ? row[index]
+            : "";
+        });
+
+        obj.__cells = row;
+
+        return obj;
+      });
+
+    return allRows;
+
+  }catch(error){
+
+    clearTimeout(timeout);
+
+    if(error.name === "AbortError"){
+      throw new Error(
+        "Search timed out. Please try again."
+      );
+    }
+
+    throw error;
+  }
+}
+
+
+/* =========================================================
+   DATE HELPERS
+   ========================================================= */
+
+function dateValue(value){
+
+  if(!value) return 0;
+
+  const text =
+    String(value).trim();
+
+  let d =
+    new Date(text);
+
+  if(!isNaN(d.getTime())){
+    return d.getTime();
+  }
+
+  const match =
+    text.match(
+      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/
+    );
+
+  if(match){
+
+    let day =
+      parseInt(match[1]);
+
+    let month =
+      parseInt(match[2]) - 1;
+
+    let year =
+      parseInt(match[3]);
+
+    if(year < 100){
+      year += 2000;
+    }
+
+    d =
+      new Date(year,month,day);
+
+    return d.getTime();
+  }
+
+  return 0;
+}
+
+
+/* =========================================================
+   GET FIELD BY HEADER NAME
+   ========================================================= */
+
+function getField(row, names){
+
+  for(const wanted of names){
+
+    const found =
+      headers.find(h =>
+        normalize(h) === normalize(wanted)
+      );
+
+    if(found && row[found] !== undefined){
+      return row[found];
+    }
+  }
+
+  return "";
+}
+
+
+/* =========================================================
+   IMPORTANT FIELD NAMES
+   ========================================================= */
+
+function getPlace(row){
+  return getField(row,[
+    "PLACE OF DAMAGE",
+    "PLACE",
+    "DAMAGE PLACE"
+  ]);
+}
+
+function getPR(row){
+  return getField(row,[
+    "PR NO",
+    "PR NUMBER",
+    "PRNO"
+  ]);
+}
+
+function getPRDate(row){
+  return getField(row,[
+    "PR DATE",
+    "PRDATE"
+  ]);
+}
+
+function getComplaint(row){
+  return getField(row,[
+    "COMPLAIN NUMBER",
+    "COMPLAINT NUMBER",
+    "COMPLAINT NO",
+    "COMPLAIN NO"
+  ]);
+}
+
+function getIssueDate(row){
+  return getField(row,[
+    "ISSUE DATE",
+    "ISSUED DATE"
+  ]);
+}
+
+function getReplacementDate(row){
+  return getField(row,[
+    "REPLACEMENT DATE",
+    "TX REPLACEMENT DATE"
+  ]);
+}
+
+function getDriver(row){
+  return getField(row,[
+    "DRIVER NAME",
+    "DRIVER"
+  ]);
+}
+
+function getDriverMobile(row){
+  return getField(row,[
+    "DRIVER MOBILE",
+    "DRIVER MOBILE NO",
+    "DRIVER PHONE"
+  ]);
+}
+
+
+/* =========================================================
+   SEARCH ALL COLUMNS
+   ========================================================= */
+
+function searchRows(rows,query){
+
+  const q =
+    normalize(query);
+
+  return rows.filter(row => {
+
+    return row.__cells.some(cell =>
+      normalize(cell).includes(q)
+    );
+
+  });
+
+}
+
+
+/* =========================================================
+   REPEATED DAMAGE HISTORY
+   SAME PLACE OF DAMAGE
+   ========================================================= */
+
+function getHistory(row){
+
+  const place =
+    normalize(getPlace(row));
+
+  if(!place){
+    return [];
+  }
+
+  const history =
+    allRows.filter(r =>
+      normalize(getPlace(r)) === place
+    );
+
+  history.sort((a,b) => {
+
+    const da =
+      dateValue(
+        getPRDate(a) ||
+        getField(a,["DATE OF DAMAGE"])
+      );
+
+    const db =
+      dateValue(
+        getPRDate(b) ||
+        getField(b,["DATE OF DAMAGE"])
+      );
+
+    return da-db;
+  });
+
+  return history;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function getStatus(row){
+
+  const replacement =
+    getReplacementDate(row);
+
+  const issue =
+    getIssueDate(row);
+
+  if(replacement){
+
+    return {
+      type:"installed",
+      html:
+      "Congratulations! Your Transformer installed." +
+      "<br><span>Replacement Date: " +
+      escapeHTML(replacement) +
+      "</span>"
+    };
+  }
+
+  if(issue){
+
+    const driver =
+      getDriver(row);
+
+    const mobile =
+      getDriverMobile(row);
+
+    let extra = "";
+
+    if(driver){
+      extra +=
+        "<br>Driver: " +
+        escapeHTML(driver);
+    }
+
+    if(mobile){
+      extra +=
+        "<br>Mobile: " +
+        escapeHTML(mobile);
+    }
+
+    return {
+      type:"issued",
+      html:
+      "Your Transformer issued by Workshop. " +
+      "Please contact Driver for installation." +
+      "<br>Issue Date: " +
+      escapeHTML(issue) +
+      extra
+    };
+  }
+
+  return {
+    type:"pending",
+    html:
+    "Transformer replacement is pending."
+  };
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+
+/* =========================================================
+   KEY DETAILS
+   ========================================================= */
+
+const importantFields = [
+
+  ["DATE OF DAMAGE",[
+    "DATE OF DAMAGE"
+  ]],
+
+  ["PLACE OF DAMAGE",[
+    "PLACE OF DAMAGE"
+  ]],
+
+  ["DID NO",[
+    "DID NO"
+  ]],
+
+  ["CAPACITY",[
+    "CAPACITY"
+  ]],
+
+  ["COMPLAIN NUMBER",[
+    "COMPLAIN NUMBER",
+    "COMPLAINT NUMBER",
+    "COMPLAINT NO"
+  ]],
+
+  ["COMPLAIN DATE",[
+    "COMPLAIN DATE",
+    "COMPLAINT DATE"
+  ]],
+
+  ["PR NO",[
+    "PR NO",
+    "PR NUMBER"
+  ]],
+
+  ["PR DATE",[
+    "PR DATE"
+  ]],
+
+  ["JE Name",[
+    "JE Name",
+    "JE NAME"
+  ]],
+
+  ["JE Mobile",[
+    "JE Mobile",
+    "JE MOBILE"
+  ]],
+
+  ["ISSUED TO FIRM",[
+    "ISSUED TO FIRM"
+  ]],
+
+  ["ISSUE DATE",[
+    "ISSUE DATE"
+  ]],
+
+  ["DRIVER NAME",[
+    "DRIVER NAME"
+  ]],
+
+  ["DRIVER MOBILE",[
+    "DRIVER MOBILE"
+  ]],
+
+  ["REPLACEMENT DATE",[
+    "REPLACEMENT DATE"
+  ]],
+
+  ["TIME",[
+    "TIME"
+  ]],
+
+  ["TX Return Date",[
+    "TX Return Date",
+    "RETURN DATE",
+    "TX RETURN DATE"
+  ]],
+
+  ["OBSERVATION DTC",[
+    "OBSERVATION DTC"
+  ]]
+];
+
+
+/* =========================================================
+   BUILD IMPORTANT DETAILS
+   ========================================================= */
+
+function buildImportantDetails(row){
+
+  let html = "";
+
+  importantFields.forEach(item => {
+
+    const label =
+      item[0];
+
+    const names =
+      item[1];
+
+    const value =
+      getField(row,names);
+
+    if(value !== ""){
+
+      html +=
+        '<div class="row">' +
+          '<div class="key">' +
+            escapeHTML(label) +
+          '</div>' +
+          '<div class="value">' +
+            escapeHTML(value) +
+          '</div>' +
+        '</div>';
+    }
+
+  });
+
+  return html;
+}
+
+
+/* =========================================================
+   ALL DETAILS
+   ========================================================= */
+
+function buildAllDetails(row){
+
+  let html = "";
+
+  headers.forEach((header,index) => {
+
+    const value =
+      row.__cells[index] || "";
+
+    if(String(value).trim() !== ""){
+
+      html +=
+        '<div class="row">' +
+          '<div class="key">' +
+            escapeHTML(header) +
+          '</div>' +
+          '<div class="value">' +
+            escapeHTML(value) +
+          '</div>' +
+        '</div>';
+    }
+
+  });
+
+  return html;
+}
+
+
+/* =========================================================
+   REPEATED DAMAGE BOX
+   ========================================================= */
+
+function buildRepeatBox(row){
+
+  const history =
+    getHistory(row);
+
+  if(history.length <= 1){
+
+    return `
+      <div class="repeatBox">
+        <div class="repeatTitle">
+          Damage History
+        </div>
+
+        <div class="history">
+          Not a repeated damage.
+        </div>
+      </div>
+    `;
+  }
+
+  let historyHTML = "";
+
+  history.forEach((item,index) => {
+
+    const pr =
+      getPR(item) || "PR Not Available";
+
+    const date =
+      getPRDate(item) ||
+      getField(item,["DATE OF DAMAGE"]) ||
+      "Date Not Available";
+
+    historyHTML +=
+      `<div class="historyItem">
+        <b>${index+1}${getOrdinal(index+1)} Time</b>
+        – PR No: ${escapeHTML(pr)}
+        – Date: ${escapeHTML(date)}
+      </div>`;
+  });
+
+  let warning =
+    "";
+
+  if(history.length >= 2){
+
+    warning =
+      `<div style="margin-top:7px;">
+        It Damaged ${history.length} times.
+        Please Ensure Increasing Capacity if Overloaded.
+      </div>`;
+  }
+
+  return `
+    <div class="repeatBox">
+
+      <div class="repeatTitle">
+        Repeated Damage
+      </div>
+
+      <div class="history">
+        ${historyHTML}
+        ${warning}
+      </div>
+
+    </div>
+  `;
+}
+
+
+function getOrdinal(n){
+
+  if(n === 1) return "st";
+  if(n === 2) return "nd";
+  if(n === 3) return "rd";
+  return "th";
+}
+
+
+/* =========================================================
+   RESULT CARD
+   ========================================================= */
+
+function buildCard(row,index){
+
+  const pr =
+    getPR(row) || "PR Not Available";
+
+  const complaint =
+    getComplaint(row);
+
+  const status =
+    getStatus(row);
+
+  const details =
+    buildImportantDetails(row);
+
+  const allDetails =
+    buildAllDetails(row);
+
+  return `
+    <div class="card">
+
+      <div class="cardHead">
+
+        <div class="cardTitle">
+          ${escapeHTML(pr)}
+        </div>
+
+        <div class="cardSub">
+          ${complaint
+            ? "Complaint: " + escapeHTML(complaint)
+            : "Transformer Record"}
+        </div>
+
+      </div>
+
+      <div class="cardBody">
+
+        ${details}
+
+        <div class="statusBox ${status.type}">
+          ${status.html}
+        </div>
+
+        ${buildRepeatBox(row)}
+
+        <details>
+          <summary>View All Details</summary>
+
+          <div class="allDetails">
+            ${allDetails}
+          </div>
+
+        </details>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   SHOW MESSAGE
+   ========================================================= */
+
+function showMessage(text,type=""){
+
+  message.className =
+    "message " + type;
+
+  message.innerHTML =
+    text;
+}
+
+
+/* =========================================================
+   MAIN SEARCH
+   ========================================================= */
+
+async function performSearch(){
+
+  const query =
+    input.value.trim();
+
+  if(!query){
+
+    showMessage(
+      "Please enter PR / Complaint Number.",
+      "error"
+    );
+
+    results.innerHTML = "";
+
+    return;
+  }
+
+  searchBtn.disabled = true;
+
+  results.innerHTML = "";
+
+  showMessage(
+    "Searching PR SEARCH...",
+    "loading"
+  );
+
+  try{
+
+    const rows =
+      await loadSheet();
+
+    const found =
+      searchRows(rows,query);
+
+    if(!found.length){
+
+      showMessage(
+        "No record found for: " +
+        escapeHTML(query),
+        "error"
+      );
+
+      results.innerHTML = "";
+
+      return;
+    }
+
+    showMessage(
+      found.length +
+      " record" +
+      (found.length === 1 ? "" : "s") +
+      " found.",
+      "success"
+    );
+
+    results.innerHTML =
+      `<div class="resultCount">
+        Search Results
+      </div>` +
+      found
+        .slice(0,50)
+        .map((row,index) =>
+          buildCard(row,index)
+        )
+        .join("");
+
+    if(found.length > 50){
+
+      results.innerHTML +=
+        `<div class="message">
+          Showing first 50 results.
+        </div>`;
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      "Unable to search Google Sheet.<br><br>" +
+      escapeHTML(error.message) +
+      "<br><br>" +
+      "P

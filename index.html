@@ -1,139 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
-
-  <meta
-    name="theme-color"
-    content="#ef3b00"
-  >
+  <meta name="theme-color" content="#ff3b00">
 
   <title>Transformer Tracking</title>
 
-  <link
-    rel="stylesheet"
-    href="./style.css?v=200"
-  >
-
+  <link rel="stylesheet" href="./style.css?v=500">
 </head>
-
 
 <body>
 
+<header class="top-header">
 
-  <!-- HEADER -->
+  <div class="header-icon">⚡</div>
 
-  <header class="top-header">
+  <div>
+    <h1>Transformer Tracking</h1>
+    <div class="header-subtitle">
+      PR / Complaint Search
+    </div>
+  </div>
 
-    <div class="header-left">
+</header>
 
-      <div class="header-icon">
-        ⚡
-      </div>
 
-      <div>
+<main class="main-container">
 
-        <h1>
-          Transformer Tracking
-        </h1>
+  <section class="search-card">
 
-        <div class="header-subtitle">
-          PR / Complaint Search
-        </div>
+    <label class="search-label">
+      PR / Complaint Number
+    </label>
 
-      </div>
+    <div class="search-row">
+
+      <input
+        id="searchInput"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Enter PR / Complaint Number"
+      >
+
+      <button id="searchBtn" type="button">
+        SEARCH
+      </button>
 
     </div>
 
-  </header>
+    <div id="searchStatus"
+         class="search-status loading">
+      Loading transformer records...
+    </div>
+
+  </section>
 
 
+  <section id="results"
+           class="results">
+  </section>
 
-  <!-- MAIN -->
-
-  <main class="main-container">
-
-
-    <!-- SEARCH -->
-
-    <section class="search-card">
-
-      <label
-        for="searchInput"
-        class="search-label"
-      >
-        PR / Complaint Number
-      </label>
+</main>
 
 
-      <div class="search-row">
-
-        <input
-          id="searchInput"
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          autocapitalize="off"
-          spellcheck="false"
-          placeholder="Enter PR / Complaint Number"
-        >
+<footer class="footer">
+  Transformer Tracking
+</footer>
 
 
-        <!--
-          Button remains available,
-          but SEARCH is automatic while typing.
-        -->
-
-        <button
-          id="searchBtn"
-          type="button"
-        >
-          SEARCH
-        </button>
-
-      </div>
-
-
-      <div
-        id="searchStatus"
-        class="search-status loading"
-      >
-        Loading transformer records...
-      </div>
-
-    </section>
-
-
-
-    <!-- RESULTS -->
-
-    <section
-      id="results"
-      class="results"
-    ></section>
-
-
-  </main>
-
-
-
-  <!-- FOOTER -->
-
-  <footer class="footer">
-    Transformer Tracking
-  </footer>
-
-
-
-  <script src="./app.js?v=200"></script>
+<script src="./app.js?v=500"></script>
 
 </body>
-
 </html>

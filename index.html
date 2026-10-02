@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
@@ -9,72 +11,194 @@
 
   <title>Transformer Tracking</title>
 
-  <link rel="stylesheet" href="./style.css?v=500">
+  <link rel="stylesheet" href="./style.css?v=700">
+
 </head>
 
 <body>
 
+
+<!-- =========================
+     HEADER
+========================= -->
+
 <header class="top-header">
 
-  <div class="header-icon">⚡</div>
+  <div class="header-icon">
+    ⚡
+  </div>
 
   <div>
-    <h1>Transformer Tracking</h1>
+
+    <h1>
+      Transformer Tracking
+    </h1>
+
     <div class="header-subtitle">
       PR / Complaint Search
     </div>
+
   </div>
 
 </header>
 
 
+
 <main class="main-container">
 
-  <section class="search-card">
 
-    <label class="search-label">
-      PR / Complaint Number
-    </label>
+<!-- =========================
+     DASHBOARD
+========================= -->
 
-    <div class="search-row">
+<section class="dashboard-card">
 
-      <input
-        id="searchInput"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="Enter PR / Complaint Number"
-      >
+  <div class="dashboard-title">
+    📊 Transformer Pendency Dashboard
+  </div>
 
-      <button id="searchBtn" type="button">
-        SEARCH
-      </button>
+
+  <div class="dashboard-summary">
+
+
+    <div class="summary-box total">
+
+      <span>
+        Total
+      </span>
+
+      <strong id="dashTotal">
+        0
+      </strong>
 
     </div>
 
-    <div id="searchStatus"
-         class="search-status loading">
-      Loading transformer records...
+
+    <div class="summary-box issued">
+
+      <span>
+        Issued
+      </span>
+
+      <strong id="dashIssued">
+        0
+      </strong>
+
     </div>
 
-  </section>
+
+    <div class="summary-box pending">
+
+      <span>
+        Pending to Issue
+      </span>
+
+      <strong id="dashPending">
+        0
+      </strong>
+
+    </div>
 
 
-  <section id="results"
-           class="results">
-  </section>
+  </div>
+
+
+  <div class="workshop-heading">
+
+    Workshop-wise Pending to Issue
+
+  </div>
+
+
+  <div id="workshopDashboard">
+
+    Loading dashboard...
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================
+     SEARCH
+========================= -->
+
+<section class="search-card">
+
+
+  <label
+    for="searchInput"
+    class="search-label">
+
+    PR / Complaint Number
+
+  </label>
+
+
+  <div class="search-row">
+
+
+    <input
+      id="searchInput"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      placeholder="Enter PR / Complaint Number"
+    >
+
+
+    <button
+      id="searchBtn"
+      type="button">
+
+      SEARCH
+
+    </button>
+
+
+  </div>
+
+
+  <div
+    id="searchStatus"
+    class="search-status loading">
+
+    Loading transformer records...
+
+  </div>
+
+
+</section>
+
+
+
+<!-- =========================
+     RESULTS
+========================= -->
+
+<section
+  id="results"
+  class="results">
+
+</section>
+
 
 </main>
 
 
+
 <footer class="footer">
+
   Transformer Tracking
+
 </footer>
 
 
-<script src="./app.js?v=500"></script>
+
+<script src="./app.js?v=700"></script>
 
 </body>
 </html>

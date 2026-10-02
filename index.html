@@ -1,117 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#ff3b00">
-<title>Transformer Tracking</title>
-<link rel="stylesheet" href="./style.css?v=902">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Transformer Tracking</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="top-header">
-  <div class="header-icon">⚡</div>
-
-  <div>
-    <h1>Transformer Tracking</h1>
-    <div class="header-subtitle">PR / Complaint Search</div>
+<header>
+  ⚡ <div>
+    <b>Transformer Tracking</b>
+    <small>PR / Complaint Search</small>
   </div>
 </header>
 
-<main class="main-container">
+<main>
 
-<section class="dashboard-card">
+  <section class="dashboard">
 
-  <div class="dashboard-title">
-    📊 Transformer Monitoring Dashboard
-  </div>
+    <h2>📊 Transformer Monitoring Dashboard</h2>
+    <div id="month">Loading...</div>
 
-  <div class="dashboard-month" id="dashboardMonth">
-    Loading...
-  </div>
+    <div class="grid">
 
-  <div class="summary-grid">
+      <div class="box">
+        <span>Total PR</span>
+        <b id="total">0</b>
+      </div>
 
-    <button class="summary-box total"
-      data-action="status"
-      data-value="ALL">
+      <div class="box green">
+        <span>Issued</span>
+        <b id="issued">0</b>
+      </div>
 
-      <span>Total PR</span>
-      <strong id="dashTotal">0</strong>
+      <div class="box red">
+        <span>Pending Issue</span>
+        <b id="pending">0</b>
+      </div>
 
-    </button>
+      <div class="box yellow">
+        <span>Replacement Pending</span>
+        <b id="replacement">0</b>
+      </div>
 
+      <div class="box purple">
+        <span>TX Return Pending</span>
+        <b id="return">0</b>
+      </div>
 
-    <button class="summary-box issued"
-      data-action="status"
-      data-value="ISSUED">
+    </div>
 
-      <span>Issued</span>
-      <strong id="dashIssued">0</strong>
+    <h3>⚠️ Today's Action</h3>
 
-    </button>
+    <div class="action">
+      <div>Issue &gt; 24 Hours <b id="a24">0</b></div>
+      <div>Issue &gt; 72 Hours <b id="a72">0</b></div>
+      <div>Issue &gt; 7 Days <b id="a168">0</b></div>
+    </div>
 
-
-    <button class="summary-box pending"
-      data-action="status"
-      data-value="PENDING_ISSUE">
-
-      <span>Pending Issue</span>
-      <strong id="dashPending">0</strong>
-
-    </button>
-
-
-    <button class="summary-box replacement"
-      data-action="status"
-      data-value="REPLACEMENT_PENDING">
-
-      <span>Replacement Pending</span>
-      <strong id="dashReplacement">0</strong>
-
-    </button>
+  </section>
 
 
-    <button class="summary-box return"
-      data-action="status"
-      data-value="RETURN_PENDING">
+  <section class="search">
 
-      <span>TX Return Pending</span>
-      <strong id="dashReturn">0</strong>
+    <input
+      id="search"
+      type="search"
+      placeholder="PR / Complaint Number"
+      autocomplete="off"
+    >
 
-    </button>
+    <div id="status">Loading PR SEARCH...</div>
 
-  </div>
-
-
-  <div class="action-title">
-    ⚠️ Today's Action
-  </div>
+  </section>
 
 
-  <div class="mini-grid">
+  <section id="results"></section>
 
-    <button class="mini-box"
-      data-action="age"
-      data-value="24">
+</main>
 
-      Issue &gt; 24 Hours
-      <b id="age24">0</b>
+<script src="app.js"></script>
 
-    </button>
-
-
-    <button class="mini-box"
-      data-action="age"
-      data-value="72">
-
-      Issue &gt; 72 Hours
-      <b id="age72">0</b>
-
-    </button>
-
-
-    <button class="mini-box"
-      data-action="age"
-      data
+</body>
+</html>

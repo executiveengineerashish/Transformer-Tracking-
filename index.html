@@ -1,89 +1,150 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sheet Search</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <div class="app">
-      <header class="topbar">
-        <div class="title">
-          <h1>Sheet Search</h1>
-          <p class="subtitle" id="subtitle">Loading…</p>
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
+  <meta name="theme-color" content="#f57c00" />
+
+  <title>Transformer Tracking</title>
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="topbar">
+
+      <div class="title">
+        <h1>Transformer Tracking</h1>
+        <p class="subtitle" id="subtitle">Loading…</p>
+      </div>
+
+      <div class="topActions">
+        <button
+          class="secondary refreshIcon"
+          id="refreshBtn"
+          type="button"
+          aria-label="Refresh"
+        >
+          ↻
+        </button>
+      </div>
+
+    </header>
+
+
+    <!-- SEARCH -->
+    <section class="panel searchPanel">
+
+      <label class="field">
+
+        <span class="label">
+          PR / Complaint Number
+        </span>
+
+        <input
+          id="q"
+          type="search"
+          inputmode="text"
+          autocomplete="off"
+          placeholder="Enter PR / Complaint Number"
+        />
+
+      </label>
+
+      <button
+        class="primary searchBtn"
+        id="searchBtn"
+        type="button"
+      >
+        PR/Complaint Number
+      </button>
+
+    </section>
+
+
+    <!-- RESULTS -->
+    <section class="results">
+
+      <div class="resultsTop">
+
+        <div
+          class="resultsSummary"
+          id="resultsSummary"
+        >
+          Loading data…
         </div>
-        <div class="topActions">
-          <a class="link" id="csvLink" href="#" target="_blank" rel="noreferrer">Open CSV</a>
-          <button class="secondary" id="refreshBtn" type="button">Refresh</button>
-        </div>
-      </header>
 
-      <section class="panel">
-        <div class="row">
-          <label class="field">
-            <span class="label">Search</span>
-            <input id="q" placeholder="Type anything (name, DID, phone, village, etc.)" />
-          </label>
+        <div class="pager">
 
-          <label class="field">
-            <span class="label">Mode</span>
-            <select id="mode">
-              <option value="global">Global (all columns)</option>
-              <option value="column">Only one column</option>
-            </select>
-          </label>
+          <button
+            class="secondary"
+            id="prevBtn"
+            type="button"
+            disabled
+          >
+            Prev
+          </button>
 
-          <label class="field">
-            <span class="label">Column</span>
-            <select id="col" disabled></select>
-          </label>
+          <button
+            class="secondary"
+            id="nextBtn"
+            type="button"
+            disabled
+          >
+            Next
+          </button>
 
-          <label class="field small">
-            <span class="label">Page size</span>
-            <select id="limit">
-              <option value="25">25</option>
-              <option value="50" selected>50</option>
-              <option value="100">100</option>
-              <option value="200">200</option>
-            </select>
-          </label>
-
-          <button class="primary" id="searchBtn" type="button">Search</button>
         </div>
 
-        <div class="filters">
-          <div class="filtersHeader">
-            <div class="filtersTitle">Filters (exact match)</div>
-            <button class="secondary" id="addFilterBtn" type="button">Add filter</button>
-            <button class="secondary" id="clearFilterBtn" type="button">Clear filters</button>
-          </div>
-          <div class="filtersGrid" id="filtersGrid"></div>
-          <p class="hint" id="filterHint">Tip: add filters for Circle/Division/Sub-division/etc.</p>
-        </div>
+      </div>
 
-        <div class="error" id="error" style="display: none"></div>
-      </section>
 
-      <section class="results">
-        <div class="resultsTop">
-          <div class="resultsSummary" id="resultsSummary">Run a search to see results.</div>
-          <div class="pager">
-            <button class="secondary" id="prevBtn" type="button" disabled>Prev</button>
-            <button class="secondary" id="nextBtn" type="button" disabled>Next</button>
-          </div>
-        </div>
+      <!-- Desktop/tablet table -->
+      <div
+        class="tableWrap"
+        id="tableWrap"
+        style="display:none"
+      >
 
-        <div class="tableWrap" id="tableWrap" style="display: none">
-          <table id="table">
-            <thead id="thead"></thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+        <table id="table">
 
-    <script type="module" src="./app.js"></script>
-  </body>
+          <thead id="thead"></thead>
+
+          <tbody id="tbody"></tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- Mobile portrait cards -->
+      <div
+        class="mobileResults"
+        id="mobileResults"
+      ></div>
+
+    </section>
+
+
+    <!-- ERROR -->
+    <div
+      class="error"
+      id="error"
+      style="display:none"
+    ></div>
+
+  </div>
+
+
+  <script type="module" src="./app.js"></script>
+
+</body>
 </html>
-

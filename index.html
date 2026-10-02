@@ -11,194 +11,162 @@
 
   <title>Transformer Tracking</title>
 
-  <link rel="stylesheet" href="./style.css?v=700">
+  <link rel="stylesheet" href="./style.css?v=800">
 
 </head>
 
 <body>
 
-
-<!-- =========================
-     HEADER
-========================= -->
-
 <header class="top-header">
 
-  <div class="header-icon">
-    ⚡
-  </div>
+  <div class="header-icon">⚡</div>
 
   <div>
-
-    <h1>
-      Transformer Tracking
-    </h1>
-
+    <h1>Transformer Tracking</h1>
     <div class="header-subtitle">
       PR / Complaint Search
     </div>
-
   </div>
 
 </header>
 
 
-
 <main class="main-container">
 
 
-<!-- =========================
-     DASHBOARD
-========================= -->
+  <!-- DASHBOARD -->
 
-<section class="dashboard-card">
+  <section class="dashboard-card">
 
-  <div class="dashboard-title">
-    📊 Transformer Pendency Dashboard
-  </div>
+    <div class="dashboard-title">
+      📊 Transformer Pendency Dashboard
+    </div>
+
+    <div class="dashboard-month"
+         id="dashboardMonth">
+      Current Month
+    </div>
 
 
-  <div class="dashboard-summary">
+    <div class="dashboard-summary">
 
 
-    <div class="summary-box total">
+      <div class="summary-box total">
 
-      <span>
-        Total
-      </span>
+        <span>Total</span>
 
-      <strong id="dashTotal">
-        0
-      </strong>
+        <strong id="dashTotal">
+          0
+        </strong>
+
+      </div>
+
+
+      <div class="summary-box issued">
+
+        <span>Issued</span>
+
+        <strong id="dashIssued">
+          0
+        </strong>
+
+      </div>
+
+
+      <div class="summary-box pending">
+
+        <span>Pending to Issue</span>
+
+        <strong id="dashPending">
+          0
+        </strong>
+
+      </div>
+
 
     </div>
 
 
-    <div class="summary-box issued">
+    <div class="workshop-heading">
+      Workshop-wise Pending to Issue
+    </div>
 
-      <span>
-        Issued
-      </span>
 
-      <strong id="dashIssued">
-        0
-      </strong>
+    <div id="workshopDashboard"
+         class="dashboard-loading">
+
+      Loading dashboard...
+
+    </div>
+
+  </section>
+
+
+
+  <!-- SEARCH -->
+
+  <section class="search-card">
+
+    <label
+      for="searchInput"
+      class="search-label">
+
+      PR / Complaint Number
+
+    </label>
+
+
+    <div class="search-row">
+
+      <input
+        id="searchInput"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Enter PR / Complaint Number"
+      >
+
+
+      <button
+        id="searchBtn"
+        type="button">
+
+        SEARCH
+
+      </button>
 
     </div>
 
 
-    <div class="summary-box pending">
+    <div
+      id="searchStatus"
+      class="search-status loading">
 
-      <span>
-        Pending to Issue
-      </span>
-
-      <strong id="dashPending">
-        0
-      </strong>
+      Loading transformer records...
 
     </div>
 
-
-  </div>
-
-
-  <div class="workshop-heading">
-
-    Workshop-wise Pending to Issue
-
-  </div>
-
-
-  <div id="workshopDashboard">
-
-    Loading dashboard...
-
-  </div>
-
-</section>
+  </section>
 
 
 
-<!-- =========================
-     SEARCH
-========================= -->
-
-<section class="search-card">
-
-
-  <label
-    for="searchInput"
-    class="search-label">
-
-    PR / Complaint Number
-
-  </label>
-
-
-  <div class="search-row">
-
-
-    <input
-      id="searchInput"
-      type="text"
-      inputmode="text"
-      autocomplete="off"
-      autocapitalize="off"
-      spellcheck="false"
-      placeholder="Enter PR / Complaint Number"
-    >
-
-
-    <button
-      id="searchBtn"
-      type="button">
-
-      SEARCH
-
-    </button>
-
-
-  </div>
-
-
-  <div
-    id="searchStatus"
-    class="search-status loading">
-
-    Loading transformer records...
-
-  </div>
-
-
-</section>
-
-
-
-<!-- =========================
-     RESULTS
-========================= -->
-
-<section
-  id="results"
-  class="results">
-
-</section>
+  <section
+    id="results"
+    class="results">
+  </section>
 
 
 </main>
 
 
-
 <footer class="footer">
-
   Transformer Tracking
-
 </footer>
 
 
-
-<script src="./app.js?v=700"></script>
+<script src="./app.js?v=800"></script>
 
 </body>
 </html>

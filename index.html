@@ -1,83 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Transformer Tracking</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformer Tracking</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header>
-  ⚡ <div>
-    <b>Transformer Tracking</b>
-    <small>PR / Complaint Search</small>
+  <div class="bolt">⚡</div>
+  <div>
+    <div class="title">Transformer Tracking</div>
+    <div class="sub">PR / Complaint Search</div>
   </div>
 </header>
 
 <main>
 
-  <section class="dashboard">
+<section class="dashboard">
 
-    <h2>📊 Transformer Monitoring Dashboard</h2>
-    <div id="month">Loading...</div>
+<h2>📊 Transformer Monitoring Dashboard</h2>
+<div id="month">Loading...</div>
 
-    <div class="grid">
+<div class="cards">
 
-      <div class="box">
-        <span>Total PR</span>
-        <b id="total">0</b>
-      </div>
+<div class="stat">
+<span>Total PR</span>
+<b id="total">0</b>
+</div>
 
-      <div class="box green">
-        <span>Issued</span>
-        <b id="issued">0</b>
-      </div>
+<div class="stat green">
+<span>Issued</span>
+<b id="issued">0</b>
+</div>
 
-      <div class="box red">
-        <span>Pending Issue</span>
-        <b id="pending">0</b>
-      </div>
+<div class="stat red">
+<span>Pending Issue</span>
+<b id="pending">0</b>
+</div>
 
-      <div class="box yellow">
-        <span>Replacement Pending</span>
-        <b id="replacement">0</b>
-      </div>
+<div class="stat yellow">
+<span>Replacement Pending</span>
+<b id="replacement">0</b>
+</div>
 
-      <div class="box purple">
-        <span>TX Return Pending</span>
-        <b id="return">0</b>
-      </div>
+<div class="stat purple">
+<span>TX Return Pending</span>
+<b id="txreturn">0</b>
+</div>
 
-    </div>
+</div>
 
-    <h3>⚠️ Today's Action</h3>
+<h3>⚠️ Today's Action</h3>
 
-    <div class="action">
-      <div>Issue &gt; 24 Hours <b id="a24">0</b></div>
-      <div>Issue &gt; 72 Hours <b id="a72">0</b></div>
-      <div>Issue &gt; 7 Days <b id="a168">0</b></div>
-    </div>
+<div class="actions">
+<div>Issue &gt; 24 Hours<b id="a24">0</b></div>
+<div>Issue &gt; 72 Hours<b id="a72">0</b></div>
+<div>Issue &gt; 7 Days<b id="a168">0</b></div>
+</div>
 
-  </section>
-
-
-  <section class="search">
-
-    <input
-      id="search"
-      type="search"
-      placeholder="PR / Complaint Number"
-      autocomplete="off"
-    >
-
-    <div id="status">Loading PR SEARCH...</div>
-
-  </section>
+</section>
 
 
-  <section id="results"></section>
+<section class="searchbox">
+
+<input
+id="search"
+type="search"
+placeholder="PR / Complaint Number"
+autocomplete="off">
+
+<div id="status">Loading PR SEARCH...</div>
+
+</section>
+
+
+<div id="results"></div>
 
 </main>
 

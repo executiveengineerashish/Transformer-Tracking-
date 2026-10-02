@@ -1,7 +1,8 @@
 /* =========================================================
    TRANSFORMER TRACKING
-   FAST LOCAL SEARCH
-   PR SEARCH SHEET
+   PR SEARCH
+   LOAD ALL DATA ONCE
+   LOCAL SEARCH AFTER LOAD
 ========================================================= */
 
 const SHEET_ID =
@@ -10,20 +11,13 @@ const SHEET_ID =
 const SHEET_GID =
   "1464518527";
 
-let ALL_RECORDS = [];
-let DAMAGE_HISTORY = new Map();
-let DATA_READY = false;
-let LOAD_STARTED = false;
-
 
 /* =========================================================
-   COLUMN POSITION
+   COLUMN MAP
    A = 0
-   X = 23
 ========================================================= */
 
 const COL = {
-
   SN: 0,
   WORKSHOP: 1,
   DIVISION: 2,
@@ -60,6 +54,19 @@ const COL = {
 
 
 /* =========================================================
+   GLOBAL
+========================================================= */
+
+let ALL_RECORDS = [];
+
+let DAMAGE_HISTORY = new Map();
+
+let DATA_READY = false;
+
+let LOAD_STARTED = false;
+
+
+/* =========================================================
    DOM
 ========================================================= */
 
@@ -90,7 +97,7 @@ function normalize(value) {
 
 
 /* =========================================================
-   ESCAPE HTML
+   ESCAPE
 ========================================================= */
 
 function esc(value) {
@@ -126,24 +133,16 @@ function ordinal(n) {
     return n + "th";
   }
 
-  if (n % 10 === 1) {
-    return n + "st";
-  }
-
-  if (n % 10 === 2) {
-    return n + "nd";
-  }
-
-  if (n % 10 === 3) {
-    return n + "rd";
-  }
+  if (n % 10 === 1) return n + "st";
+  if (n % 10 === 2) return n + "nd";
+  if (n % 10 === 3) return n + "rd";
 
   return n + "th";
 }
 
 
 /* =========================================================
-   DATE SORT
+   DATE SCORE
 ========================================================= */
 
 function dateScore(value) {
@@ -193,10 +192,10 @@ function dateScore(value) {
 
 
 /* =========================================================
-   LOAD GOOGLE SHEET
+   LOAD GOOGLE CHARTS
 ========================================================= */
 
-function loadGoogleSheet() {
+function loadGoogleCharts() {
 
   if (LOAD_STARTED) {
     return;
@@ -205,142 +204,72 @@ function loadGoogleSheet() {
   LOAD_STARTED = true;
 
   searchStatus.textContent =
-    "Loading all transformer records...";
+    "Connecting to PR SEARCH...";
 
   searchStatus.className =
     "search-status loading";
 
 
-  const callbackName =
-    "ttCallback_" + Date.now();
+  /*
+     If Google Charts is already loaded
+  */
+
+  if (
+    window.google &&
+    google.charts
+  ) {
+
+    startSheetQuery();
+
+    return;
+  }
 
 
   const script =
     document.createElement("script");
 
 
-  let finished = false;
+  script.src =
+    "https://www.gstatic.com/charts/loader.js";
 
 
-  const timeout =
-    setTimeout(function() {
-
-      if (finished) {
-        return;
-      }
-
-      finished = true;
-
-      cleanup();
-
-      LOAD_STARTED = false;
-
-      searchStatus.textContent =
-        "Loading timed out. Please refresh the page.";
-
-      searchStatus.className =
-        "search-status error";
-
-    }, 60000);
+  script.async = true;
 
 
-  function cleanup() {
-
-    clearTimeout(timeout);
-
-    if (script.parentNode) {
-      script.parentNode.removeChild(script);
-    }
-
-    try {
-      delete window[callbackName];
-    } catch (e) {
-      window[callbackName] = undefined;
-    }
-  }
-
-
-  window[callbackName] =
-    function(response) {
-
-      if (finished) {
-        return;
-      }
-
-      finished = true;
-
-      cleanup();
+  script.onload =
+    function() {
 
       try {
 
-        processGoogleData(response);
+        google.charts.load(
+          "current",
+          {
+            packages: ["corechart"]
+          }
+        );
+
+
+        google.charts.setOnLoadCallback(
+          startSheetQuery
+        );
 
       } catch (error) {
 
         console.error(error);
 
-        LOAD_STARTED = false;
-
-        searchStatus.textContent =
-          "Data processing error.";
-
-        searchStatus.className =
-          "search-status error";
+        showLoadError(
+          "Google Charts could not start."
+        );
       }
     };
-
-
-  /*
-     IMPORTANT
-
-     Only A:X is required.
-
-     Row 3 = headers
-     Row 4 onward = records
-  */
-
-  const url =
-    "https://docs.google.com/spreadsheets/d/" +
-    SHEET_ID +
-    "/gviz/tq" +
-    "?gid=" + encodeURIComponent(SHEET_GID) +
-    "&range=A3:X" +
-    "&headers=1" +
-    "&tq=" + encodeURIComponent("select *") +
-    "&tqx=" + encodeURIComponent(
-      "responseHandler:" + callbackName
-    );
-
-
-  console.log(
-    "Loading PR SEARCH:",
-    url
-  );
-
-
-  script.src = url;
-
-  script.async = true;
 
 
   script.onerror =
     function() {
 
-      if (finished) {
-        return;
-      }
-
-      finished = true;
-
-      cleanup();
-
-      LOAD_STARTED = false;
-
-      searchStatus.textContent =
-        "Google Sheet connection failed.";
-
-      searchStatus.className =
-        "search-status error";
+      showLoadError(
+        "Google service connection failed."
+      );
     };
 
 
@@ -349,63 +278,136 @@ function loadGoogleSheet() {
 
 
 /* =========================================================
-   PROCESS DATA
+   QUERY GOOGLE SHEET
 ========================================================= */
 
-function processGoogleData(response) {
+function startSheetQuery() {
 
-  if (
-    !response ||
-    !response.table ||
-    !Array.isArray(response.table.rows)
-  ) {
+  searchStatus.textContent =
+    "Loading all transformer records...";
 
-    throw new Error(
-      "Invalid Google response"
-    );
-  }
+  searchStatus.className =
+    "search-status loading";
 
 
   /*
-     Check Google error response
+     Direct Google Visualization endpoint.
+
+     ONLY PR SEARCH TAB.
   */
 
-  if (
-    response.status &&
-    response.status !== "ok" &&
-    response.status !== "warning"
-  ) {
-
-    const message =
-      response.errors &&
-      response.errors[0]
-        ? response.errors[0].message
-        : "Google Sheet error";
-
-    throw new Error(message);
-  }
+  const sheetUrl =
+    "https://docs.google.com/spreadsheets/d/" +
+    SHEET_ID +
+    "/gviz/tq" +
+    "?gid=" +
+    SHEET_GID +
+    "&range=A3:X";
 
 
-  const rows =
-    response.table.rows;
+  console.log(
+    "Google Sheet:",
+    sheetUrl
+  );
 
+
+  const query =
+    new google.visualization.Query(
+      sheetUrl
+    );
+
+
+  query.setQuery(
+    "select *"
+  );
+
+
+  /*
+     Send request.
+  */
+
+  query.send(
+    function(response) {
+
+      if (
+        response.isError()
+      ) {
+
+        console.error(
+          "Google Sheet Error:",
+          response.getMessage(),
+          response.getDetailedMessage()
+        );
+
+
+        showLoadError(
+          "PR SEARCH data could not be loaded."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        processDataTable(
+          response.getDataTable()
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        showLoadError(
+          "Data processing error."
+        );
+      }
+
+    }
+  );
+}
+
+
+/* =========================================================
+   PROCESS DATATABLE
+========================================================= */
+
+function processDataTable(dataTable) {
 
   ALL_RECORDS = [];
 
 
+  const rowCount =
+    dataTable.getNumberOfRows();
+
+  const columnCount =
+    dataTable.getNumberOfColumns();
+
+
+  console.log(
+    "Rows:",
+    rowCount
+  );
+
+  console.log(
+    "Columns:",
+    columnCount
+  );
+
+
+  /*
+     Row 3 was selected as header.
+
+     Data starts from row 4.
+
+     Convert every row to normal JS array.
+  */
+
   for (
-    let i = 0;
-    i < rows.length;
-    i++
+    let r = 0;
+    r < rowCount;
+    r++
   ) {
-
-    const cells =
-      rows[i].c || [];
-
-
-    /*
-       A:X = 24 columns
-    */
 
     const record =
       new Array(24).fill("");
@@ -417,36 +419,66 @@ function processGoogleData(response) {
       c++
     ) {
 
-      const cell =
-        cells[c];
-
-      if (!cell) {
+      if (
+        c >= columnCount
+      ) {
         continue;
       }
 
 
+      let value = "";
+
+
       /*
-         Prefer formatted value.
-         This keeps dates/numbers readable.
+         getFormattedValue keeps dates
+         in the displayed Google Sheet format.
       */
 
+      try {
+
+        value =
+          dataTable.getFormattedValue(
+            r,
+            c
+          );
+
+      } catch (e) {
+
+        value =
+          dataTable.getValue(
+            r,
+            c
+          );
+      }
+
+
+      if (
+        value == null
+      ) {
+
+        value = "";
+      }
+
+
       record[c] =
-        cell.f != null
-          ? cell.f
-          : (
-              cell.v != null
-                ? cell.v
-                : ""
-            );
+        String(value);
     }
 
 
+    /*
+       Ignore completely blank rows.
+    */
+
     const hasData =
-      record.some(function(value) {
+      record.some(
+        function(value) {
 
-        return String(value ?? "").trim() !== "";
+          return (
+            String(value).trim() !== ""
+          );
 
-      });
+        }
+      );
 
 
     if (!hasData) {
@@ -455,9 +487,9 @@ function processGoogleData(response) {
 
 
     /*
-       Complete local search index.
+       Create ONE search index.
 
-       Every column A:X is included.
+       Search all columns A:X.
     */
 
     record.__search =
@@ -467,23 +499,24 @@ function processGoogleData(response) {
 
 
     /*
-       Actual Google Sheet row number.
+       Actual Google Sheet row.
 
-       A3 is header,
-       therefore first data row = 4.
+       Query begins at row 3.
+       First returned record = row 4.
     */
 
     record.__sheetRow =
-      i + 4;
+      r + 4;
 
 
-    ALL_RECORDS.push(record);
+    ALL_RECORDS.push(
+      record
+    );
   }
 
 
   /*
-     Build repeated damage history
-     only once.
+     Build history once.
   */
 
   buildDamageHistory();
@@ -501,13 +534,8 @@ function processGoogleData(response) {
 
 
   console.log(
-    "TOTAL RECORDS:",
+    "DATA READY:",
     ALL_RECORDS.length
-  );
-
-  console.log(
-    "DAMAGE HISTORY:",
-    DAMAGE_HISTORY.size
   );
 }
 
@@ -558,52 +586,56 @@ function buildDamageHistory() {
 
 
   /*
-     Sort every history by PR Date.
+     Sort history by PR Date.
   */
 
   for (
     const history of DAMAGE_HISTORY.values()
   ) {
 
-    history.sort(function(a, b) {
+    history.sort(
+      function(a, b) {
 
-      const aDate =
-        dateScore(
-          getValue(
-            a,
-            COL.PR_DATE
-          ) ||
-          getValue(
-            a,
-            COL.DATE_DAMAGE
-          )
-        );
-
-
-      const bDate =
-        dateScore(
-          getValue(
-            b,
-            COL.PR_DATE
-          ) ||
-          getValue(
-            b,
-            COL.DATE_DAMAGE
-          )
-        );
+        const aDate =
+          dateScore(
+            getValue(
+              a,
+              COL.PR_DATE
+            ) ||
+            getValue(
+              a,
+              COL.DATE_DAMAGE
+            )
+          );
 
 
-      if (aDate === bDate) {
+        const bDate =
+          dateScore(
+            getValue(
+              b,
+              COL.PR_DATE
+            ) ||
+            getValue(
+              b,
+              COL.DATE_DAMAGE
+            )
+          );
 
-        return (
-          (a.__sheetRow || 0) -
-          (b.__sheetRow || 0)
-        );
+
+        if (
+          aDate === bDate
+        ) {
+
+          return (
+            (a.__sheetRow || 0) -
+            (b.__sheetRow || 0)
+          );
+        }
+
+
+        return aDate - bDate;
       }
-
-
-      return aDate - bDate;
-    });
+    );
   }
 }
 
@@ -647,13 +679,17 @@ function performSearch() {
   }
 
 
-  /*
-     LOCAL SEARCH.
-     No Google request.
-  */
-
   const found = [];
 
+
+  /*
+     IMPORTANT:
+
+     From here onwards there is
+     NO Google request.
+
+     Search is completely local.
+  */
 
   for (
     let i = 0;
@@ -679,7 +715,7 @@ function performSearch() {
 
 
 /* =========================================================
-   RENDER RESULTS
+   RENDER
 ========================================================= */
 
 function renderResults(records) {
@@ -729,6 +765,28 @@ function renderResults(records) {
 
   results.innerHTML =
     html;
+}
+
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+function field(label, value) {
+
+  return `
+    <div class="card-row">
+
+      <div class="field-label">
+        ${esc(label)}
+      </div>
+
+      <div class="field-value">
+        ${esc(value || "-")}
+      </div>
+
+    </div>
+  `;
 }
 
 
@@ -818,7 +876,7 @@ function renderCard(row, number) {
   if (
     String(
       replacementDate
-    ).trim() !== ""
+    ).trim()
   ) {
 
     statusHTML = `
@@ -840,7 +898,7 @@ function renderCard(row, number) {
   else if (
     String(
       issueDate
-    ).trim() !== ""
+    ).trim()
   ) {
 
     statusHTML = `
@@ -885,7 +943,7 @@ function renderCard(row, number) {
 
   /* =======================================================
      REPEATED DAMAGE
-     NO LIMIT
+     UNLIMITED
   ======================================================= */
 
   const placeKey =
@@ -905,11 +963,15 @@ function renderCard(row, number) {
   let repeatHTML;
 
 
-  if (history.length <= 1) {
+  if (
+    history.length <= 1
+  ) {
 
     repeatHTML = `
       <div class="repeat-box normal">
+
         Not a repeated damage
+
       </div>
     `;
 
@@ -921,11 +983,9 @@ function renderCard(row, number) {
 
 
     /*
-       ALL occurrences.
+       NO LIMIT.
 
-       No slice()
-       No limit
-       No first-3 restriction.
+       ALL occurrences will be shown.
     */
 
     for (
@@ -966,6 +1026,7 @@ function renderCard(row, number) {
           <span>
             PR No:
             ${esc(hPR || "-")}
+
             <br>
 
             Date:
@@ -981,16 +1042,22 @@ function renderCard(row, number) {
       <div class="repeat-box repeated">
 
         <div class="repeat-title">
+
           It Damaged ${history.length} times
+
         </div>
 
         <div class="repeat-warning">
+
           Please Ensure Increasing Capacity
           if Overloaded
+
         </div>
 
         <div class="repeat-history">
+
           ${historyHTML}
+
         </div>
 
       </div>
@@ -999,7 +1066,7 @@ function renderCard(row, number) {
 
 
   /* =======================================================
-     FINAL CARD
+     CARD
   ======================================================= */
 
   return `
@@ -1017,9 +1084,7 @@ function renderCard(row, number) {
 
       </div>
 
-
       ${statusHTML}
-
 
       ${field("Workshop", workshop)}
 
@@ -1067,7 +1132,6 @@ function renderCard(row, number) {
 
       ${field("Observation DTC", observation)}
 
-
       ${repeatHTML}
 
     </article>
@@ -1076,22 +1140,25 @@ function renderCard(row, number) {
 
 
 /* =========================================================
-   FIELD HTML
+   ERROR
 ========================================================= */
 
-function field(label, value) {
+function showLoadError(message) {
 
-  return `
-    <div class="card-row">
+  LOAD_STARTED = false;
 
-      <div class="field-label">
-        ${esc(label)}
-      </div>
+  searchStatus.textContent =
+    message;
 
-      <div class="field-value">
-        ${esc(value || "-")}
-      </div>
+  searchStatus.className =
+    "search-status error";
 
+  results.innerHTML = `
+    <div class="empty-box">
+      <strong>Unable to connect to PR SEARCH.</strong>
+      <br><br>
+      Please check that the Google Sheet is
+      publicly viewable.
     </div>
   `;
 }
@@ -1122,10 +1189,6 @@ searchInput.addEventListener(
   }
 );
 
-
-/*
-   Instant local search while typing.
-*/
 
 searchInput.addEventListener(
   "input",
@@ -1166,12 +1229,12 @@ if (
 
   document.addEventListener(
     "DOMContentLoaded",
-    loadGoogleSheet
+    loadGoogleCharts
   );
 
 }
 else {
 
-  loadGoogleSheet();
+  loadGoogleCharts();
 
 }

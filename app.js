@@ -15,57 +15,28 @@ const CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 
-// Cache
-const CACHE_KEY =
-  "pr_search_cache_v2";
-
-const CACHE_TTL_MS =
-  10 * 60 * 1000;
-
-
 // ==========================================
 // ELEMENTS
 // ==========================================
 
-const el = (id) =>
-  document.getElementById(id);
+const el = (id) => document.getElementById(id);
 
+const subtitle = el("subtitle");
+const refreshBtn = el("refreshBtn");
+const qInput = el("q");
+const searchBtn = el("searchBtn");
 
-const subtitle =
-  el("subtitle");
+const errorBox = el("error");
+const resultsSummary = el("resultsSummary");
 
-const refreshBtn =
-  el("refreshBtn");
+const prevBtn = el("prevBtn");
+const nextBtn = el("nextBtn");
 
-const qInput =
-  el("q");
+const tableWrap = el("tableWrap");
+const thead = el("thead");
+const tbody = el("tbody");
 
-const searchBtn =
-  el("searchBtn");
-
-const errorBox =
-  el("error");
-
-const resultsSummary =
-  el("resultsSummary");
-
-const prevBtn =
-  el("prevBtn");
-
-const nextBtn =
-  el("nextBtn");
-
-const tableWrap =
-  el("tableWrap");
-
-const thead =
-  el("thead");
-
-const tbody =
-  el("tbody");
-
-const mobileResults =
-  el("mobileResults");
+const mobileResults = el("mobileResults");
 
 
 // ==========================================
@@ -73,9 +44,7 @@ const mobileResults =
 // ==========================================
 
 let headers = [];
-
 let rows = [];
-
 let filtered = [];
 
 let offset = 0;
@@ -97,15 +66,24 @@ function normalize(value) {
 
 
 // ==========================================
+// SUBTITLE
+// ==========================================
+
+function setSubtitle(text) {
+
+  subtitle.textContent = text;
+
+}
+
+
+// ==========================================
 // ERROR
 // ==========================================
 
 function showError(message) {
 
   errorBox.style.display =
-    message
-      ? "block"
-      : "none";
+    message ? "block" : "none";
 
   errorBox.textContent =
     message || "";
@@ -122,11 +100,9 @@ function parseCSV(text) {
   const output = [];
 
   let row = [];
-
   let current = "";
 
   let i = 0;
-
   let inQuotes = false;
 
 
@@ -139,9 +115,7 @@ function parseCSV(text) {
 
       if (ch === '"') {
 
-        const next =
-          text[i + 1];
-
+        const next = text[i + 1];
 
         if (next === '"') {
 
@@ -151,7 +125,6 @@ function parseCSV(text) {
 
           continue;
         }
-
 
         inQuotes = false;
 
@@ -221,9 +194,15 @@ function parseCSV(text) {
   }
 
 
-  row.push(current);
+  if (
+    current !== "" ||
+    row.length > 0
+  ) {
 
-  output.push(row);
+    row.push(current);
+
+    output.push(row);
+  }
 
 
   return output;
@@ -237,14 +216,9 @@ function parseCSV(text) {
 function detectHeaderRow(records) {
 
   const count =
-    Math.min(
-      records.length,
-      15
-    );
-
+    Math.min(records.length, 15);
 
   let bestIndex = 0;
-
   let bestScore = -1;
 
 
@@ -254,12 +228,12 @@ function detectHeaderRow(records) {
     i++
   ) {
 
-    const row =
+    const currentRow =
       records[i] || [];
 
 
     const score =
-      row.filter(
+      currentRow.filter(
         (cell) =>
           normalize(cell).length > 0
       ).length;
@@ -295,8 +269,7 @@ function cleanData(records) {
       .map((header, index) => {
 
         const value =
-          String(header ?? "")
-            .trim();
+          String(header ?? "").trim();
 
 
         return value
@@ -309,15 +282,15 @@ function cleanData(records) {
     records
       .slice(headerIndex + 1)
 
-      .map((row) =>
-        row.map(
+      .map((record) =>
+        record.map(
           (cell) =>
             String(cell ?? "")
         )
       )
 
-      .filter((row) =>
-        row.some(
+      .filter((record) =>
+        record.some(
           (cell) =>
             normalize(cell)
         )
@@ -333,62 +306,23 @@ function cleanData(records) {
 
 // ==========================================
 // FETCH GOOGLE SHEET
+//
+// IMPORTANT:
+// NO localStorage
+// NO CACHE
 // ==========================================
 
-async function fetchSheetCSV(
-  force = false
-) {
+async function fetchSheetCSV() {
 
-  const now =
+  const url =
+    CSV_URL +
+    "&t=" +
     Date.now();
-
-
-  if (!force) {
-
-    const cached =
-      localStorage.getItem(
-        CACHE_KEY
-      );
-
-
-    if (cached) {
-
-      try {
-
-        const parsed =
-          JSON.parse(cached);
-
-
-        if (
-          parsed &&
-          typeof parsed.csvText === "string" &&
-          now - parsed.fetchedAt <
-            CACHE_TTL_MS
-        ) {
-
-          return {
-
-            csvText:
-              parsed.csvText,
-
-            fetchedAt:
-              parsed.fetchedAt,
-
-            cached: true
-          };
-        }
-
-      } catch {
-
-        // Ignore bad cache
-      }
-    }
-  }
 
 
   const response =
     await fetch(
-      CSV_URL,
+      url,
       {
         cache: "no-store"
       }
@@ -407,37 +341,33 @@ async function fetchSheetCSV(
     await response.text();
 
 
-  localStorage.setItem(
-    CACHE_KEY,
+  if (
+    !csvText ||
+    csvText.trim().length === 0
+  ) {
 
-    JSON.stringify({
-      fetchedAt: now,
-      csvText
-    })
-  );
+    throw new Error(
+      "Google Sheet returned empty data."
+    );
+  }
 
 
   return {
-
-    csvText,
-
-    fetchedAt: now,
-
-    cached: false
+    csvText: csvText,
+    fetchedAt: Date.now()
   };
 }
 
 
 // ==========================================
-// FIND DATE COLUMNS
+// FIND DATE COLUMN
 // ==========================================
 
-function findDateColumn(
-  type
-) {
+function findDateColumn(type) {
 
   const wanted =
     type === "replacement"
+
       ? [
           "replacement date",
           "replacementdate",
@@ -446,6 +376,7 @@ function findDateColumn(
           "date of replacement",
           "replacement"
         ]
+
       : [
           "issue date",
           "issued date",
@@ -457,6 +388,7 @@ function findDateColumn(
         ];
 
 
+  // Exact header match
   for (
     let i = 0;
     i < headers.length;
@@ -464,19 +396,14 @@ function findDateColumn(
   ) {
 
     const header =
-      normalize(
-        headers[i]
-      )
-      .replace(/[_-]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+      normalize(headers[i])
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
 
     if (
-      wanted.some(
-        (name) =>
-          header === name
-      )
+      wanted.includes(header)
     ) {
 
       return i;
@@ -484,8 +411,7 @@ function findDateColumn(
   }
 
 
-  // Second-level flexible matching
-
+  // Flexible header match
   for (
     let i = 0;
     i < headers.length;
@@ -493,10 +419,9 @@ function findDateColumn(
   ) {
 
     const header =
-      normalize(
-        headers[i]
-      )
-      .replace(/[_-]/g, " ");
+      normalize(headers[i])
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ");
 
 
     if (
@@ -525,23 +450,17 @@ function findDateColumn(
 
 
 // ==========================================
-// CHECK TRANSFORMER STATUS
+// TRANSFORMER STATUS
 // ==========================================
 
-function getTransformerStatus(
-  row
-) {
+function getTransformerStatus(row) {
 
   const replacementColumn =
-    findDateColumn(
-      "replacement"
-    );
+    findDateColumn("replacement");
 
 
   const issueColumn =
-    findDateColumn(
-      "issue"
-    );
+    findDateColumn("issue");
 
 
   const replacementDate =
@@ -560,57 +479,58 @@ function getTransformerStatus(
       : "";
 
 
-  /*
-    Replacement Date has priority.
-
-    If replacement date is filled:
-    Transformer installed.
-
-    Otherwise if issue date is filled:
-    Transformer issued by workshop.
-  */
+  // Replacement has priority
 
   if (replacementDate) {
 
     return {
+
       type: "installed",
+
       date: replacementDate
+
     };
   }
 
 
+  // Issue date but no replacement date
+
   if (issueDate) {
 
     return {
+
       type: "issued",
+
       date: issueDate
+
     };
   }
 
 
   return {
+
     type: "none",
+
     date: ""
+
   };
 }
 
 
 // ==========================================
 // SEARCH ENTIRE PR SEARCH SHEET
+//
+// EVERY ROW
+// EVERY COLUMN
 // ==========================================
 
 function applySearch() {
 
   const query =
-    normalize(
-      qInput.value
-    );
+    normalize(qInput.value);
 
 
-  /*
-    Empty search:
-    Show complete PR Search sheet.
-  */
+  // Empty search = show all data
 
   if (!query) {
 
@@ -626,26 +546,29 @@ function applySearch() {
 
 
   /*
-    IMPORTANT:
-
-    Search EVERY row
-    and EVERY column.
-
-    It is NOT restricted
-    to PR column or
-    Complaint column.
-  */
+   * IMPORTANT:
+   *
+   * Search ALL columns.
+   *
+   * Not only PR Number.
+   * Not only Complaint Number.
+   * Not only one column.
+   */
 
   filtered =
     rows.filter(
       (row) => {
 
         return row.some(
-          (cell) =>
-            normalize(
+          (cell) => {
+
+            return normalize(
               cell
-            ).includes(query)
+            ).includes(query);
+
+          }
         );
+
       }
     );
 
@@ -657,12 +580,10 @@ function applySearch() {
 
 
 // ==========================================
-// CREATE STATUS MESSAGE
+// STATUS MESSAGE
 // ==========================================
 
-function createStatusMessage(
-  status
-) {
+function createStatusMessage(status) {
 
   if (
     status.type ===
@@ -670,9 +591,7 @@ function createStatusMessage(
   ) {
 
     const div =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
 
     div.className =
@@ -687,9 +606,8 @@ function createStatusMessage(
     if (status.date) {
 
       const small =
-        document.createElement(
-          "div"
-        );
+        document.createElement("div");
+
 
       small.style.fontSize =
         "12px";
@@ -699,6 +617,7 @@ function createStatusMessage(
 
       small.style.marginTop =
         "5px";
+
 
       small.textContent =
         `Replacement Date: ${status.date}`;
@@ -720,9 +639,7 @@ function createStatusMessage(
   ) {
 
     const div =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
 
     div.className =
@@ -737,9 +654,8 @@ function createStatusMessage(
     if (status.date) {
 
       const small =
-        document.createElement(
-          "div"
-        );
+        document.createElement("div");
+
 
       small.style.fontSize =
         "12px";
@@ -749,6 +665,7 @@ function createStatusMessage(
 
       small.style.marginTop =
         "5px";
+
 
       small.textContent =
         `Issue Date: ${status.date}`;
@@ -772,62 +689,52 @@ function createStatusMessage(
 // MOBILE CARDS
 // ==========================================
 
-function renderMobileCards(
-  page
-) {
+function renderMobileCards(page) {
 
-  mobileResults.innerHTML =
-    "";
+  mobileResults.innerHTML = "";
 
 
   page.forEach(
     (row, rowIndex) => {
 
       const card =
-        document.createElement(
-          "div"
-        );
+        document.createElement("div");
 
 
       card.className =
         "dataCard";
 
 
+      // Status message
+
       const status =
-        getTransformerStatus(
-          row
-        );
+        getTransformerStatus(row);
 
-
-      /*
-        Show status only when
-        user has actually searched.
-      */
 
       if (
         qInput.value.trim() &&
         status.type !== "none"
       ) {
 
-        const statusMessage =
+        const message =
           createStatusMessage(
             status
           );
 
 
-        if (statusMessage) {
+        if (message) {
 
           card.appendChild(
-            statusMessage
+            message
           );
         }
       }
 
 
+      // Card title
+
       const title =
-        document.createElement(
-          "div"
-        );
+        document.createElement("div");
 
 
       title.className =
@@ -840,17 +747,19 @@ function renderMobileCards(
         }`;
 
 
-      card.appendChild(
-        title
-      );
+      card.appendChild(title);
 
+
+      // Data fields
 
       headers.forEach(
-        (header, index) => {
+        (header, columnIndex) => {
 
           const value =
-            row[index] ?? "";
+            row[columnIndex] ?? "";
 
+
+          // Don't display empty cells
 
           if (
             !String(value).trim()
@@ -861,9 +770,7 @@ function renderMobileCards(
 
 
           const item =
-            document.createElement(
-              "div"
-            );
+            document.createElement("div");
 
 
           item.className =
@@ -871,9 +778,7 @@ function renderMobileCards(
 
 
           const label =
-            document.createElement(
-              "span"
-            );
+            document.createElement("span");
 
 
           label.className =
@@ -884,41 +789,29 @@ function renderMobileCards(
             header;
 
 
-          const val =
-            document.createElement(
-              "span"
-            );
+          const dataValue =
+            document.createElement("span");
 
 
-          val.className =
+          dataValue.className =
             "dataValue";
 
 
-          val.textContent =
+          dataValue.textContent =
             value;
 
 
-          item.appendChild(
-            label
-          );
+          item.appendChild(label);
 
+          item.appendChild(dataValue);
 
-          item.appendChild(
-            val
-          );
-
-
-          card.appendChild(
-            item
-          );
+          card.appendChild(item);
 
         }
       );
 
 
-      mobileResults.appendChild(
-        card
-      );
+      mobileResults.appendChild(card);
 
     }
   );
@@ -929,39 +822,30 @@ function renderMobileCards(
 // DESKTOP TABLE
 // ==========================================
 
-function renderTable(
-  page
-) {
+function renderTable(page) {
 
-  thead.innerHTML =
-    "";
+  thead.innerHTML = "";
 
-  tbody.innerHTML =
-    "";
+  tbody.innerHTML = "";
 
 
   const headerRow =
-    document.createElement(
-      "tr"
-    );
+    document.createElement("tr");
 
 
   headers.forEach(
     (header) => {
 
       const th =
-        document.createElement(
-          "th"
-        );
+        document.createElement("th");
 
 
       th.textContent =
         header;
 
 
-      headerRow.appendChild(
-        th
-      );
+      headerRow.appendChild(th);
+
     }
   );
 
@@ -975,34 +859,28 @@ function renderTable(
     (row) => {
 
       const tr =
-        document.createElement(
-          "tr"
-        );
+        document.createElement("tr");
 
 
       headers.forEach(
         (_header, index) => {
 
           const td =
-            document.createElement(
-              "td"
-            );
+            document.createElement("td");
 
 
           td.textContent =
             row[index] ?? "";
 
 
-          tr.appendChild(
-            td
-          );
+          tr.appendChild(td);
+
         }
       );
 
 
-      tbody.appendChild(
-        tr
-      );
+      tbody.appendChild(tr);
+
     }
   );
 
@@ -1059,14 +937,9 @@ function renderPage() {
     filtered.length;
 
 
-  renderMobileCards(
-    page
-  );
+  renderMobileCards(page);
 
-
-  renderTable(
-    page
-  );
+  renderTable(page);
 }
 
 
@@ -1074,9 +947,7 @@ function renderPage() {
 // INITIAL LOAD
 // ==========================================
 
-async function init(
-  force = false
-) {
+async function init() {
 
   showError("");
 
@@ -1089,24 +960,27 @@ async function init(
 
     const {
       csvText,
-      fetchedAt,
-      cached
+      fetchedAt
     } =
-      await fetchSheetCSV(
-        force
-      );
+      await fetchSheetCSV();
 
 
     const records =
-      parseCSV(
-        csvText
+      parseCSV(csvText);
+
+
+    if (
+      !records.length
+    ) {
+
+      throw new Error(
+        "No records received from Google Sheet."
       );
+    }
 
 
     const cleaned =
-      cleanData(
-        records
-      );
+      cleanData(records);
 
 
     headers =
@@ -1117,10 +991,7 @@ async function init(
       cleaned.data;
 
 
-    /*
-      Automatically show
-      complete PR Search sheet.
-    */
+    // Show all records automatically
 
     filtered =
       [...rows];
@@ -1139,15 +1010,17 @@ async function init(
         new Date(
           fetchedAt
         ).toLocaleString()
-      }${
-        cached
-          ? " • cached"
-          : ""
       }`
     );
 
 
   } catch (error) {
+
+    console.error(
+      "PR Search Error:",
+      error
+    );
+
 
     showError(
       error instanceof Error
@@ -1159,29 +1032,14 @@ async function init(
     setSubtitle(
       "Failed to load PR Search."
     );
+
   }
 }
 
 
 // ==========================================
-// SET SUBTITLE
+// SEARCH BUTTON
 // ==========================================
-
-function setSubtitle(
-  text
-) {
-
-  subtitle.textContent =
-    text;
-}
-
-
-// ==========================================
-// EVENTS
-// ==========================================
-
-
-// Search button
 
 searchBtn.addEventListener(
   "click",
@@ -1189,8 +1047,9 @@ searchBtn.addEventListener(
 );
 
 
-// Search automatically
-// while typing
+// ==========================================
+// AUTOMATIC SEARCH WHILE TYPING
+// ==========================================
 
 qInput.addEventListener(
   "input",
@@ -1206,28 +1065,34 @@ qInput.addEventListener(
         applySearch,
         250
       );
+
   }
 );
 
 
-// Enter key
+// ==========================================
+// ENTER KEY
+// ==========================================
 
 qInput.addEventListener(
   "keydown",
   (event) => {
 
     if (
-      event.key ===
-      "Enter"
+      event.key === "Enter"
     ) {
 
       applySearch();
+
     }
+
   }
 );
 
 
-// Previous
+// ==========================================
+// PREVIOUS
+// ==========================================
 
 prevBtn.addEventListener(
   "click",
@@ -1241,11 +1106,14 @@ prevBtn.addEventListener(
 
 
     renderPage();
+
   }
 );
 
 
-// Next
+// ==========================================
+// NEXT
+// ==========================================
 
 nextBtn.addEventListener(
   "click",
@@ -1259,23 +1127,27 @@ nextBtn.addEventListener(
 
 
     renderPage();
+
   }
 );
 
 
-// Refresh
+// ==========================================
+// REFRESH
+// ==========================================
 
 refreshBtn.addEventListener(
   "click",
   () => {
 
-    init(true);
+    init();
+
   }
 );
 
 
 // ==========================================
-// START
+// START APPLICATION
 // ==========================================
 
-init(false);
+init();

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 <title>Transformer Tracking</title>
 
-<link rel="stylesheet" href="style.css?v=20261003">
+<link rel="stylesheet" href="style.css?v=20261004">
 </head>
 
 <body>
@@ -26,22 +26,23 @@
 
 <main>
 
-
-<!-- ================= DASHBOARD ================= -->
+<!-- DASHBOARD -->
 
 <section class="dashboard">
 
-  <h1>📊 Transformer Pendency Dashboard</h1>
-
-  <div id="dashboardMonth" class="dashboard-month">
-    Current Month
+  <div class="dashboard-heading">
+    <span>📊</span>
+    <div>
+      <h1>Transformer Pendency Dashboard</h1>
+      <div id="dashboardMonth">Current Month</div>
+    </div>
   </div>
 
 
   <div class="summary-grid">
 
     <div class="summary-card total">
-      <span>Total</span>
+      <span>Total PR</span>
       <strong id="dashTotal">0</strong>
     </div>
 
@@ -68,64 +69,24 @@
   </div>
 
 
-  <h2>⚠️ Today's Action</h2>
-
-  <div class="action-grid">
-
-    <div>
-      <span>Issue &gt; 24 Hours</span>
-      <strong id="action24">0</strong>
-    </div>
-
-    <div>
-      <span>Issue &gt; 72 Hours</span>
-      <strong id="action72">0</strong>
-    </div>
-
-    <div>
-      <span>Issue &gt; 7 Days</span>
-      <strong id="action7">0</strong>
-    </div>
-
+  <div class="section-title">
+    Workshop-wise Pending to Issue
   </div>
-
-
-  <h2>Workshop-wise Pending to Issue</h2>
 
   <div id="workshopDashboard">
-    Loading dashboard...
-  </div>
-
-
-  <h2>Capacity-wise Pending to Issue</h2>
-
-  <div id="capacityDashboard">
-    Loading dashboard...
-  </div>
-
-
-  <h2>Ageing of Pending to Issue</h2>
-
-  <div id="ageingDashboard">
-    Loading dashboard...
-  </div>
-
-
-  <h2>🔄 Repeated Damage</h2>
-
-  <div id="repeatedDashboard">
-    Loading dashboard...
+    Loading...
   </div>
 
 </section>
 
 
-
-<!-- ================= SEARCH ================= -->
+<!-- SEARCH -->
 
 <section class="search-card">
 
-  <h2>PR / Complaint Number</h2>
+  <div class="search-title">
+    PR / Complaint Number
+  </div>
 
   <div class="search-row">
 
@@ -149,11 +110,9 @@
 </section>
 
 
-
-<!-- ================= RESULTS ================= -->
+<!-- RESULTS -->
 
 <section id="results"></section>
-
 
 </main>
 
@@ -163,7 +122,7 @@ Transformer Tracking
 </footer>
 
 
-<script src="app.js?v=20261003"></script>
+<script src="app.js?v=20261004"></script>
 
 </body>
 </html>

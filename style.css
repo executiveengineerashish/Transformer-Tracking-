@@ -2,864 +2,529 @@
   box-sizing: border-box;
 }
 
-html,
 body {
   margin: 0;
-  padding: 0;
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  background: #f3f4f6;
-  color: #222;
+  background: #fff7f2;
+  color: #272727;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
 }
 
-body {
-  min-height: 100vh;
-}
-
-
-/* =========================
-   HEADER
-========================= */
+/* ================= HEADER ================= */
 
 .top-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 
-  background:
-    linear-gradient(
-      135deg,
-      #ff4b00,
-      #ff0800
-    );
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 13px 15px;
+
+  background: linear-gradient(
+    135deg,
+    #ff3b00,
+    #ff6a00
+  );
 
   color: white;
 
-  padding: 22px 18px 24px;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 14px;
-
   box-shadow:
-    0 3px 12px
-    rgba(0,0,0,.18);
+    0 2px 9px rgba(0,0,0,.15);
 }
 
 .header-icon {
-
-  width: 64px;
-  height: 64px;
-
-  border-radius: 17px;
-
-  background:
-    rgba(255,255,255,.18);
-
-  border:
-    1px solid
-    rgba(255,255,255,.35);
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  font-size: 37px;
+  font-size: 29px;
 }
 
 .top-header h1 {
-
-  margin: 0;
-
-  font-size: 28px;
-
-  line-height: 1.1;
+  margin: 0 0 2px;
+  font-size: 20px;
 }
 
 .header-subtitle {
-
-  margin-top: 6px;
-
-  font-size: 16px;
-
-  opacity: .95;
+  font-size: 12px;
+  opacity: .9;
 }
 
 
-/* =========================
-   MAIN
-========================= */
+/* ================= MAIN ================= */
 
 .main-container {
-
-  max-width: 760px;
-
-  margin: 20px auto;
-
-  padding:
-    0 14px 40px;
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  padding: 10px;
 }
 
 
-/* =========================
-   DASHBOARD
-========================= */
+/* ================= CARDS ================= */
 
-.dashboard-card {
+.dashboard-card,
+.search-card,
+.result-card {
+  background: #fff;
 
-  background: white;
+  border-radius: 15px;
 
-  border-radius: 24px;
-
-  padding: 18px;
-
-  margin-bottom: 18px;
+  border: 1px solid #eee;
 
   box-shadow:
-    0 8px 25px
-    rgba(0,0,0,.10);
+    0 2px 10px rgba(0,0,0,.07);
+
+  margin-bottom: 10px;
+}
+
+
+/* ================= DASHBOARD ================= */
+
+.dashboard-card {
+  padding: 12px;
 }
 
 .dashboard-title {
-
-  font-size: 21px;
-
+  font-size: 17px;
   font-weight: 800;
-
-  color: #333;
 }
 
 .dashboard-month {
-
-  margin-top: 4px;
-
-  margin-bottom: 15px;
-
-  color: #888;
-
-  font-size: 13px;
-
-  font-weight: 600;
+  color: #777;
+  font-size: 12px;
+  margin: 3px 0 10px;
 }
 
 
-.dashboard-summary {
+/* ================= SUMMARY ================= */
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.summary-box {
+  border: 0;
+
+  border-radius: 11px;
+
+  padding: 10px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  min-height: 72px;
+}
+
+.summary-box span {
+  display: block;
+
+  font-size: 11px;
+}
+
+.summary-box strong {
+  display: block;
+
+  font-size: 24px;
+
+  margin-top: 3px;
+}
+
+.summary-box.total {
+  background: #fff1e8;
+}
+
+.summary-box.issued {
+  background: #eaf9ee;
+}
+
+.summary-box.pending {
+  background: #fff0ed;
+}
+
+.summary-box.replacement {
+  background: #fff8df;
+}
+
+.summary-box.return {
+  background: #efeaff;
+}
+
+
+/* ================= TODAY ACTION ================= */
+
+.action-title {
+  font-weight: 800;
+
+  margin:
+    13px 0
+    7px;
+}
+
+.mini-grid {
   display: grid;
 
   grid-template-columns:
     repeat(3, 1fr);
 
-  gap: 9px;
+  gap: 6px;
 }
 
-.summary-box {
+.mini-box {
+  border: 0;
 
-  border-radius: 14px;
+  background: #fff3ee;
 
-  padding: 13px 8px;
+  color: #333;
 
-  text-align: center;
+  border-radius: 9px;
+
+  padding: 8px;
+
+  font-size: 11px;
+
+  cursor: pointer;
 }
 
-.summary-box span {
-
+.mini-box b {
   display: block;
 
-  font-size: 12px;
+  font-size: 19px;
 
-  font-weight: 700;
-}
-
-.summary-box strong {
-
-  display: block;
-
-  margin-top: 5px;
-
-  font-size: 25px;
-}
-
-.summary-box.total {
-
-  background: #e9f1ff;
-
-  color: #1955a5;
-}
-
-.summary-box.issued {
-
-  background: #e8f8ee;
-
-  color: #16803d;
-}
-
-.summary-box.pending {
-
-  background: #fff0df;
-
-  color: #c75b00;
+  margin-top: 3px;
 }
 
 
-.workshop-heading {
+/* ================= SECTION HEADINGS ================= */
 
-  margin-top: 19px;
-
-  margin-bottom: 12px;
-
-  font-size: 17px;
-
+.section-heading {
   font-weight: 800;
 
-  color: #444;
+  margin:
+    13px 0
+    7px;
 }
 
-.workshop-row {
 
-  margin-bottom: 13px;
+/* ================= WORKSHOP BARS ================= */
+
+.workshop-row {
+  margin: 8px 0;
 }
 
 .workshop-name-line {
-
   display: flex;
 
-  justify-content: space-between;
+  justify-content:
+    space-between;
 
-  align-items: center;
-
-  gap: 8px;
-
-  margin-bottom: 5px;
-
-  font-size: 14px;
-
-  font-weight: 700;
+  font-size: 12px;
 }
 
 .workshop-name {
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
+  font-weight: 700;
 }
 
 .workshop-count {
-
   font-weight: 800;
-
-  min-width: 30px;
-
-  text-align: right;
 }
 
 .bar-background {
+  height: 8px;
 
-  width: 100%;
+  background: #eee;
 
-  height: 15px;
-
-  background: #eeeeee;
-
-  border-radius: 20px;
+  border-radius: 10px;
 
   overflow: hidden;
+
+  margin-top: 4px;
 }
 
 .bar-fill {
-
   height: 100%;
-
-  border-radius: 20px;
-
-  transition:
-    width .4s ease;
-}
-
-.bar-1 { background: #ff3b00; }
-.bar-2 { background: #ff7a00; }
-.bar-3 { background: #f5b400; }
-.bar-4 { background: #00a86b; }
-.bar-5 { background: #3478f6; }
-.bar-6 { background: #8e44ad; }
-.bar-7 { background: #e84393; }
-.bar-8 { background: #0097a7; }
-.bar-9 { background: #795548; }
-.bar-10 { background: #607d8b; }
-
-.dashboard-loading {
-
-  text-align: center;
-
-  padding: 15px;
-
-  color: #888;
-
-  font-size: 14px;
-}
-
-
-/* =========================
-   SEARCH
-========================= */
-
-.search-card {
-
-  background: white;
-
-  border-radius: 25px;
-
-  padding: 22px;
-
-  box-shadow:
-    0 8px 25px
-    rgba(0,0,0,.10);
-}
-
-.search-label {
-
-  display: block;
-
-  font-size: 22px;
-
-  font-weight: 700;
-
-  margin-bottom: 14px;
-}
-
-.search-row {
-
-  display: flex;
-
-  gap: 12px;
-}
-
-#searchInput {
-
-  flex: 1;
-
-  min-width: 0;
-
-  height: 80px;
-
-  border:
-    3px solid #ff7200;
-
-  border-radius: 19px;
-
-  padding:
-    0 20px;
-
-  font-size: 25px;
-
-  outline: none;
-
-  background: white;
-}
-
-#searchInput:focus {
-
-  border-color:
-    #ff3b00;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(255,90,0,.12);
-}
-
-#searchBtn {
-
-  width: 155px;
-
-  border: 0;
-
-  border-radius: 19px;
 
   background:
     linear-gradient(
-      135deg,
-      #ff5b00,
-      #ff0800
+      90deg,
+      #ff3b00,
+      #ff9800
     );
 
-  color: white;
-
-  font-size: 20px;
-
-  font-weight: 800;
-
-  box-shadow:
-    0 6px 14px
-    rgba(255,50,0,.25);
+  border-radius: 10px;
 }
 
 
-/* =========================
-   STATUS
-========================= */
+/* ================= CAPACITY ================= */
 
-.search-status {
+.chip-list {
+  display: flex;
 
-  margin-top: 16px;
+  flex-wrap: wrap;
 
-  padding: 15px;
-
-  border-radius: 15px;
-
-  text-align: center;
-
-  font-size: 17px;
-
-  font-weight: 700;
+  gap: 6px;
 }
 
-.search-status.loading {
+.capacity-chip {
+  background: #fff0e8;
 
-  background: #fff0e5;
+  border:
+    1px solid
+    #ffd0bd;
 
-  color: #9b4b00;
-}
+  border-radius: 20px;
 
-.search-status.ready {
+  padding: 7px 10px;
 
-  background: #eaf8ee;
-
-  color: #19733b;
-}
-
-.search-status.error {
-
-  background: #ffe8e8;
-
-  color: #c40000;
+  font-size: 12px;
 }
 
 
-/* =========================
-   RESULTS
-========================= */
+/* ================= AGEING ================= */
 
-.results {
-
-  margin-top: 20px;
-}
-
-.result-card {
-
-  background: white;
-
-  border-radius: 22px;
-
-  padding: 17px;
-
-  margin-bottom: 18px;
-
-  box-shadow:
-    0 7px 22px
-    rgba(0,0,0,.10);
-}
-
-.card-number {
-
-  font-size: 14px;
-
-  font-weight: 700;
-
-  color: #777;
-
-  margin-bottom: 12px;
-}
-
-.card-number span {
-
-  float: right;
-
-  color: #999;
-
-  font-weight: 500;
-}
-
-
-/* =========================
-   STATUS BOX
-========================= */
-
-.status-box {
-
-  border-radius: 17px;
-
-  padding: 17px;
-
-  margin-bottom: 13px;
-}
-
-.status-title {
-
-  font-size: 18px;
-
-  font-weight: 800;
-
-  line-height: 1.35;
-}
-
-.status-detail {
-
-  margin-top: 6px;
-
-  font-size: 16px;
-
-  font-weight: 600;
-}
-
-.status-box.installed {
-
-  background: #e8f8ee;
-
-  border-left:
-    6px solid #1c9a4b;
-
-  color: #176c37;
-}
-
-.status-box.issued {
-
-  background: #fff3df;
-
-  border-left:
-    6px solid #ff7a00;
-
-  color: #864400;
-}
-
-.status-box.pending {
-
-  background: #fff0ed;
-
-  border-left:
-    6px solid #ff3b00;
-
-  color: #9c2b00;
-}
-
-
-/* =========================
-   DRIVER
-========================= */
-
-.driver-info {
-
+.ageing-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(3,1fr);
+    repeat(4, 1fr);
 
-  gap: 10px;
-
-  margin-top: 14px;
-
-  font-size: 15px;
+  gap: 5px;
 }
 
-.driver-info > div {
+.age-box {
+  background: #f5f5f5;
 
-  background:
-    rgba(255,255,255,.65);
+  border-radius: 9px;
 
-  border-radius: 10px;
+  padding: 7px;
 
-  padding: 9px;
+  text-align: center;
+
+  font-size: 10px;
 }
 
-.call-btn {
-
+.age-box b {
   display: block;
 
-  text-align: center;
-
-  margin-top: 13px;
-
-  padding: 14px;
-
-  border-radius: 12px;
-
-  background: #20a84b;
-
-  color: white;
-
-  text-decoration: none;
-
   font-size: 17px;
 
-  font-weight: 800;
+  margin-top: 3px;
 }
 
 
-/* =========================
-   REPEATED DAMAGE
-========================= */
+/* ================= REPEATED DAMAGE ================= */
 
-.repeat-box {
-
-  border-radius: 17px;
-
-  padding: 15px;
-
-  margin-bottom: 14px;
-}
-
-.repeat-box.normal {
-
-  background: #f3f4f6;
+.repeated-summary {
+  font-size: 12px;
 
   color: #555;
-
-  text-align: center;
-
-  font-size: 16px;
 }
 
-.repeat-box.repeated {
+.repeated-link {
+  display: block;
 
-  background: #fff4df;
+  width: 100%;
 
-  border-left:
-    6px solid #ff7100;
+  border: 0;
+
+  background: #fff4ef;
+
+  text-align: left;
+
+  padding: 9px;
+
+  margin: 4px 0;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  color: #333;
 }
 
-.repeat-title {
 
-  font-size: 18px;
+/* ================= SEARCH ================= */
+
+.search-card {
+  padding: 12px;
+}
+
+.search-label {
+  display: block;
 
   font-weight: 800;
 
-  color: #a33d00;
+  margin-bottom: 6px;
 }
 
-.repeat-warning {
-
-  margin-top: 5px;
-
-  font-size: 15px;
-
-  font-weight: 700;
-
-  color: #8b5100;
-}
-
-.repeat-location {
-
-  margin-top: 5px;
-
-  font-size: 13px;
-
-  color: #9a5b00;
-
-  font-weight: 600;
-}
-
-.repeat-row {
-
-  margin-top: 10px;
-
-  padding: 11px;
-
-  background: white;
-
-  border-radius: 10px;
-
-  font-size: 14px;
-
-  display: grid;
-
-  grid-template-columns:
-    1fr 1fr;
+.search-row {
+  display: flex;
 
   gap: 7px;
 }
 
+.search-row input {
+  flex: 1;
 
-/* =========================
-   DATA
-========================= */
+  min-width: 0;
 
-.data-grid {
+  padding: 12px;
 
-  display: grid;
+  border:
+    1px solid
+    #ddd;
 
-  grid-template-columns:
-    1fr 1fr;
-
-  gap: 9px;
-}
-
-.data-item {
-
-  background: #f7f7f8;
-
-  border-radius: 11px;
-
-  padding: 10px;
-}
-
-.data-label {
-
-  font-size: 12px;
-
-  color: #777;
-
-  margin-bottom: 4px;
-}
-
-.data-value {
+  border-radius: 10px;
 
   font-size: 15px;
 
-  font-weight: 700;
+  outline: none;
+}
 
-  word-break: break-word;
+.search-row input:focus {
+  border-color: #ff5a1f;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(255,90,31,.1);
+}
+
+.search-row button {
+  border: 0;
+
+  background: #ff4b12;
+
+  color: white;
+
+  font-weight: 800;
+
+  border-radius: 10px;
+
+  padding: 0 13px;
+
+  cursor: pointer;
 }
 
 
-/* =========================
-   NO RESULT
-========================= */
+/* ================= TOOLBAR ================= */
 
-.no-result {
+.toolbar {
+  display: flex;
+
+  gap: 7px;
+
+  margin-top: 7px;
+}
+
+.tool-btn {
+  border:
+    1px solid
+    #ddd;
 
   background: white;
 
-  border-radius: 18px;
+  border-radius: 8px;
 
-  padding: 25px;
+  padding: 6px 10px;
 
-  text-align: center;
+  font-size: 11px;
+
+  cursor: pointer;
+}
+
+
+/* ================= FILTER TAGS ================= */
+
+.active-filters {
+  display: flex;
+
+  gap: 5px;
+
+  flex-wrap: wrap;
+
+  margin-top: 6px;
+}
+
+.filter-tag {
+  background: #fff0e8;
+
+  border-radius: 15px;
+
+  padding: 5px 8px;
+
+  font-size: 10px;
+}
+
+
+/* ================= STATUS ================= */
+
+.search-status {
+  margin-top: 7px;
+
+  font-size: 11px;
 
   color: #777;
+}
 
-  font-size: 17px;
+.search-status.error {
+  color: #c62828;
+}
+
+.search-status.ready {
+  color: #198754;
 }
 
 
-/* =========================
-   FOOTER
-========================= */
+/* ================= RESULTS ================= */
 
-.footer {
+.result-count {
+  font-weight: 800;
 
-  text-align: center;
+  margin: 8px 3px;
+}
 
-  color: #999;
+.result-card {
+  padding: 11px;
+}
 
-  padding: 25px;
+.card-number {
+  font-size: 11px;
 
-  font-size: 14px;
+  color: #888;
+
+  margin-bottom: 7px;
 }
 
 
-/* =========================
-   MOBILE
-========================= */
+/* ================= STATUS BOX ================= */
 
-@media (max-width:600px) {
+.status-box {
+  border-radius: 11px;
 
-  .top-header {
+  padding: 10px;
 
-    padding:
-      20px 16px;
-  }
+  margin-bottom: 8px;
 
-  .header-icon {
-
-    width: 60px;
-    height: 60px;
-  }
-
-  .top-header h1 {
-
-    font-size: 25px;
-  }
-
-  .main-container {
-
-    margin-top: 18px;
-
-    padding:
-      0 12px 30px;
-  }
-
-  .dashboard-card {
-
-    padding: 16px;
-  }
-
-  .dashboard-title {
-
-    font-size: 19px;
-  }
-
-  .summary-box strong {
-
-    font-size: 22px;
-  }
-
-  .search-card {
-
-    padding: 19px;
-
-    border-radius: 23px;
-  }
-
-  .search-label {
-
-    font-size: 20px;
-  }
-
-  .search-row {
-
-    gap: 10px;
-  }
-
-  #searchInput {
-
-    height: 78px;
-
-    font-size: 22px;
-
-    padding:
-      0 17px;
-  }
-
-  #searchBtn {
-
-    width: 125px;
-
-    font-size: 18px;
-  }
-
-  .result-card {
-
-    padding: 14px;
-  }
-
-  .data-grid {
-
-    grid-template-columns: 1fr;
-  }
-
-  .driver-info {
-
-    grid-template-columns: 1fr;
-  }
-
-  .repeat-row {
-
-    grid-template-columns: 1fr;
-  }
-
+  line-height: 1.5;
 }
+
+.status-box.installed {
+  background: #eaf9ee;
+
+  border-left:
+    4px solid
+    #28a745;
+}
+
+.status-box.issued {
+  background: #fff5e9;
+
+  border-left:
+    4px solid
+    #ff7200;
+}
+
+.status-box.pending {
+  background

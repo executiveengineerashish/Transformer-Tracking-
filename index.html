@@ -2,181 +2,170 @@
 <html lang="en">
 
 <head>
-
   <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  >
-
-  <meta
-    name="theme-color"
-    content="#f57c00"
+    content="width=device-width, initial-scale=1.0"
   >
 
   <title>PR Search</title>
 
-  <link rel="stylesheet" href="./style.css">
-
+  <link
+    rel="stylesheet"
+    href="./style.css"
+  >
 </head>
 
 
 <body>
 
-<div class="app">
+  <div class="app">
 
-  <!-- HEADER -->
+    <!-- HEADER -->
 
-  <header class="topbar">
+    <header class="topbar">
 
-    <div class="title">
+      <div class="title">
 
-      <h1>PR Search</h1>
+        <h1>PR Search</h1>
 
-      <p
-        class="subtitle"
-        id="subtitle"
+        <p
+          class="subtitle"
+          id="subtitle"
+        >
+          Loading PR Search…
+        </p>
+
+      </div>
+
+
+      <button
+        class="refreshBtn"
+        id="refreshBtn"
+        type="button"
+        aria-label="Refresh"
       >
-        Loading PR Search data…
-      </p>
+        ↻
+      </button>
 
-    </div>
-
-
-    <button
-      class="refresh"
-      id="refreshBtn"
-      type="button"
-    >
-      ↻
-    </button>
-
-  </header>
+    </header>
 
 
-  <!-- SEARCH -->
+    <!-- SEARCH -->
 
-  <section class="searchPanel">
+    <section class="searchPanel">
 
-    <label class="field">
-
-      <span class="label">
+      <label class="searchLabel">
         PR / Complaint Number
-      </span>
+      </label>
+
 
       <input
         id="q"
-        type="search"
+        type="text"
         inputmode="numeric"
         autocomplete="off"
         placeholder="Enter PR / Complaint Number"
       >
 
-    </label>
+
+      <button
+        class="searchBtn"
+        id="searchBtn"
+        type="button"
+      >
+        PR/Complaint Number
+      </button>
+
+    </section>
 
 
-    <button
-      class="searchBtn"
-      id="searchBtn"
-      type="button"
-    >
-      PR/Complaint Number
-    </button>
-
-  </section>
-
-
-  <!-- RESULTS -->
-
-  <section class="results">
+    <!-- ERROR -->
 
     <div
-      class="resultsSummary"
-      id="resultsSummary"
-    >
-      Preparing search…
-    </div>
-
-
-    <div
-      class="pager"
-      id="pager"
+      class="error"
+      id="error"
       style="display:none"
-    >
-
-      <button
-        class="pageBtn"
-        id="prevBtn"
-        type="button"
-        disabled
-      >
-        Prev
-      </button>
-
-      <button
-        class="pageBtn"
-        id="nextBtn"
-        type="button"
-        disabled
-      >
-        Next
-      </button>
-
-    </div>
-
-
-    <!-- MOBILE RESULTS -->
-
-    <div
-      id="mobileResults"
-      class="mobileResults"
     ></div>
 
 
-    <!-- DESKTOP RESULTS -->
+    <!-- RESULTS -->
 
-    <div
-      id="tableWrap"
-      class="tableWrap"
-      style="display:none"
-    >
+    <section class="resultsPanel">
 
-      <table>
-
-        <thead id="thead"></thead>
-
-        <tbody id="tbody"></tbody>
-
-      </table>
-
-    </div>
-
-  </section>
+      <div
+        class="resultsSummary"
+        id="resultsSummary"
+      >
+        Enter PR / Complaint Number to search.
+      </div>
 
 
-  <!-- ERROR -->
+      <div
+        class="pager"
+        id="pager"
+        style="display:none"
+      >
 
-  <div
-    id="error"
-    class="error"
-    style="display:none"
-  ></div>
+        <button
+          class="pageBtn"
+          id="prevBtn"
+          type="button"
+          disabled
+        >
+          Prev
+        </button>
 
 
-</div>
+        <button
+          class="pageBtn"
+          id="nextBtn"
+          type="button"
+          disabled
+        >
+          Next
+        </button>
+
+      </div>
 
 
-<!-- IMPORTANT:
-     ?v=20261002 forces Chrome to download
-     the new JavaScript instead of using old cache.
--->
+      <!-- MOBILE RESULTS -->
 
-<script
-  type="module"
-  src="./app.js?v=20261002"
-></script>
+      <div
+        id="mobileResults"
+        class="mobileResults"
+      ></div>
 
+
+      <!-- DESKTOP TABLE -->
+
+      <div
+        id="tableWrap"
+        class="tableWrap"
+        style="display:none"
+      >
+
+        <table>
+
+          <thead id="thead"></thead>
+
+          <tbody id="tbody"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+  </div>
+
+
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
 
 </body>
 

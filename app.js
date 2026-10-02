@@ -1,1441 +1,682 @@
-// =====================================================
-// PR SEARCH - TRANSFORMER TRACKING
-// ONLY "PR SEARCH" SHEET IS USED
-// =====================================================
-
-
 const SHEET_ID =
   "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
-
-// IMPORTANT:
-// Uses SHEET NAME instead of monthly sheets.
-// No GID required.
-
-const SHEET_NAME =
-  "PR SEARCH";
-
+const SHEET_GID = "1464518527";
 
 const CSV_URL =
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
-
-
-// =====================================================
-// EXACT COLUMNS FROM YOUR SHEET
-// =====================================================
-
-const COL = {
-
-  DATE_DAMAGE: 6,        // G
-  PLACE_DAMAGE: 7,       // H
-  DID_NO: 8,             // I
-  CAPACITY: 9,           // J
-  COMPLAINT_NO: 10,      // K
-  COMPLAINT_DATE: 11,    // L
-  PR_NO: 12,             // M
-  PR_DATE: 13,           // N
-  JE_NAME: 14,           // O
-  JE_MOBILE: 15,         // P
-  ISSUED_FIRM: 16,       // Q
-  ISSUE_DATE: 17,        // R
-  DRIVER_NAME: 18,       // S
-  DRIVER_MOBILE: 19,     // T
-  REPLACEMENT_DATE: 20,  // U
-  TIME: 21,              // V
-  TX_RETURN_DATE: 22,    // W
-  OBSERVATION: 23        // X
-
-};
-
-
-// =====================================================
-// ELEMENTS
-// =====================================================
-
-const subtitle =
-  document.getElementById("subtitle");
-
-const refreshBtn =
-  document.getElementById("refreshBtn");
-
-const qInput =
-  document.getElementById("q");
-
-const searchBtn =
-  document.getElementById("searchBtn");
-
-const resultsSummary =
-  document.getElementById("resultsSummary");
-
-const prevBtn =
-  document.getElementById("prevBtn");
-
-const nextBtn =
-  document.getElementById("nextBtn");
-
-const pager =
-  document.getElementById("pager");
-
-const mobileResults =
-  document.getElementById("mobileResults");
-
-const tableWrap =
-  document.getElementById("tableWrap");
-
-const thead =
-  document.getElementById("thead");
-
-const tbody =
-  document.getElementById("tbody");
-
-const errorBox =
-  document.getElementById("error");
-
-
-// =====================================================
-// DATA
-// =====================================================
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 let headers = [];
-
 let rows = [];
+let ready = false;
 
-let filtered = [];
-
-let offset = 0;
-
-const PAGE_SIZE = 20;
-
-let sheetLoaded = false;
-
-let loading = false;
-
-let searchTimer = null;
+const input = document.getElementById("searchInput");
+const button = document.getElementById("searchBtn");
+const statusBox = document.getElementById("status");
+const message = document.getElementById("message");
+const results = document.getElementById("results");
 
 
-// =====================================================
-// NORMALIZE
-// =====================================================
+/* ---------------- CSV PARSER ---------------- */
 
-function normalize(value) {
+function parseCSV(text){
 
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
-
-}
-
-
-// =====================================================
-// ERROR
-// =====================================================
-
-function showError(message) {
-
-  errorBox.style.display =
-    message ? "block" : "none";
-
-  errorBox.textContent =
-    message || "";
-
-}
-
-
-// =====================================================
-// SUBTITLE
-// =====================================================
-
-function setSubtitle(text) {
-
-  subtitle.textContent = text;
-
-}
-
-
-// =====================================================
-// CSV PARSER
-// =====================================================
-
-function parseCSV(text) {
-
-  const result = [];
-
+  const data = [];
   let row = [];
+  let cell = "";
+  let quoted = false;
 
-  let value = "";
+  for(let i=0;i<text.length;i++){
 
-  let inQuotes = false;
+    const c = text[i];
+    const next = text[i+1];
 
+    if(c === '"' && quoted && next === '"'){
+      cell += '"';
+      i++;
+      continue;
+    }
 
-  for (
-    let i = 0;
-    i < text.length;
-    i++
-  ) {
+    if(c === '"'){
+      quoted = !quoted;
+      continue;
+    }
 
-    const ch = text[i];
+    if(c === "," && !quoted){
+      row.push(cell);
+      cell = "";
+      continue;
+    }
 
+    if((c === "\n" || c === "\r") && !quoted){
 
-    if (inQuotes) {
+      if(c === "\r" && next === "\n") i++;
 
-      if (ch === '"') {
+      row.push(cell);
+      cell = "";
 
-        if (text[i + 1] === '"') {
-
-          value += '"';
-
-          i++;
-
-        }
-
-        else {
-
-          inQuotes = false;
-
-        }
-
+      if(row.some(x => String(x).trim() !== "")){
+        data.push(row);
       }
-
-      else {
-
-        value += ch;
-
-      }
-
-      continue;
-
-    }
-
-
-    if (ch === '"') {
-
-      inQuotes = true;
-
-      continue;
-
-    }
-
-
-    if (ch === ",") {
-
-      row.push(value);
-
-      value = "";
-
-      continue;
-
-    }
-
-
-    if (ch === "\n") {
-
-      row.push(value);
-
-      result.push(row);
 
       row = [];
-
-      value = "";
-
       continue;
-
     }
 
+    cell += c;
+  }
 
-    if (ch === "\r") {
+  if(cell !== "" || row.length){
+    row.push(cell);
 
-      continue;
-
+    if(row.some(x => String(x).trim() !== "")){
+      data.push(row);
     }
-
-
-    value += ch;
-
   }
 
-
-  if (
-    value !== "" ||
-    row.length > 0
-  ) {
-
-    row.push(value);
-
-    result.push(row);
-
-  }
-
-
-  return result;
-
+  return data;
 }
 
 
-// =====================================================
-// HEADER DETECTION
-// =====================================================
+/* ---------------- NORMALIZE ---------------- */
 
-function detectHeaderRow(records) {
+function normalize(value){
 
-  const max =
-    Math.min(
-      records.length,
-      15
-    );
+  return String(value ?? "")
+    .toLowerCase()
+    .trim();
+}
 
+function compact(value){
 
-  let bestIndex = 0;
-
-  let bestScore = -1;
+  return normalize(value)
+    .replace(/[\s\-\/]/g,"");
+}
 
 
-  for (
-    let i = 0;
-    i < max;
-    i++
-  ) {
+/* ---------------- HEADER DETECTION ---------------- */
 
-    const current =
-      records[i] || [];
+function findHeaderRow(data){
 
+  let best = 0;
+  let bestScore = 0;
 
-    const score =
-      current.filter(
-        cell =>
-          normalize(cell).length > 0
-      ).length;
+  const keywords = [
+    "place of damage",
+    "complain number",
+    "complaint number",
+    "pr no",
+    "pr date",
+    "date of damage",
+    "capacity",
+    "did no",
+    "je name"
+  ];
 
+  for(let i=0;i<Math.min(data.length,20);i++){
 
-    if (
-      score > bestScore
-    ) {
+    const line = data[i]
+      .map(x => normalize(x))
+      .join(" | ");
 
+    let score = 0;
+
+    keywords.forEach(k=>{
+      if(line.includes(k)) score++;
+    });
+
+    if(score > bestScore){
       bestScore = score;
-
-      bestIndex = i;
-
+      best = i;
     }
-
   }
 
-
-  return bestIndex;
-
+  return best;
 }
 
 
-// =====================================================
-// CLEAN DATA
-// =====================================================
+/* ---------------- LOAD SHEET ---------------- */
 
-function cleanData(records) {
+async function loadSheet(){
 
-  const headerIndex =
-    detectHeaderRow(records);
+  statusBox.textContent = "Loading PR SEARCH...";
+  statusBox.className = "sub";
 
+  try{
 
-  const headerRow =
-    (
-      records[headerIndex] || []
-    ).map(
-      (header, index) => {
+    const controller = new AbortController();
 
-        const text =
-          String(
-            header ?? ""
-          ).trim();
+    const timeout = setTimeout(()=>{
+      controller.abort();
+    },15000);
 
-
-        return text
-          ? text
-          : `Column ${index + 1}`;
-
-      }
-    );
-
-
-  const data =
-    records
-      .slice(headerIndex + 1)
-      .map(
-        row =>
-          row.map(
-            cell =>
-              String(cell ?? "")
-          )
-      )
-      .filter(
-        row =>
-          row.some(
-            cell =>
-              normalize(cell)
-          )
-      );
-
-
-  return {
-
-    headers: headerRow,
-
-    rows: data
-
-  };
-
-}
-
-
-// =====================================================
-// FETCH ONLY PR SEARCH SHEET
-// =====================================================
-
-async function fetchSheet() {
-
-  const url =
-    CSV_URL +
-    "&_=" +
-    Date.now();
-
-
-  const response =
-    await fetch(
-      url,
+    const response = await fetch(
+      CSV_URL + "&t=" + Date.now(),
       {
-        cache: "no-store"
+        cache:"no-store",
+        signal:controller.signal
       }
     );
 
+    clearTimeout(timeout);
 
-  if (!response.ok) {
-
-    throw new Error(
-      `PR SEARCH fetch failed: ${response.status}`
-    );
-
-  }
-
-
-  const text =
-    await response.text();
-
-
-  if (
-    !text.trim()
-  ) {
-
-    throw new Error(
-      "PR SEARCH sheet returned no data."
-    );
-
-  }
-
-
-  return text;
-
-}
-
-
-// =====================================================
-// LOAD DATA INTO MEMORY
-//
-// IMPORTANT:
-// It loads the sheet,
-// BUT DOES NOT DISPLAY RECORDS.
-// =====================================================
-
-async function preloadSheet() {
-
-  if (
-    loading ||
-    sheetLoaded
-  ) {
-
-    return;
-
-  }
-
-
-  loading = true;
-
-  showError("");
-
-  setSubtitle(
-    "Loading PR Search…"
-  );
-
-
-  try {
-
-    const csvText =
-      await fetchSheet();
-
-
-    const records =
-      parseCSV(csvText);
-
-
-    if (
-      !records.length
-    ) {
-
-      throw new Error(
-        "No records received."
-      );
-
+    if(!response.ok){
+      throw new Error("Google Sheet could not be loaded.");
     }
 
+    const text = await response.text();
 
-    const cleaned =
-      cleanData(records);
+    if(!text || text.length < 50){
+      throw new Error("No data received from Google Sheet.");
+    }
 
+    const data = parseCSV(text);
 
-    headers =
-      cleaned.headers;
+    if(!data.length){
+      throw new Error("PR SEARCH is empty.");
+    }
 
-    rows =
-      cleaned.rows;
+    const headerIndex = findHeaderRow(data);
 
+    headers = data[headerIndex].map((h,i)=>{
+      const value = String(h || "").trim();
+      return value || `Column ${i+1}`;
+    });
 
-    sheetLoaded =
-      true;
+    rows = data
+      .slice(headerIndex + 1)
+      .filter(row =>
+        row.some(cell => String(cell ?? "").trim() !== "")
+      );
 
+    ready = true;
 
-    // IMPORTANT:
-    // Do not show full data.
+    statusBox.textContent =
+      `${rows.length.toLocaleString()} records • Ready`;
 
-    filtered = [];
-
-    offset = 0;
-
-
-    mobileResults.innerHTML = "";
-
-    tbody.innerHTML = "";
-
-    thead.innerHTML = "";
-
-
-    tableWrap.style.display =
-      "none";
-
-
-    pager.style.display =
-      "none";
-
-
-    resultsSummary.textContent =
+    message.textContent =
       "Enter PR / Complaint Number to search.";
 
-
-    setSubtitle(
-      `${rows.length.toLocaleString()} records • Ready`
-    );
-
-  }
-
-  catch (error) {
+  }catch(error){
 
     console.error(error);
 
+    statusBox.textContent = "Unable to load PR SEARCH";
+    statusBox.className = "sub error";
 
-    showError(
-      error instanceof Error
-        ? error.message
-        : String(error)
-    );
-
-
-    setSubtitle(
-      "Failed to load PR Search"
-    );
-
+    message.innerHTML =
+      `<span class="error">
+        ${error.name === "AbortError"
+          ? "Loading timed out. Please check Google Sheet access."
+          : escapeHTML(error.message)}
+      </span>`;
   }
-
-  finally {
-
-    loading = false;
-
-  }
-
 }
 
 
-// =====================================================
-// PARSE DATE
-// =====================================================
+/* ---------------- HEADER FINDER ---------------- */
 
-function parsePossibleDate(value) {
+function findColumn(possibleNames){
 
-  const text =
-    String(value ?? "")
-      .trim();
+  for(const name of possibleNames){
 
+    const wanted = normalize(name);
 
-  if (!text) {
-
-    return null;
-
-  }
-
-
-  // DD.MM.YYYY
-
-  let match =
-    text.match(
-      /^(\d{1,2})\.(\d{1,2})\.(\d{4})/
+    const index = headers.findIndex(h =>
+      normalize(h) === wanted
     );
 
-
-  if (match) {
-
-    return new Date(
-      Number(match[3]),
-      Number(match[2]) - 1,
-      Number(match[1])
-    ).getTime();
-
+    if(index !== -1) return index;
   }
 
-
-  // DD/MM/YYYY
-
-  match =
-    text.match(
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[3]),
-      Number(match[2]) - 1,
-      Number(match[1])
-    ).getTime();
-
-  }
-
-
-  // DD-MM-YYYY
-
-  match =
-    text.match(
-      /^(\d{1,2})-(\d{1,2})-(\d{4})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[3]),
-      Number(match[2]) - 1,
-      Number(match[1])
-    ).getTime();
-
-  }
-
-
-  // YYYY-MM-DD
-
-  match =
-    text.match(
-      /^(\d{4})-(\d{1,2})-(\d{1,2})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[1]),
-      Number(match[2]) - 1,
-      Number(match[3])
-    ).getTime();
-
-  }
-
-
-  const parsed =
-    Date.parse(text);
-
-
-  return Number.isNaN(parsed)
-    ? null
-    : parsed;
-
+  return -1;
 }
 
 
-// =====================================================
-// ORDINAL
-// =====================================================
+/* ---------------- SEARCH ---------------- */
 
-function getOrdinal(number) {
+function doSearch(){
 
-  const names = {
+  if(!ready){
 
-    1: "First",
+    message.innerHTML =
+      `<span class="loading">Please wait. PR SEARCH is loading...</span>`;
 
-    2: "Second",
-
-    3: "Third",
-
-    4: "Fourth",
-
-    5: "Fifth",
-
-    6: "Sixth",
-
-    7: "Seventh",
-
-    8: "Eighth",
-
-    9: "Ninth",
-
-    10: "Tenth",
-
-    11: "Eleventh",
-
-    12: "Twelfth",
-
-    13: "Thirteenth",
-
-    14: "Fourteenth",
-
-    15: "Fifteenth",
-
-    16: "Sixteenth",
-
-    17: "Seventeenth",
-
-    18: "Eighteenth",
-
-    19: "Nineteenth",
-
-    20: "Twentieth"
-
-  };
-
-
-  return (
-    names[number] ||
-    `${number}th`
-  );
-
-}
-
-
-// =====================================================
-// HTML ESCAPE
-// =====================================================
-
-function escapeHtml(value) {
-
-  return String(value ?? "")
-
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-
-}
-
-
-// =====================================================
-// REPEATED DAMAGE
-//
-// EXACTLY:
-// H = PLACE OF DAMAGE
-// M = PR NO
-// N = PR DATE
-// =====================================================
-
-function getRepeatedDamage(row) {
-
-  const currentPlace =
-    normalize(
-      row[COL.PLACE_DAMAGE]
-    );
-
-
-  if (
-    !currentPlace
-  ) {
-
-    return {
-
-      type: "unknown",
-
-      count: 0,
-
-      history: []
-
-    };
-
+    return;
   }
 
+  const query = input.value.trim();
 
-  const history = [];
+  if(!query){
 
+    results.innerHTML = "";
 
-  rows.forEach(
-    (otherRow, index) => {
-
-      const otherPlace =
-        normalize(
-          otherRow[
-            COL.PLACE_DAMAGE
-          ]
-        );
-
-
-      if (
-        otherPlace ===
-        currentPlace
-      ) {
-
-        history.push({
-
-          rowIndex: index,
-
-          prNumber:
-            String(
-              otherRow[
-                COL.PR_NO
-              ] ?? ""
-            ).trim(),
-
-          prDate:
-            String(
-              otherRow[
-                COL.PR_DATE
-              ] ?? ""
-            ).trim(),
-
-          damageDate:
-            String(
-              otherRow[
-                COL.DATE_DAMAGE
-              ] ?? ""
-            ).trim()
-
-        });
-
-      }
-
-    }
-  );
-
-
-  // Oldest first
-
-  history.sort(
-    (a, b) => {
-
-      const da =
-        parsePossibleDate(
-          a.prDate
-        );
-
-
-      const db =
-        parsePossibleDate(
-          b.prDate
-        );
-
-
-      if (
-        da !== null &&
-        db !== null
-      ) {
-
-        return da - db;
-
-      }
-
-
-      return (
-        a.rowIndex -
-        b.rowIndex
-      );
-
-    }
-  );
-
-
-  return {
-
-    type:
-      history.length >= 2
-        ? "repeated"
-        : "notRepeated",
-
-    count:
-      history.length,
-
-    history
-
-  };
-
-}
-
-
-// =====================================================
-// CREATE STATUS
-// =====================================================
-
-function createStatus(row) {
-
-  const box =
-    document.createElement("div");
-
-
-  // ===================================================
-  // REPLACEMENT DATE
-  // U
-  // ===================================================
-
-  const replacementDate =
-    String(
-      row[
-        COL.REPLACEMENT_DATE
-      ] ?? ""
-    ).trim();
-
-
-  // ===================================================
-  // ISSUE DATE
-  // R
-  // ===================================================
-
-  const issueDate =
-    String(
-      row[
-        COL.ISSUE_DATE
-      ] ?? ""
-    ).trim();
-
-
-  // ===================================================
-  // INSTALLED
-  // ===================================================
-
-  if (
-    replacementDate
-  ) {
-
-    const status =
-      document.createElement("div");
-
-
-    status.className =
-      "status installed";
-
-
-    status.innerHTML =
-      `
-      🎉 Congratulations!<br>
-      Your Transformer is installed.
-      <div style="
-        margin-top:6px;
-        font-size:13px;
-        font-weight:500;
-      ">
-        Replacement Date: ${escapeHtml(
-          replacementDate
-        )}
-      </div>
-      `;
-
-
-    box.appendChild(status);
-
-  }
-
-
-  // ===================================================
-  // ISSUED
-  // ===================================================
-
-  else if (
-    issueDate
-  ) {
-
-    const driver =
-      String(
-        row[
-          COL.DRIVER_NAME
-        ] ?? ""
-      ).trim();
-
-
-    const mobile =
-      String(
-        row[
-          COL.DRIVER_MOBILE
-        ] ?? ""
-      ).trim();
-
-
-    const status =
-      document.createElement("div");
-
-
-    status.className =
-      "status issued";
-
-
-    status.innerHTML =
-      `
-      ⚡ Your Transformer is issued by Workshop.
-      <br>
-      Please Contact Driver for Installation.
-
-      <div style="
-        margin-top:8px;
-        font-size:13px;
-        font-weight:500;
-      ">
-
-        Issue Date:
-        ${escapeHtml(issueDate)}
-
-        ${
-          driver
-            ? `<br>Driver:
-               ${escapeHtml(driver)}`
-            : ""
-        }
-
-        ${
-          mobile
-            ? `<br>Mobile:
-               ${escapeHtml(mobile)}`
-            : ""
-        }
-
-      </div>
-      `;
-
-
-    box.appendChild(status);
-
-  }
-
-
-  // ===================================================
-  // REPEATED DAMAGE
-  // ===================================================
-
-  const repeated =
-    getRepeatedDamage(row);
-
-
-  if (
-    repeated.type ===
-    "notRepeated"
-  ) {
-
-    const status =
-      document.createElement("div");
-
-
-    status.className =
-      "status notRepeated";
-
-
-    status.textContent =
-      "✅ Not a repeated damage";
-
-
-    box.appendChild(status);
-
-  }
-
-
-  else if (
-    repeated.type ===
-    "repeated"
-  ) {
-
-    const status =
-      document.createElement("div");
-
-
-    status.className =
-      "status repeated";
-
-
-    const heading =
-      document.createElement("div");
-
-
-    heading.innerHTML =
-      `
-      ⚠️ Repeated Damage –
-      ${repeated.count} Times
-      `;
-
-
-    heading.style.fontSize =
-      "17px";
-
-
-    heading.style.fontWeight =
-      "800";
-
-
-    heading.style.marginBottom =
-      "7px";
-
-
-    status.appendChild(
-      heading
-    );
-
-
-    const warning =
-      document.createElement("div");
-
-
-    warning.textContent =
-      "Please Ensure Increasing Capacity if Overloaded.";
-
-
-    warning.style.marginBottom =
-      "10px";
-
-
-    warning.style.fontWeight =
-      "600";
-
-
-    status.appendChild(
-      warning
-    );
-
-
-    // -----------------------------------------------
-    // HISTORY
-    // -----------------------------------------------
-
-    repeated.history.forEach(
-      (item, index) => {
-
-        const history =
-          document.createElement("div");
-
-
-        history.style.padding =
-          "8px 0";
-
-
-        history.style.borderTop =
-          "1px solid rgba(138,76,0,.20)";
-
-
-        const ordinal =
-          getOrdinal(
-            index + 1
-          );
-
-
-        history.innerHTML =
-          `
-          <strong>
-            ${ordinal} Time
-          </strong>
-          <br>
-          PR No:
-          ${escapeHtml(
-            item.prNumber ||
-            "Not available"
-          )}
-          <br>
-          PR Date:
-          ${escapeHtml(
-            item.prDate ||
-            "Not available"
-          )}
-          `;
-
-
-        status.appendChild(
-          history
-        );
-
-      }
-    );
-
-
-    box.appendChild(status);
-
-  }
-
-
-  return box;
-
-}
-
-
-// =====================================================
-// SEARCH ALL COLUMNS
-// =====================================================
-
-function searchData() {
-
-  const query =
-    normalize(
-      qInput.value
-    );
-
-
-  // ---------------------------------------------------
-  // EMPTY SEARCH
-  // ---------------------------------------------------
-
-  if (
-    !query
-  ) {
-
-    filtered = [];
-
-    offset = 0;
-
-
-    mobileResults.innerHTML = "";
-
-    tbody.innerHTML = "";
-
-    thead.innerHTML = "";
-
-
-    tableWrap.style.display =
-      "none";
-
-
-    pager.style.display =
-      "none";
-
-
-    resultsSummary.textContent =
+    message.textContent =
       "Enter PR / Complaint Number to search.";
 
-
     return;
-
   }
 
+  const q = compact(query);
 
-  // ---------------------------------------------------
-  // WAIT FOR SHEET
-  // ---------------------------------------------------
+  const matches = rows.filter(row => {
 
-  if (
-    !sheetLoaded
-  ) {
-
-    resultsSummary.textContent =
-      "Please wait — PR Search is loading…";
-
-
-    return;
-
-  }
-
-
-  // ---------------------------------------------------
-  // SEARCH EVERY COLUMN
-  // ---------------------------------------------------
-
-  filtered =
-    rows.filter(
-      row =>
-        row.some(
-          cell =>
-            normalize(
-              cell
-            ).includes(
-              query
-            )
-        )
+    return row.some(cell =>
+      compact(cell).includes(q)
     );
 
+  });
 
-  offset = 0;
-
-
-  renderResults();
-
+  renderResults(matches);
 }
 
 
-// =====================================================
-// MOBILE CARDS
-// =====================================================
+/* ---------------- REPEATED DAMAGE ---------------- */
 
-function renderMobile(page) {
+function getRepeatedHistory(currentRow){
 
-  mobileResults.innerHTML = "";
+  const placeIndex = findColumn([
+    "PLACE OF DAMAGE",
+    "Place of Damage"
+  ]);
 
+  if(placeIndex === -1){
+    return [];
+  }
 
-  page.forEach(
-    (row, pageIndex) => {
+  const place = compact(currentRow[placeIndex]);
 
-      const card =
-        document.createElement("div");
+  if(!place){
+    return [];
+  }
 
-
-      card.className =
-        "dataCard";
-
-
-      // -----------------------------------------------
-      // STATUS
-      // -----------------------------------------------
-
-      const status =
-        createStatus(row);
-
-
-      if (
-        status.children.length
-      ) {
-
-        card.appendChild(
-          status
-        );
-
-      }
-
-
-      // -----------------------------------------------
-      // TITLE
-      // -----------------------------------------------
-
-      const title =
-        document.createElement("div");
-
-
-      title.className =
-        "cardTitle";
-
-
-      title.textContent =
-        `Transformer Record ${
-          offset +
-          pageIndex +
-          1
-        }`;
-
-
-      card.appendChild(
-        title
-      );
-
-
-      // -----------------------------------------------
-      // DISPLAY DATA
-      // -----------------------------------------------
-
-      headers.forEach(
-        (
-          header,
-          index
-        ) => {
-
-          const value =
-            row[index] ?? "";
-
-
-          if (
-            !String(value).trim()
-          ) {
-
-            return;
-
-          }
-
-
-          const item =
-            document.createElement("div");
-
-
-          item.className =
-            "dataItem";
-
-
-          const label =
-            document.createElement("span");
-
-
-          label.className =
-            "dataLabel";
-
-
-          label.textContent =
-            header;
-
-
-          const valueElement =
-            document.createElement("span");
-
-
-          valueElement.className =
-            "dataValue";
-
-
-          valueElement.textContent =
-            value;
-
-
-          item.appendChild(
-            label
-          );
-
-
-          item.appendChild(
-            valueElement
-          );
-
-
-          card.appendChild(
-            item
-          );
-
-        }
-      );
-
-
-      mobileResults.appendChild(
-        card
-      );
-
-    }
+  const samePlace = rows.filter(row =>
+    compact(row[placeIndex]) === place
   );
 
+  if(samePlace.length <= 1){
+    return samePlace;
+  }
+
+  const dateIndex = findColumn([
+    "PR DATE",
+    "PR Date",
+    "DATE OF DAMAGE",
+    "Date of Damage"
+  ]);
+
+  samePlace.sort((a,b)=>{
+
+    const da = dateIndex >= 0
+      ? new Date(a[dateIndex] || 0).getTime()
+      : 0;
+
+    const db = dateIndex >= 0
+      ? new Date(b[dateIndex] || 0).getTime()
+      : 0;
+
+    return da - db;
+  });
+
+  return samePlace;
 }
 
 
-// =====================================================
-// DESKTOP TABLE
-// ================
+/* ---------------- STATUS ---------------- */
+
+function getStatus(row){
+
+  const replacementIndex = findColumn([
+    "REPLACEMENT DATE",
+    "Replacement Date"
+  ]);
+
+  const issueIndex = findColumn([
+    "ISSUE DATE",
+    "Issue Date"
+  ]);
+
+  const driverIndex = findColumn([
+    "DRIVER NAME",
+    "Driver Name"
+  ]);
+
+  const mobileIndex = findColumn([
+    "DRIVER MOBILE",
+    "Driver Mobile"
+  ]);
+
+  const replacement =
+    replacementIndex >= 0
+      ? String(row[replacementIndex] || "").trim()
+      : "";
+
+  const issue =
+    issueIndex >= 0
+      ? String(row[issueIndex] || "").trim()
+      : "";
+
+  const driver =
+    driverIndex >= 0
+      ? String(row[driverIndex] || "").trim()
+      : "";
+
+  const mobile =
+    mobileIndex >= 0
+      ? String(row[mobileIndex] || "").trim()
+      : "";
+
+  if(replacement){
+
+    return {
+      type:"installed",
+      title:"🎉 Congratulations! Your Transformer is installed.",
+      detail:`Replacement Date: ${replacement}`
+    };
+  }
+
+  if(issue){
+
+    return {
+      type:"issued",
+      title:"⚡ Your Transformer is issued by Workshop.",
+      detail:
+        `Issue Date: ${issue}` +
+        (driver ? `<br>Driver: ${escapeHTML(driver)}` : "") +
+        (mobile ? `<br>Mobile: ${escapeHTML(mobile)}` : "") +
+        `<br><b>Please contact Driver for Installation.</b>`
+    };
+  }
+
+  return {
+    type:"pending",
+    title:"Transformer replacement pending.",
+    detail:"No Issue Date / Replacement Date found."
+  };
+}
+
+
+/* ---------------- RENDER ---------------- */
+
+function renderResults(matches){
+
+  results.innerHTML = "";
+
+  if(!matches.length){
+
+    message.innerHTML =
+      `<b>No record found.</b><br>
+       <span class="small">Try PR Number, Complaint Number, DID No or another value.</span>`;
+
+    return;
+  }
+
+  message.textContent =
+    `${matches.length} matching record${matches.length > 1 ? "s" : ""} found`;
+
+  matches.slice(0,50).forEach(row=>{
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const prIndex = findColumn([
+      "PR NO",
+      "PR No",
+      "PR NUMBER"
+    ]);
+
+    const prDateIndex = findColumn([
+      "PR DATE",
+      "PR Date"
+    ]);
+
+    const placeIndex = findColumn([
+      "PLACE OF DAMAGE",
+      "Place of Damage"
+    ]);
+
+    const capacityIndex = findColumn([
+      "CAPACITY",
+      "CAPACITY IN KVA"
+    ]);
+
+    const complaintIndex = findColumn([
+      "COMPLAIN NUMBER",
+      "COMPLAINT NUMBER",
+      "COMPLAINT NO"
+    ]);
+
+    const damageDateIndex = findColumn([
+      "DATE OF DAMAGE",
+      "Date of Damage"
+    ]);
+
+    const prNo = prIndex >= 0 ? row[prIndex] : "";
+    const prDate = prDateIndex >= 0 ? row[prDateIndex] : "";
+
+    const history = getRepeatedHistory(row);
+    const repeated = history.length > 1;
+
+    const status = getStatus(row);
+
+    let html = `
+      <div class="cardHead">
+
+        <div>
+          <div class="pr">
+            PR No: ${escapeHTML(prNo || "—")}
+          </div>
+
+          <div class="small">
+            PR Date: ${escapeHTML(prDate || "—")}
+          </div>
+        </div>
+
+        <div class="badge ${status.type}">
+          ${status.type === "installed"
+            ? "INSTALLED"
+            : status.type === "issued"
+              ? "ISSUED"
+              : "PENDING"}
+        </div>
+
+      </div>
+    `;
+
+    if(status.type === "installed"){
+
+      html += `
+        <div class="alert ok">
+          ${status.title}<br>
+          ${status.detail}
+        </div>
+      `;
+
+    }else if(status.type === "issued"){
+
+      html += `
+        <div class="alert issue">
+          ${status.title}<br>
+          ${status.detail}
+        </div>
+      `;
+
+    }else{
+
+      html += `
+        <div class="alert">
+          ${status.title}<br>
+          ${status.detail}
+        </div>
+      `;
+    }
+
+
+    if(repeated){
+
+      html += `
+        <div class="alert">
+          ⚠️ It Damaged ${history.length} Times.<br>
+          Please Ensure Increasing Capacity if Overloaded.
+        </div>
+
+        <div class="history">
+
+          <div class="historyTitle">
+            Repeated Damage History
+          </div>
+      `;
+
+      history.forEach((item,index)=>{
+
+        const itemPr =
+          prIndex >= 0 ? item[prIndex] : "";
+
+        const itemDate =
+          prDateIndex >= 0
+            ? item[prDateIndex]
+            : damageDateIndex >= 0
+              ? item[damageDateIndex]
+              : "";
+
+        html += `
+          <div class="historyRow">
+            <b>${ordinal(index+1)} Time</b>
+            — PR No: ${escapeHTML(itemPr || "—")}
+            <br>
+            <span class="small">
+              Date: ${escapeHTML(itemDate || "—")}
+            </span>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+
+    }else{
+
+      html += `
+        <div class="alert ok">
+          ✓ Not a repeated damage
+        </div>
+      `;
+    }
+
+
+    html += `<div class="infoGrid">`;
+
+    const important = [
+      ["DATE OF DAMAGE",["DATE OF DAMAGE","Date of Damage"]],
+      ["PLACE OF DAMAGE",["PLACE OF DAMAGE","Place of Damage"]],
+      ["DID NO",["DID NO","DID NO."]],
+      ["CAPACITY",["CAPACITY","CAPACITY IN KVA"]],
+      ["COMPLAINT NUMBER",["COMPLAIN NUMBER","COMPLAINT NUMBER"]],
+      ["COMPLAINT DATE",["COMPLAIN DATE","COMPLAINT DATE"]],
+      ["JE NAME",["JE Name","JE NAME"]],
+      ["JE MOBILE",["JE Mobile","JE MOBILE"]],
+      ["ISSUED TO FIRM",["ISSUED TO FIRM"]],
+      ["ISSUE DATE",["ISSUE DATE","Issue Date"]],
+      ["DRIVER NAME",["DRIVER NAME","Driver Name"]],
+      ["DRIVER MOBILE",["DRIVER MOBILE","Driver Mobile"]],
+      ["REPLACEMENT DATE",["REPLACEMENT DATE","Replacement Date"]],
+      ["TIME",["TIME"]],
+      ["TX RETURN DATE",["TX Return Date","TX RETURN DATE"]],
+      ["OBSERVATION DTC",["OBSERVATION DTC"]]
+    ];
+
+    important.forEach(item=>{
+
+      const label = item[0];
+      const index = findColumn(item[1]);
+
+      if(index >= 0){
+
+        const value = String(row[index] ?? "").trim();
+
+        if(value){
+
+          html += `
+            <div class="item ${label === "PLACE OF DAMAGE" ? "full" : ""}">
+              <div class="label">${label}</div>
+              <div class="value">${escapeHTML(value)}</div>
+            </div>
+          `;
+        }
+      }
+    });
+
+    html += `</div>`;
+
+    card.innerHTML = html;
+
+    results.appendChild(card);
+  });
+
+  if(matches.length > 50){
+
+    const more = document.createElement("div");
+
+    more.className = "message";
+
+    more.textContent =
+      "Showing first 50 matching records.";
+
+    results.appendChild(more);
+  }
+}
+
+
+/* ---------------- HELPERS ---------------- */
+
+function ordinal(n){
+
+  if(n === 1) return "First";
+  if(n === 2) return "Second";
+  if(n === 3) return "Third";
+
+  return n + "th";
+}
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+
+/* ---------------- EVENTS ---------------- */
+
+button.addEventListener("click",doSearch);
+
+input.addEventListener("keydown",e=>{
+
+  if(e.key === "Enter"){
+    doSearch();
+  }
+
+});
+
+let timer;
+
+input.addEventListener("input",()=>{
+
+  clearTimeout(timer);
+
+  timer = setTimeout(()=>{
+
+    if(input.value.trim()){
+      doSearch();
+    }
+
+  },180);
+
+});
+
+
+/* ---------------- START ---------------- */
+
+loadSheet();

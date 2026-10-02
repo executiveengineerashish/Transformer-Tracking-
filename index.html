@@ -1,7 +1,9 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
@@ -9,24 +11,38 @@
 
   <meta name="theme-color" content="#f57c00" />
 
-  <title>Transformer Tracking</title>
+  <title>PR Search</title>
 
   <link rel="stylesheet" href="./style.css" />
 </head>
+
 
 <body>
 
   <div class="app">
 
-    <!-- HEADER -->
+    <!-- =========================
+         HEADER
+         ========================= -->
+
     <header class="topbar">
 
       <div class="title">
-        <h1>Transformer Tracking</h1>
-        <p class="subtitle" id="subtitle">Loading…</p>
+
+        <h1>PR Search</h1>
+
+        <p
+          class="subtitle"
+          id="subtitle"
+        >
+          Loading PR Search…
+        </p>
+
       </div>
 
+
       <div class="topActions">
+
         <button
           class="secondary refreshIcon"
           id="refreshBtn"
@@ -35,12 +51,16 @@
         >
           ↻
         </button>
+
       </div>
 
     </header>
 
 
-    <!-- SEARCH -->
+    <!-- =========================
+         SEARCH
+         ========================= -->
+
     <section class="panel searchPanel">
 
       <label class="field">
@@ -48,6 +68,7 @@
         <span class="label">
           PR / Complaint Number
         </span>
+
 
         <input
           id="q"
@@ -58,6 +79,7 @@
         />
 
       </label>
+
 
       <button
         class="primary searchBtn"
@@ -70,7 +92,10 @@
     </section>
 
 
-    <!-- RESULTS -->
+    <!-- =========================
+         RESULTS
+         ========================= -->
+
     <section class="results">
 
       <div class="resultsTop">
@@ -82,6 +107,7 @@
           Loading data…
         </div>
 
+
         <div class="pager">
 
           <button
@@ -92,6 +118,7 @@
           >
             Prev
           </button>
+
 
           <button
             class="secondary"
@@ -107,7 +134,20 @@
       </div>
 
 
-      <!-- Desktop/tablet table -->
+      <!-- =========================
+           MOBILE RESULTS
+           ========================= -->
+
+      <div
+        class="mobileResults"
+        id="mobileResults"
+      ></div>
+
+
+      <!-- =========================
+           DESKTOP RESULTS
+           ========================= -->
+
       <div
         class="tableWrap"
         id="tableWrap"
@@ -124,17 +164,11 @@
 
       </div>
 
-
-      <!-- Mobile portrait cards -->
-      <div
-        class="mobileResults"
-        id="mobileResults"
-      ></div>
-
     </section>
 
 
     <!-- ERROR -->
+
     <div
       class="error"
       id="error"
@@ -144,7 +178,11 @@
   </div>
 
 
-  <script type="module" src="./app.js"></script>
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
 
 </body>
+
 </html>

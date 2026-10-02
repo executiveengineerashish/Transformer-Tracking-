@@ -1,857 +1,493 @@
-/* =========================================================
-   TRANSFORMER TRACKING
-   MOBILE PORTRAIT DESIGN
-========================================================= */
-
-
-/* =========================================================
-   RESET
-========================================================= */
-
 * {
   box-sizing: border-box;
 }
 
-
 html,
 body {
-
   margin: 0;
-
   padding: 0;
-
-  min-height: 100%;
-
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f4f6;
+  color: #222;
 }
-
 
 body {
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  background:
-    #f4f5f7;
-
-  color:
-    #202124;
-
+  min-height: 100vh;
 }
 
 
-/* =========================================================
-   HEADER
-========================================================= */
+/* HEADER */
 
 .top-header {
-
-  width: 100%;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ff4b00,
-      #f21e00
-    );
-
+  background: linear-gradient(135deg, #ff4b00, #ff0800);
   color: white;
 
-  padding:
-    15px 14px;
-
-  box-shadow:
-    0 3px 12px
-    rgba(0,0,0,0.18);
-
-  position: sticky;
-
-  top: 0;
-
-  z-index: 100;
-
-}
-
-
-.header-left {
-
-  max-width: 620px;
-
-  margin: auto;
+  padding: 22px 18px 24px;
 
   display: flex;
-
   align-items: center;
+  gap: 14px;
 
-  gap: 12px;
-
+  box-shadow: 0 3px 12px rgba(0,0,0,.18);
 }
-
 
 .header-icon {
+  width: 64px;
+  height: 64px;
 
-  width: 44px;
+  border-radius: 17px;
 
-  height: 44px;
+  background: rgba(255,255,255,.18);
 
-  flex-shrink: 0;
-
-  border-radius: 12px;
-
-  background:
-    rgba(255,255,255,0.18);
-
-  border:
-    1px solid
-    rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,.35);
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
-  font-size: 25px;
-
+  font-size: 37px;
 }
-
 
 .top-header h1 {
-
   margin: 0;
 
-  font-size: 21px;
-
-  font-weight: 800;
-
+  font-size: 28px;
+  line-height: 1.1;
 }
-
 
 .header-subtitle {
-
-  margin-top: 3px;
-
-  font-size: 12px;
-
-  opacity: 0.92;
-
+  margin-top: 6px;
+  font-size: 16px;
+  opacity: .95;
 }
 
 
-/* =========================================================
-   MAIN
-========================================================= */
+/* MAIN */
 
 .main-container {
-
-  width: 100%;
-
-  max-width: 620px;
-
-  margin:
-    0 auto;
-
-  padding:
-    12px 10px 30px;
-
+  max-width: 760px;
+  margin: 22px auto;
+  padding: 0 14px 40px;
 }
 
 
-/* =========================================================
-   SEARCH CARD
-========================================================= */
+/* SEARCH */
 
 .search-card {
+  background: white;
 
-  background:
-    #ffffff;
+  border-radius: 25px;
 
-  border-radius:
-    17px;
+  padding: 22px;
 
-  padding:
-    14px;
-
-  box-shadow:
-    0 3px 13px
-    rgba(0,0,0,0.09);
-
-  border:
-    1px solid #eeeeee;
-
+  box-shadow: 0 8px 25px rgba(0,0,0,.10);
 }
-
 
 .search-label {
-
   display: block;
 
-  font-size: 13px;
+  font-size: 22px;
+  font-weight: 700;
 
-  font-weight: 800;
-
-  color:
-    #3d3d3d;
-
-  margin-bottom:
-    8px;
-
+  margin-bottom: 14px;
 }
-
 
 .search-row {
-
-  display:
-    flex;
-
-  width: 100%;
-
-  gap: 8px;
-
+  display: flex;
+  gap: 12px;
 }
 
-
 #searchInput {
-
   flex: 1;
 
   min-width: 0;
 
-  height: 48px;
+  height: 80px;
 
-  border:
-    2px solid #ff6500;
+  border: 3px solid #ff7200;
 
-  border-radius:
-    11px;
+  border-radius: 19px;
 
-  padding:
-    0 12px;
+  padding: 0 20px;
+
+  font-size: 25px;
 
   outline: none;
 
-  background:
-    white;
-
-  color:
-    #222;
-
-  font-size:
-    16px;
-
-  font-weight:
-    600;
-
+  background: white;
 }
-
 
 #searchInput:focus {
-
-  border-color:
-    #ed3600;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(255,75,0,0.10);
-
+  border-color: #ff3b00;
+  box-shadow: 0 0 0 3px rgba(255,90,0,.12);
 }
-
 
 #searchBtn {
+  width: 155px;
 
-  width:
-    104px;
+  border: 0;
 
-  height:
-    48px;
+  border-radius: 19px;
 
-  flex-shrink: 0;
+  background: linear-gradient(135deg,#ff5b00,#ff0800);
 
-  border: none;
+  color: white;
 
-  border-radius:
-    11px;
+  font-size: 20px;
+  font-weight: 800;
 
-  background:
-    linear-gradient(
-      135deg,
-      #ff5200,
-      #ed2600
-    );
+  box-shadow: 0 6px 14px rgba(255,50,0,.25);
 
-  color:
-    white;
-
-  font-size:
-    13px;
-
-  font-weight:
-    900;
-
-  cursor:
-    pointer;
-
-  box-shadow:
-    0 3px 8px
-    rgba(235,55,0,0.25);
-
+  cursor: pointer;
 }
-
 
 #searchBtn:active {
-
-  transform:
-    scale(0.98);
-
+  transform: scale(.97);
 }
 
 
-/* =========================================================
-   SEARCH STATUS
-========================================================= */
+/* STATUS */
 
 .search-status {
+  margin-top: 16px;
 
-  margin-top:
-    10px;
+  padding: 15px;
 
-  padding:
-    9px 10px;
+  border-radius: 15px;
 
-  border-radius:
-    9px;
+  text-align: center;
 
-  text-align:
-    center;
-
-  font-size:
-    12px;
-
-  font-weight:
-    800;
-
+  font-size: 17px;
+  font-weight: 700;
 }
-
 
 .search-status.loading {
-
-  background:
-    #fff1e5;
-
-  color:
-    #984800;
-
+  background: #fff0e5;
+  color: #9b4b00;
 }
-
 
 .search-status.ready {
-
-  background:
-    #e8f8f1;
-
-  color:
-    #087443;
-
+  background: #eaf8ee;
+  color: #19733b;
 }
-
 
 .search-status.error {
-
-  background:
-    #ffeded;
-
-  color:
-    #a40000;
-
+  background: #ffe8e8;
+  color: #c40000;
 }
 
 
-/* =========================================================
-   RESULTS
-========================================================= */
+/* RESULTS */
 
 .results {
-
-  margin-top:
-    12px;
-
+  margin-top: 20px;
 }
 
 
-.empty-box {
-
-  background:
-    white;
-
-  border-radius:
-    14px;
-
-  padding:
-    22px 14px;
-
-  text-align:
-    center;
-
-  color:
-    #777;
-
-  font-size:
-    13px;
-
-  box-shadow:
-    0 2px 8px
-    rgba(0,0,0,0.06);
-
-}
-
-
-/* =========================================================
-   RESULT CARD
-========================================================= */
+/* CARD */
 
 .result-card {
+  background: white;
 
-  background:
-    white;
+  border-radius: 22px;
 
-  border-radius:
-    16px;
+  padding: 17px;
 
-  margin-bottom:
-    12px;
+  margin-bottom: 18px;
 
-  overflow:
-    hidden;
-
-  box-shadow:
-    0 3px 12px
-    rgba(0,0,0,0.08);
-
-  border:
-    1px solid #eeeeee;
-
+  box-shadow: 0 7px 22px rgba(0,0,0,.10);
 }
-
-
-.card-top {
-
-  padding:
-    10px 12px;
-
-  background:
-    #fff6f0;
-
-  border-bottom:
-    1px solid #f0e2da;
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    center;
-
-}
-
 
 .card-number {
+  font-size: 14px;
+  font-weight: 700;
 
-  font-size:
-    12px;
+  color: #777;
 
-  font-weight:
-    900;
+  margin-bottom: 12px;
+}
 
-  color:
-    #df3900;
+.card-number span {
+  float: right;
 
+  color: #999;
+
+  font-weight: 500;
 }
 
 
-/* =========================================================
-   DATA ROW
-========================================================= */
-
-.card-row {
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  padding:
-    9px 12px;
-
-  border-bottom:
-    1px solid #eeeeee;
-
-}
-
-
-.field-label {
-
-  font-size:
-    10px;
-
-  font-weight:
-    800;
-
-  color:
-    #777;
-
-  text-transform:
-    uppercase;
-
-  margin-bottom:
-    3px;
-
-  letter-spacing:
-    0.2px;
-
-}
-
-
-.field-value {
-
-  font-size:
-    14px;
-
-  font-weight:
-    700;
-
-  color:
-    #202124;
-
-  word-break:
-    break-word;
-
-}
-
-
-/* =========================================================
-   STATUS BOX
-========================================================= */
+/* STATUS BOX */
 
 .status-box {
+  border-radius: 17px;
 
-  margin:
-    10px 12px;
+  padding: 17px;
 
-  padding:
-    12px;
-
-  border-radius:
-    11px;
-
-  font-size:
-    13px;
-
-  font-weight:
-    800;
-
-  line-height:
-    1.5;
-
+  margin-bottom: 13px;
 }
 
+.status-title {
+  font-size: 18px;
+  font-weight: 800;
+
+  line-height: 1.35;
+}
+
+.status-detail {
+  margin-top: 6px;
+
+  font-size: 16px;
+  font-weight: 600;
+}
 
 .status-box.installed {
-
-  background:
-    #e8f8ef;
-
-  color:
-    #087443;
-
-  border:
-    1px solid #bce8cf;
-
+  background: #e8f8ee;
+  border-left: 6px solid #1c9a4b;
+  color: #176c37;
 }
-
 
 .status-box.issued {
-
-  background:
-    #fff3d7;
-
-  color:
-    #8c5500;
-
-  border:
-    1px solid #f0d28a;
-
+  background: #fff3df;
+  border-left: 6px solid #ff7a00;
+  color: #864400;
 }
-
 
 .status-box.pending {
-
-  background:
-    #ffeded;
-
-  color:
-    #a40000;
-
-  border:
-    1px solid #f1bebe;
-
+  background: #fff0ed;
+  border-left: 6px solid #ff3b00;
+  color: #9c2b00;
 }
 
 
-/* =========================================================
-   CALL DRIVER BUTTON
-========================================================= */
+/* DRIVER */
+
+.driver-info {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 14px;
+
+  font-size: 15px;
+}
+
+.driver-info > div {
+  background: rgba(255,255,255,.65);
+
+  border-radius: 10px;
+
+  padding: 9px;
+}
 
 .call-btn {
+  display: block;
 
-  display:
-    block;
+  text-align: center;
 
-  width:
-    100%;
+  margin-top: 13px;
 
-  margin-top:
-    10px;
+  padding: 14px;
 
-  padding:
-    10px 12px;
+  border-radius: 12px;
 
-  border-radius:
-    9px;
+  background: #20a84b;
 
-  background:
-    linear-gradient(
-      135deg,
-      #18a64b,
-      #07843a
-    );
+  color: white;
 
-  color:
-    white;
+  text-decoration: none;
 
-  text-align:
-    center;
-
-  text-decoration:
-    none;
-
-  font-size:
-    13px;
-
-  font-weight:
-    900;
-
-  box-shadow:
-    0 3px 7px
-    rgba(0,0,0,0.15);
-
+  font-size: 17px;
+  font-weight: 800;
 }
 
 
-.call-btn:active {
-
-  transform:
-    scale(0.98);
-
-}
-
-
-/* =========================================================
-   REPEATED DAMAGE
-========================================================= */
+/* REPEATED DAMAGE */
 
 .repeat-box {
+  border-radius: 17px;
 
-  margin:
-    10px 12px;
+  padding: 15px;
 
-  padding:
-    12px;
-
-  border-radius:
-    12px;
-
-  font-size:
-    13px;
-
+  margin-bottom: 14px;
 }
-
 
 .repeat-box.normal {
+  background: #f3f4f6;
 
-  background:
-    #eef7f1;
+  color: #555;
 
-  color:
-    #23613c;
+  text-align: center;
 
-  border:
-    1px solid #cde5d5;
-
-  font-weight:
-    700;
-
+  font-size: 16px;
 }
-
 
 .repeat-box.repeated {
+  background: #fff4df;
 
-  background:
-    #fff8e7;
-
-  border:
-    1px solid #efd28d;
-
-  color:
-    #704900;
-
+  border-left: 6px solid #ff7100;
 }
-
 
 .repeat-title {
+  font-size: 18px;
+  font-weight: 800;
 
-  font-size:
-    14px;
-
-  font-weight:
-    900;
-
-  color:
-    #8a5200;
-
+  color: #a33d00;
 }
-
 
 .repeat-warning {
+  margin-top: 5px;
 
-  margin-top:
-    5px;
+  font-size: 15px;
+  font-weight: 700;
 
-  font-size:
-    12px;
-
-  font-weight:
-    800;
-
-  color:
-    #b13d00;
-
+  color: #8b5100;
 }
-
-
-.repeat-history {
-
-  margin-top:
-    9px;
-
-}
-
 
 .repeat-row {
+  margin-top: 10px;
 
-  display:
-    grid;
+  padding: 10px;
 
-  grid-template-columns:
-    72px 1fr;
+  background: white;
 
-  gap:
-    6px;
+  border-radius: 10px;
 
-  padding:
-    7px 0;
+  font-size: 14px;
 
-  border-top:
-    1px solid
-    rgba(140,90,0,0.14);
+  display: grid;
 
-  font-size:
-    12px;
+  grid-template-columns: 1fr 1fr 1fr;
 
+  gap: 6px;
 }
 
 
-.repeat-row strong {
+/* DATA */
 
-  color:
-    #8a5200;
+.data-grid {
+  display: grid;
 
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+}
+
+.data-item {
+  background: #f7f7f8;
+
+  border-radius: 11px;
+
+  padding: 10px;
+}
+
+.data-label {
+  font-size: 12px;
+
+  color: #777;
+
+  margin-bottom: 4px;
+}
+
+.data-value {
+  font-size: 15px;
+
+  font-weight: 700;
+
+  word-break: break-word;
 }
 
 
-.repeat-row span {
+/* NO RESULT */
 
-  color:
-    #444;
+.no-result {
+  background: white;
 
+  border-radius: 18px;
+
+  padding: 25px;
+
+  text-align: center;
+
+  color: #777;
+
+  font-size: 17px;
 }
 
 
-/* =========================================================
-   FOOTER
-========================================================= */
+/* FOOTER */
 
 .footer {
+  text-align: center;
 
-  text-align:
-    center;
+  color: #999;
 
-  padding:
-    14px;
+  padding: 25px;
 
-  color:
-    #999;
-
-  font-size:
-    11px;
-
+  font-size: 14px;
 }
 
 
-/* =========================================================
-   MOBILE
-========================================================= */
+/* MOBILE */
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
 
-  .top-header h1 {
-
-    font-size:
-      19px;
-
+  .top-header {
+    padding: 20px 16px;
   }
-
 
   .header-icon {
-
-    width:
-      40px;
-
-    height:
-      40px;
-
-    font-size:
-      22px;
-
+    width: 60px;
+    height: 60px;
   }
 
+  .top-header h1 {
+    font-size: 25px;
+  }
+
+  .main-container {
+    margin-top: 18px;
+    padding: 0 12px 30px;
+  }
+
+  .search-card {
+    padding: 19px;
+    border-radius: 23px;
+  }
+
+  .search-label {
+    font-size: 20px;
+  }
+
+  .search-row {
+    gap: 10px;
+  }
+
+  #searchInput {
+    height: 78px;
+    font-size: 22px;
+    padding: 0 17px;
+  }
 
   #searchBtn {
-
-    width:
-      92px;
-
+    width: 125px;
+    font-size: 18px;
   }
 
-
-  .field-value {
-
-    font-size:
-      13px;
-
+  .result-card {
+    padding: 14px;
   }
 
+  .data-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-info {
+    grid-template-columns: 1fr;
+  }
+
+  .repeat-row {
+    grid-template-columns: 1fr;
+  }
 }

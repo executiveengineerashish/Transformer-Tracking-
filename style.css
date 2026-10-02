@@ -3,13 +3,14 @@
   -webkit-tap-highlight-color:transparent;
 }
 
-html,body{
+html,
+body{
   margin:0;
   padding:0;
   width:100%;
   min-height:100%;
   font-family:Arial,Helvetica,sans-serif;
-  background:#f5f5f5;
+  background:#f4f4f4;
   color:#222;
 }
 
@@ -19,59 +20,401 @@ body{
 
 .app{
   width:100%;
-  max-width:560px;
+  max-width:700px;
   margin:0 auto;
   min-height:100vh;
-  background:#f5f5f5;
+  background:#f4f4f4;
 }
 
-/* TOP BAR */
+
+/* ================= HEADER ================= */
 
 .topbar{
-  background:linear-gradient(135deg,#ff6f00,#e65100);
-  color:#fff;
-  padding:18px 16px 17px;
-  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  background:linear-gradient(
+    90deg,
+    #ff3300,
+    #ff6d00
+  );
+
+  color:white;
+
+  padding:17px 18px 18px;
+
+  box-shadow:
+    0 2px 7px rgba(0,0,0,.18);
+}
+
+.title-row{
+  display:flex;
+  align-items:center;
+}
+
+.bolt{
+  font-size:44px;
+  line-height:1;
+  margin-right:12px;
+  filter:drop-shadow(
+    0 1px 1px rgba(0,0,0,.2)
+  );
 }
 
 .app-title{
-  font-size:23px;
+  font-size:24px;
   font-weight:800;
-  letter-spacing:.2px;
+  line-height:1.1;
 }
 
 .app-subtitle{
   margin-top:4px;
-  font-size:12px;
-  opacity:.92;
+  font-size:15px;
 }
 
-/* SEARCH */
+
+/* ================= DASHBOARD ================= */
+
+.dashboard-card{
+  margin:17px 17px 14px;
+  background:#fff;
+  border-radius:22px;
+
+  padding:17px 18px 18px;
+
+  box-shadow:
+    0 2px 10px rgba(0,0,0,.12);
+}
+
+.dashboard-title{
+  display:flex;
+  align-items:center;
+  gap:7px;
+
+  font-size:25px;
+  font-weight:800;
+
+  line-height:1.2;
+}
+
+.dashboard-month{
+  margin-top:4px;
+  color:#777;
+  font-size:20px;
+}
+
+
+/* ================= COUNTERS ================= */
+
+.counter-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:17px;
+}
+
+.counter-card{
+  min-height:119px;
+  border-radius:18px;
+  padding:20px 17px;
+}
+
+.counter-label{
+  font-size:18px;
+  line-height:1.2;
+}
+
+.counter-number{
+  margin-top:4px;
+  font-size:40px;
+  font-weight:800;
+  line-height:1;
+}
+
+
+/* COLORS */
+
+.counter-card.total{
+  background:#fff0e7;
+}
+
+.counter-card.issued{
+  background:#e7f8ed;
+}
+
+.counter-card.pending{
+  background:#fff0f0;
+}
+
+.counter-card.replacement{
+  background:#fff9dc;
+}
+
+.counter-card.return{
+  background:#eee8ff;
+}
+
+
+/* ================= SECTION TITLE ================= */
+
+.section-title{
+  margin-top:21px;
+  margin-bottom:9px;
+
+  font-size:21px;
+  font-weight:800;
+}
+
+.action-title{
+  margin-top:21px;
+}
+
+
+/* ================= TODAY ACTION ================= */
+
+.action-grid{
+  display:grid;
+  grid-template-columns:
+    1fr 1fr 1fr;
+
+  gap:9px;
+}
+
+.action-card{
+  background:#fff1e9;
+
+  border-radius:13px;
+
+  min-height:88px;
+
+  padding:13px 5px;
+
+  text-align:center;
+
+  font-size:15px;
+  color:#444;
+}
+
+.action-card strong{
+  display:block;
+
+  margin-top:5px;
+
+  font-size:28px;
+
+  color:#333;
+}
+
+
+/* ================= BARS ================= */
+
+.dashboard-list{
+  width:100%;
+}
+
+.dashboard-row{
+  margin-bottom:12px;
+}
+
+.dashboard-row-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  font-size:17px;
+  font-weight:700;
+
+  margin-bottom:5px;
+}
+
+.dashboard-count{
+  font-size:18px;
+}
+
+.progress-track{
+  width:100%;
+  height:14px;
+
+  background:#eeeeee;
+
+  border-radius:10px;
+
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+
+  border-radius:10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff2d00,
+      #ff9800
+    );
+}
+
+
+/* ================= CAPACITY ================= */
+
+.capacity-grid{
+  display:grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap:8px;
+}
+
+.capacity-item{
+  background:#f7f7f7;
+
+  border-radius:9px;
+
+  padding:10px;
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  font-size:15px;
+
+  border-left:4px solid #ff6d00;
+}
+
+.capacity-value{
+  font-weight:800;
+  font-size:18px;
+}
+
+
+/* ================= AGEING ================= */
+
+.ageing-grid{
+  display:grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap:9px;
+}
+
+.ageing-item{
+  border-radius:12px;
+
+  padding:12px;
+
+  text-align:center;
+
+  background:#f8f8f8;
+}
+
+.ageing-label{
+  font-size:14px;
+}
+
+.ageing-number{
+  font-size:28px;
+  font-weight:800;
+  margin-top:4px;
+}
+
+.age-red{
+  background:#ffe8e8;
+}
+
+.age-orange{
+  background:#fff0df;
+}
+
+.age-yellow{
+  background:#fff9dc;
+}
+
+.age-green{
+  background:#e9f7ec;
+}
+
+
+/* ================= REPEATED ================= */
+
+.repeated-dashboard-item{
+  background:#fff8e5;
+
+  border-left:5px solid #ff9800;
+
+  border-radius:9px;
+
+  padding:10px 11px;
+
+  margin-bottom:8px;
+
+  font-size:13px;
+}
+
+.repeated-dashboard-title{
+  font-weight:800;
+  font-size:15px;
+
+  color:#d84315;
+}
+
+.repeated-dashboard-detail{
+  margin-top:3px;
+  color:#555;
+}
+
+.repeated-capacity{
+  font-weight:800;
+}
+
+.no-dashboard-data{
+  color:#777;
+  font-size:14px;
+  padding:3px 0;
+}
+
+
+/* ================= SEARCH ================= */
 
 .search-section{
+  margin:0 17px 14px;
+
   background:#fff;
-  padding:14px 14px 12px;
-  border-bottom:1px solid #ddd;
+
+  border-radius:20px;
+
+  padding:18px;
+
+  box-shadow:
+    0 2px 9px rgba(0,0,0,.10);
 }
 
 .search-section label{
   display:block;
-  font-size:13px;
-  font-weight:700;
-  color:#444;
-  margin-bottom:7px;
+
+  font-size:21px;
+
+  font-weight:800;
+
+  margin-bottom:9px;
 }
 
 .search-box{
   width:100%;
-  height:48px;
+  height:52px;
+
   display:flex;
+
   align-items:center;
+
   background:#fff;
-  border:2px solid #ff6f00;
-  border-radius:11px;
+
+  border:2px solid #ff5b00;
+
+  border-radius:28px;
+
   overflow:hidden;
-  box-shadow:0 2px 7px rgba(0,0,0,.07);
 }
 
 .search-icon{
@@ -82,13 +425,19 @@ body{
 
 .search-box input{
   flex:1;
+
   min-width:0;
+
   height:100%;
+
   border:0;
-  outline:none;
+  outline:0;
+
+  background:white;
+
   font-size:16px;
+
   color:#222;
-  background:#fff;
 }
 
 .search-box input::placeholder{
@@ -96,26 +445,28 @@ body{
 }
 
 .search-box button{
-  width:42px;
+  width:45px;
   height:100%;
+
   border:0;
-  background:#fff;
-  color:#888;
+
+  background:#ff4d00;
+
+  color:#fff;
+
   font-size:17px;
+
   cursor:pointer;
 }
 
-.search-box button:active{
-  background:#eee;
-}
-
-/* STATUS */
-
 .search-status{
-  min-height:18px;
+  min-height:20px;
+
   padding:7px 2px 0;
+
   font-size:12px;
-  color:#666;
+
+  color:#777;
 }
 
 .search-status.ready{
@@ -126,74 +477,104 @@ body{
   color:#c62828;
 }
 
-/* RESULTS */
+
+/* ================= RESULTS ================= */
 
 #results{
-  padding:10px;
+  padding:0 10px 20px;
 }
 
 .result-count{
   background:#fff;
-  border-radius:9px;
-  padding:9px 11px;
-  margin-bottom:9px;
-  font-size:13px;
-  font-weight:700;
-  color:#555;
-  border-left:4px solid #ff6f00;
-}
 
-/* CARD */
+  border-radius:9px;
+
+  padding:9px 11px;
+
+  margin-bottom:9px;
+
+  font-size:13px;
+
+  font-weight:700;
+
+  color:#555;
+
+  border-left:4px solid #ff6d00;
+}
 
 .result-card{
   background:#fff;
-  border-radius:12px;
+
+  border-radius:13px;
+
   margin-bottom:12px;
+
   overflow:hidden;
-  box-shadow:0 2px 9px rgba(0,0,0,.10);
-  border:1px solid #e4e4e4;
+
+  box-shadow:
+    0 2px 9px rgba(0,0,0,.10);
+
+  border:1px solid #e5e5e5;
 }
 
 .card-number{
   background:#fafafa;
+
   padding:9px 12px;
+
   color:#777;
+
   font-size:11px;
+
   font-weight:700;
+
   border-bottom:1px solid #eee;
 }
 
-/* STATUS BOX */
+
+/* ================= STATUS ================= */
 
 .status-box{
   margin:10px;
+
   padding:12px;
+
   border-radius:9px;
+
   font-size:13px;
+
   line-height:1.55;
 }
 
 .status-box strong{
   display:block;
+
   font-size:14px;
+
   margin-bottom:3px;
 }
 
 .status-box.pending{
   background:#fff3e0;
+
   border-left:5px solid #ff9800;
+
   color:#8a4b00;
 }
 
 .status-box.issued{
   background:#e8f5e9;
+
   border-left:5px solid #43a047;
+
   color:#245c29;
 }
 
 .status-box.installed{
   background:#e3f2fd;
+
   border-left:5px solid #1976d2;
+
   color:#15558d;
 }
 
@@ -201,26 +582,38 @@ body{
   margin-top:2px;
 }
 
-/* DRIVER BUTTONS */
+
+/* ================= DRIVER BUTTONS ================= */
 
 .driver-buttons{
   display:flex;
+
   gap:8px;
+
   margin-top:9px;
+
   flex-wrap:wrap;
 }
 
 .driver-buttons a{
   display:inline-flex;
+
   align-items:center;
   justify-content:center;
+
   min-height:36px;
+
   padding:7px 12px;
+
   border-radius:7px;
+
   text-decoration:none;
+
   font-size:12px;
+
   font-weight:800;
-  color:#fff;
+
+  color:white;
 }
 
 .call-driver{
@@ -231,37 +624,54 @@ body{
   background:#128c7e;
 }
 
-/* REPEATED DAMAGE */
+
+/* ================= REPEATED DAMAGE ================= */
 
 .repeated-box{
   margin:10px;
+
   padding:11px;
+
   border-radius:9px;
+
   background:#fff8e1;
+
   border:1px solid #ffd54f;
 }
 
 .repeated-title{
   color:#d84315;
+
   font-size:14px;
+
   font-weight:800;
+
   margin-bottom:4px;
 }
 
 .repeated-warning{
   color:#8a4b00;
+
   font-size:12px;
+
   font-weight:700;
+
   margin-bottom:8px;
 }
 
 .history-item{
   background:#fff;
+
   border-radius:6px;
+
   padding:7px 8px;
+
   margin-top:5px;
+
   border-left:3px solid #ff9800;
+
   font-size:12px;
+
   line-height:1.45;
 }
 
@@ -269,11 +679,8 @@ body{
   display:block;
 }
 
-.history-item strong{
-  font-weight:800;
-}
 
-/* DATA */
+/* ================= DATA ================= */
 
 .data-section{
   padding:5px 10px 11px;
@@ -281,9 +688,13 @@ body{
 
 .data-row{
   display:flex;
+
   width:100%;
+
   padding:7px 3px;
+
   border-bottom:1px solid #eee;
+
   gap:10px;
 }
 
@@ -293,38 +704,100 @@ body{
 
 .data-label{
   width:39%;
+
   flex-shrink:0;
+
   color:#555;
+
   font-size:12px;
+
   font-weight:700;
 }
 
 .data-value{
   width:61%;
+
   color:#222;
+
   font-size:14px;
+
   font-weight:400;
+
   word-break:break-word;
 }
 
-/* NO RESULTS */
-
 .no-results{
   background:#fff;
+
   border-radius:10px;
+
   padding:20px;
+
   text-align:center;
+
   color:#777;
+
   font-size:14px;
-  box-shadow:0 2px 7px rgba(0,0,0,.07);
 }
 
-/* MOBILE */
 
-@media(max-width:380px){
+/* ================= MOBILE ================= */
 
-  .app-title{
-    font-size:21px;
+@media(max-width:420px){
+
+  .dashboard-card{
+    margin:17px 17px 14px;
+    padding:17px 18px;
+  }
+
+  .dashboard-title{
+    font-size:25px;
+  }
+
+  .dashboard-month{
+    font-size:19px;
+  }
+
+  .counter-card{
+    min-height:119px;
+  }
+
+  .counter-number{
+    font-size:39px;
+  }
+
+  .action-card{
+    font-size:14px;
+  }
+
+  .action-card strong{
+    font-size:27px;
+  }
+
+}
+
+@media(max-width:370px){
+
+  .dashboard-card{
+    margin-left:10px;
+    margin-right:10px;
+  }
+
+  .search-section{
+    margin-left:10px;
+    margin-right:10px;
+  }
+
+  .dashboard-title{
+    font-size:22px;
+  }
+
+  .counter-label{
+    font-size:16px;
+  }
+
+  .counter-number{
+    font-size:34px;
   }
 
   .data-label{
@@ -337,8 +810,4 @@ body{
     font-size:13px;
   }
 
-  .driver-buttons a{
-    font-size:11px;
-    padding:7px 9px;
-  }
 }

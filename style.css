@@ -1,26 +1,41 @@
 :root {
 
-  --orange1: #ff9800;
-  --orange2: #ff6d00;
-  --orange3: #f4511e;
+  --orange: #ff8a00;
 
-  --bg: #fff8f0;
+  --orange2: #ff3d00;
 
-  --card: #ffffff;
+  --orange3: #ffb000;
 
-  --text: #374151;
-  --heading: #1f2937;
+  --light-orange: #fff3e4;
 
-  --border: #efcfad;
+  --border: #ead7bd;
 
-  --green: #16803c;
+  --text: #303642;
+
+  --muted: #707783;
+
+  --white: #ffffff;
+
+  --green: #168642;
+
+  --green-bg: #eaf8ef;
+
+  --blue: #1769aa;
+
+  --blue-bg: #eaf4ff;
+
+  --red: #c62828;
+
+  --red-bg: #fff0f0;
 
   --shadow:
-    0 5px 18px
-    rgba(180, 83, 9, 0.10);
+    0 8px 25px rgba(255, 115, 0, 0.12);
 
-  --font:
+  --radius: 22px;
+
+  font-family:
     system-ui,
+    -apple-system,
     "Segoe UI",
     Roboto,
     Arial,
@@ -28,827 +43,822 @@
 }
 
 
+/* =========================================
+   RESET
+========================================= */
+
 * {
 
-  box-sizing:
-    border-box;
+  box-sizing: border-box;
 
-  -webkit-tap-highlight-color:
-    transparent;
 }
 
 
-html,
-body {
+html {
 
-  margin:
-    0;
+  width: 100%;
 
-  padding:
-    0;
+  min-height: 100%;
 
-  min-height:
-    100%;
-
-  width:
-    100%;
 }
 
 
 body {
+
+  margin: 0;
+
+  min-height: 100vh;
 
   background:
-    var(--bg);
+    linear-gradient(
+      180deg,
+      #fff7ed 0%,
+      #fffaf5 45%,
+      #fffdfb 100%
+    );
 
-  color:
-    var(--text);
+  color: var(--text);
 
-  font:
-    16px/1.45
-    var(--font);
 }
 
 
-/* ============================
+/* =========================================
    APP
-   ============================ */
+========================================= */
 
 .app {
 
-  width:
-    100%;
+  width: 100%;
 
-  max-width:
-    1120px;
+  max-width: 900px;
 
-  margin:
-    0 auto;
+  margin: 0 auto;
 
-  padding:
-    0 15px 30px;
+  padding-bottom: 35px;
+
 }
 
 
-/* ============================
-   HEADER
-   ============================ */
+/* =========================================
+   TOP BAR
+========================================= */
 
 .topbar {
 
-  margin:
-    0 -15px;
+  min-height: 180px;
 
   padding:
-    calc(
-      18px +
-      env(safe-area-inset-top)
-    )
-    18px
-    20px;
+    35px 28px 30px;
 
-  display:
-    flex;
+  color: white;
 
-  align-items:
-    center;
+  display: flex;
 
-  justify-content:
-    space-between;
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-radius:
+    0 0 38px 38px;
 
   background:
     linear-gradient(
       135deg,
-      var(--orange1),
-      var(--orange2),
-      var(--orange3)
+      #ff9d00 0%,
+      #ff7900 45%,
+      #ff3d00 100%
     );
 
-  color:
-    white;
-
-  border-radius:
-    0 0 25px 25px;
-
   box-shadow:
-    0 5px 20px
-    rgba(230,81,0,.20);
+    0 10px 30px
+    rgba(255, 95, 0, 0.25);
+
+}
+
+
+.title {
+
+  min-width: 0;
+
 }
 
 
 .title h1 {
 
-  margin:
-    0;
+  margin: 0;
 
-  font-size:
-    28px;
+  font-size: 38px;
 
-  line-height:
-    1.15;
+  line-height: 1.1;
 
-  font-weight:
-    750;
+  font-weight: 800;
 
-  color:
-    white;
+  letter-spacing: -0.7px;
+
 }
 
 
 .subtitle {
 
-  margin:
-    5px 0 0;
+  margin: 10px 0 0;
 
-  font-size:
-    13px;
+  font-size: 16px;
 
-  color:
-    rgba(255,255,255,.95);
+  opacity: 0.95;
+
 }
 
 
-.refresh {
+.refreshBtn {
 
-  width:
-    52px;
+  width: 74px;
 
-  height:
-    52px;
+  height: 74px;
 
-  border:
-    1px solid
+  flex: 0 0 auto;
+
+  border: 1px solid
     rgba(255,255,255,.75);
 
-  border-radius:
-    15px;
+  border-radius: 20px;
 
   background:
     rgba(255,255,255,.12);
 
-  color:
-    white;
+  color: white;
 
-  font-size:
-    28px;
+  font-size: 34px;
 
-  cursor:
-    pointer;
+  cursor: pointer;
+
 }
 
 
-.refresh:active {
+.refreshBtn:active {
 
-  transform:
-    scale(.95);
+  transform: scale(.96);
+
 }
 
 
-/* ============================
+/* =========================================
    SEARCH PANEL
-   ============================ */
+========================================= */
 
 .searchPanel {
 
-  margin-top:
-    22px;
+  margin:
+    28px 22px 0;
 
-  padding:
-    18px;
+  padding: 25px;
 
-  background:
-    var(--card);
+  background: white;
 
-  border:
-    1px solid
+  border: 1px solid
     var(--border);
 
-  border-radius:
-    20px;
+  border-radius: var(--radius);
 
-  box-shadow:
-    var(--shadow);
+  box-shadow: var(--shadow);
+
 }
 
 
-.field {
+.searchLabel {
 
-  display:
-    flex;
+  display: block;
 
-  flex-direction:
-    column;
+  margin-bottom: 10px;
 
-  gap:
-    7px;
+  font-size: 20px;
+
+  font-weight: 700;
+
 }
 
 
-.label {
+#q {
 
-  font-size:
-    15px;
+  width: 100%;
 
-  font-weight:
-    650;
-
-  color:
-    var(--heading);
-}
-
-
-input {
-
-  width:
-    100%;
-
-  height:
-    55px;
+  height: 68px;
 
   padding:
-    10px 15px;
+    0 20px;
 
-  border:
-    2px solid
-    #e8c69f;
+  border-radius: 18px;
 
-  border-radius:
-    15px;
+  border: 2px solid
+    #e7c9a2;
 
-  background:
-    #fffdfb;
+  background: #fffdfb;
 
-  color:
-    var(--heading);
+  color: var(--text);
 
-  font-size:
-    17px;
+  font-size: 21px;
 
-  outline:
-    none;
+  outline: none;
+
 }
 
 
-input:focus {
+#q:focus {
 
   border-color:
-    var(--orange2);
+    var(--orange);
 
   box-shadow:
     0 0 0 4px
-    rgba(245,124,0,.12);
+    rgba(255,138,0,.13);
+
 }
 
 
 .searchBtn {
 
-  width:
-    100%;
+  width: 100%;
 
-  height:
-    55px;
+  height: 64px;
 
-  margin-top:
-    13px;
+  margin-top: 16px;
 
-  border:
-    none;
+  border: 0;
 
-  border-radius:
-    15px;
+  border-radius: 18px;
 
   background:
     linear-gradient(
-      135deg,
-      var(--orange1),
-      var(--orange2),
-      var(--orange3)
+      100deg,
+      #ff9d00,
+      #ff3d00
     );
 
-  color:
-    white;
+  color: white;
 
-  font-size:
-    17px;
+  font-size: 20px;
 
-  font-weight:
-    650;
+  font-weight: 700;
+
+  cursor: pointer;
 
   box-shadow:
-    0 5px 14px
-    rgba(230,81,0,.20);
+    0 7px 18px
+    rgba(255,92,0,.22);
 
-  cursor:
-    pointer;
 }
 
 
 .searchBtn:active {
 
-  transform:
-    scale(.98);
+  transform: scale(.99);
+
 }
 
 
-/* ============================
+/* =========================================
+   ERROR
+========================================= */
+
+.error {
+
+  margin:
+    18px 22px 0;
+
+  padding: 16px;
+
+  border-radius: 16px;
+
+  border: 1px solid #efb1b1;
+
+  background: #fff0f0;
+
+  color: #a82d2d;
+
+  font-size: 15px;
+
+}
+
+
+/* =========================================
    RESULTS
-   ============================ */
+========================================= */
 
-.results {
+.resultsPanel {
 
-  margin-top:
-    22px;
+  margin:
+    22px 22px 0;
 
-  padding:
-    16px;
+  padding: 22px;
 
-  background:
-    white;
+  background: white;
 
-  border:
-    1px solid
+  border: 1px solid
     var(--border);
 
-  border-radius:
-    20px;
+  border-radius: var(--radius);
 
-  box-shadow:
-    var(--shadow);
+  box-shadow: var(--shadow);
+
 }
 
 
 .resultsSummary {
 
-  font-size:
-    15px;
+  font-size: 19px;
 
-  font-weight:
-    650;
+  font-weight: 700;
 
-  color:
-    var(--text);
 }
 
 
 .pager {
 
-  display:
-    grid;
+  display: grid;
 
   grid-template-columns:
     1fr 1fr;
 
-  gap:
-    10px;
+  gap: 10px;
 
-  margin-top:
-    13px;
+  margin-top: 15px;
+
 }
 
 
 .pageBtn {
 
-  height:
-    48px;
+  height: 54px;
 
-  border:
-    1px solid
+  border-radius: 16px;
+
+  border: 1px solid
     var(--border);
 
-  border-radius:
-    14px;
+  background: white;
 
-  background:
-    white;
+  color: var(--text);
 
-  color:
-    var(--text);
+  font-size: 17px;
 
-  font-size:
-    15px;
+  cursor: pointer;
 
-  cursor:
-    pointer;
 }
 
 
 .pageBtn:disabled {
 
-  opacity:
-    .45;
+  opacity: .45;
 
-  cursor:
-    not-allowed;
+  cursor: not-allowed;
+
 }
 
 
-/* ============================
-   MOBILE CARD
-   ============================ */
+/* =========================================
+   MOBILE CARDS
+========================================= */
 
 .mobileResults {
 
-  margin-top:
-    14px;
+  margin-top: 18px;
+
 }
 
 
 .dataCard {
 
-  margin-bottom:
-    15px;
+  overflow: hidden;
 
-  border:
-    1px solid
+  margin-bottom: 20px;
+
+  border: 1px solid
     var(--border);
 
-  border-radius:
-    17px;
+  border-radius: 22px;
 
-  overflow:
-    hidden;
-
-  background:
-    white;
+  background: white;
 
   box-shadow:
-    0 4px 14px
-    rgba(180,83,9,.08);
+    0 6px 20px
+    rgba(255,115,0,.10);
+
 }
 
 
 .cardTitle {
 
   padding:
-    12px 15px;
+    14px 18px;
 
   background:
     linear-gradient(
-      135deg,
-      var(--orange1),
-      var(--orange2),
-      var(--orange3)
+      100deg,
+      #ff9d00,
+      #ff4d00
     );
 
-  color:
-    white;
+  color: white;
 
-  font-size:
-    16px;
+  font-size: 19px;
 
-  font-weight:
-    750;
+  font-weight: 800;
+
 }
 
 
 .dataItem {
 
   padding:
-    9px 15px;
+    12px 18px;
 
   border-bottom:
-    1px solid
-    #f1e1d2;
+    1px solid #eee2d4;
+
 }
 
 
 .dataItem:last-child {
 
-  border-bottom:
-    none;
+  border-bottom: 0;
+
 }
 
 
 .dataLabel {
 
-  display:
-    block;
+  display: block;
 
-  margin-bottom:
-    2px;
+  margin-bottom: 3px;
 
-  font-size:
-    11px;
+  color: #9a6332;
 
-  font-weight:
-    750;
+  font-size: 13px;
 
-  color:
-    #a25d25;
+  font-weight: 800;
 
-  text-transform:
-    uppercase;
+  text-transform: uppercase;
+
 }
 
 
 .dataValue {
 
-  display:
-    block;
+  display: block;
 
-  font-size:
-    14px;
+  color: #303640;
 
-  color:
-    #29323a;
+  font-size: 16px;
 
-  word-break:
-    break-word;
+  line-height: 1.35;
+
+  word-break: break-word;
+
 }
 
 
-/* ============================
-   STATUS
-   ============================ */
+/* =========================================
+   STATUS BOXES
+========================================= */
 
 .status {
 
-  margin:
-    12px;
+  margin: 14px;
 
-  padding:
-    13px;
+  padding: 15px 16px;
 
-  border-radius:
-    14px;
+  border-radius: 16px;
 
-  text-align:
-    center;
+  font-size: 15px;
 
-  font-size:
-    14px;
+  line-height: 1.45;
 
-  font-weight:
-    750;
-
-  line-height:
-    1.4;
 }
 
 
-.installed {
+.status.installed {
 
   background:
-    #e9f8ee;
+    var(--green-bg);
 
-  border:
-    1px solid
-    #8ed0a2;
+  border: 1px solid #9bd5ad;
 
-  color:
-    #146c32;
+  color: #126d32;
+
+  font-weight: 700;
+
 }
 
 
-.issued {
+.status.issued {
 
   background:
-    #fff1d9;
+    var(--blue-bg);
 
-  border:
-    1px solid
-    #efbd70;
+  border: 1px solid #a8d1ef;
 
-  color:
-    #8a4b00;
+  color: #07558d;
+
+  font-weight: 700;
+
 }
 
 
-.notRepeated {
+.status.notRepeated {
 
   background:
-    #eaf8ef;
+    #f0faf2;
 
-  border:
-    1px solid
-    #9ad4ab;
+  border: 1px solid #b8dfc0;
 
-  color:
-    #176b35;
+  color: #26733a;
+
+  font-weight: 700;
+
 }
 
 
-.repeated {
+.status.repeated {
 
   background:
-    #fff0df;
+    #fff4df;
 
-  border:
-    1px solid
-    #efa45d;
+  border: 1px solid #f0bd69;
 
-  color:
-    #a23e00;
+  color: #8a4c00;
+
 }
 
 
-/* ============================
-   DESKTOP TABLE
-   ============================ */
+.status.repeated strong {
+
+  color: #713900;
+
+}
+
+
+/* =========================================
+   TABLE
+========================================= */
 
 .tableWrap {
 
-  margin-top:
-    14px;
+  display: none;
 
-  overflow-x:
-    auto;
+  overflow: auto;
+
+  margin-top: 20px;
 
   border:
-    1px solid
-    var(--border);
+    1px solid var(--border);
 
-  border-radius:
-    14px;
+  border-radius: 15px;
+
 }
 
 
 table {
 
-  width:
-    100%;
+  width: 100%;
 
-  min-width:
-    900px;
+  min-width: 900px;
 
-  border-collapse:
-    collapse;
+  border-collapse: collapse;
+
 }
 
 
 th,
 td {
 
-  padding:
-    9px 11px;
+  padding: 10px;
 
   border-bottom:
-    1px solid
-    #f1e1d2;
+    1px solid #eee0d0;
 
-  text-align:
-    left;
+  text-align: left;
 
-  font-size:
-    13px;
+  white-space: nowrap;
 
-  white-space:
-    nowrap;
+  font-size: 13px;
 
-  vertical-align:
-    top;
 }
 
 
 th {
 
+  position: sticky;
+
+  top: 0;
+
   background:
-    #fff0dc;
+    #fff0d7;
 
-  color:
-    #873e00;
+  color: #713900;
 
-  font-weight:
-    750;
+  font-weight: 800;
+
 }
 
 
-/* ============================
-   ERROR
-   ============================ */
-
-.error {
-
-  margin-top:
-    15px;
-
-  padding:
-    13px;
-
-  border:
-    1px solid
-    #e9a79c;
-
-  border-radius:
-    13px;
-
-  background:
-    #fff0ee;
-
-  color:
-    #9d3025;
-
-  font-size:
-    14px;
-}
-
-
-/* ============================
+/* =========================================
    DESKTOP
-   ============================ */
+========================================= */
 
-@media (min-width: 701px) {
-
-  .mobileResults {
-
-    display:
-      none;
-  }
-
-}
-
-
-/* ============================
-   MOBILE
-   ============================ */
-
-@media (max-width: 700px) {
+@media (min-width: 800px) {
 
   .app {
 
-    max-width:
-      520px;
+    max-width: 1100px;
 
-    padding:
-      0 11px 30px;
   }
 
 
   .topbar {
 
-    margin:
-      0 -11px;
+    padding-left: 45px;
 
-    padding-left:
-      16px;
+    padding-right: 45px;
 
-    padding-right:
-      16px;
   }
 
 
-  .title h1 {
+  .searchPanel,
+  .resultsPanel {
 
-    font-size:
-      25px;
+    margin-left: 35px;
+
+    margin-right: 35px;
+
   }
 
 
-  .searchPanel {
+  .mobileResults {
 
-    margin-top:
-      17px;
+    display: none;
 
-    padding:
-      14px;
-  }
-
-
-  .results {
-
-    margin-top:
-      15px;
-
-    padding:
-      13px;
   }
 
 
   .tableWrap {
 
-    display:
-      none !important;
-  }
+    display: block;
 
-
-  input {
-
-    font-size:
-      16px;
   }
 
 }
 
 
-/* ============================
-   SMALL PHONE
-   ============================ */
+/* =========================================
+   MOBILE PORTRAIT
+========================================= */
 
-@media (max-width: 380px) {
+@media (max-width: 600px) {
 
-  .title h1 {
+  .app {
 
-    font-size:
-      22px;
+    width: 100%;
+
   }
 
 
-  .refresh {
+  .topbar {
 
-    width:
-      47px;
+    min-height: 180px;
 
-    height:
-      47px;
+    padding:
+      30px 27px 28px;
+
+    border-radius:
+      0 0 35px 35px;
+
+  }
+
+
+  .title h1 {
+
+    font-size: 34px;
+
+  }
+
+
+  .subtitle {
+
+    font-size: 14px;
+
+  }
+
+
+  .refreshBtn {
+
+    width: 64px;
+
+    height: 64px;
+
+    border-radius: 18px;
+
+    font-size: 29px;
+
+  }
+
+
+  .searchPanel {
+
+    margin:
+      22px 20px 0;
+
+    padding: 22px;
+
+    border-radius: 22px;
+
+  }
+
+
+  .searchLabel {
+
+    font-size: 19px;
+
+  }
+
+
+  #q {
+
+    height: 64px;
+
+    font-size: 19px;
+
+  }
+
+
+  .searchBtn {
+
+    height: 62px;
+
+    font-size: 18px;
+
+  }
+
+
+  .resultsPanel {
+
+    margin:
+      20px 20px 0;
+
+    padding: 20px;
+
+    border-radius: 22px;
+
+  }
+
+
+  .resultsSummary {
+
+    font-size: 18px;
+
+  }
+
+}
+
+
+/* =========================================
+   VERY SMALL PHONE
+========================================= */
+
+@media (max-width: 380px) {
+
+  .topbar {
+
+    padding-left: 20px;
+
+    padding-right: 20px;
+
+  }
+
+
+  .title h1 {
+
+    font-size: 29px;
+
+  }
+
+
+  .refreshBtn {
+
+    width: 55px;
+
+    height: 55px;
+
+  }
+
+
+  .searchPanel,
+  .resultsPanel {
+
+    margin-left: 14px;
+
+    margin-right: 14px;
+
   }
 
 }

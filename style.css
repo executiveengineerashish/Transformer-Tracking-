@@ -8,16 +8,12 @@
   --green: #16803c;
   --green-light: #eaf8ef;
 
-  --blue: #1565c0;
-  --blue-light: #eaf3ff;
-
   --text: #374151;
   --text-h: #1f2937;
 
-  --bg: #fff8f1;
-  --card: #ffffff;
-
   --border: #f0c9a5;
+
+  --card: #ffffff;
 
   --shadow:
     0 5px 18px rgba(180, 83, 9, 0.10);
@@ -52,9 +48,11 @@ body {
 
   min-height: 100vh;
 
-  background: var(--bg);
+  background:
+    var(--orange-soft);
 
-  color: var(--text);
+  color:
+    var(--text);
 
   font:
     16px/1.45
@@ -156,7 +154,7 @@ body {
   font-size: 13px;
 
   color:
-    rgba(255,255,255,0.92);
+    rgba(255,255,255,0.94);
 }
 
 
@@ -204,7 +202,8 @@ body {
 .primary:active,
 .secondary:active {
 
-  transform: scale(.97);
+  transform:
+    scale(.97);
 }
 
 
@@ -230,9 +229,11 @@ body {
 
 .secondary {
 
-  background: white;
+  background:
+    white;
 
-  color: var(--text-h);
+  color:
+    var(--text-h);
 }
 
 
@@ -266,41 +267,53 @@ button:disabled {
     1px solid
     var(--border);
 
-  border-radius: 20px;
+  border-radius:
+    20px;
 
-  padding: 16px;
+  padding:
+    16px;
 
-  background: white;
+  background:
+    white;
 
-  box-shadow: var(--shadow);
+  box-shadow:
+    var(--shadow);
 }
 
 
 .field {
 
-  display: flex;
+  display:
+    flex;
 
-  flex-direction: column;
+  flex-direction:
+    column;
 
-  gap: 7px;
+  gap:
+    7px;
 }
 
 
 .label {
 
-  font-size: 14px;
+  font-size:
+    14px;
 
-  font-weight: 650;
+  font-weight:
+    650;
 
-  color: var(--text-h);
+  color:
+    var(--text-h);
 }
 
 
 input {
 
-  width: 100%;
+  width:
+    100%;
 
-  min-height: 52px;
+  min-height:
+    52px;
 
   padding:
     11px
@@ -310,17 +323,21 @@ input {
     2px solid
     #e7c49f;
 
-  border-radius: 14px;
+  border-radius:
+    14px;
 
-  background: #fffdfb;
+  background:
+    #fffdfb;
 
-  color: var(--text-h);
+  color:
+    var(--text-h);
 
   font:
     16px
     var(--sans);
 
-  outline: none;
+  outline:
+    none;
 }
 
 
@@ -337,15 +354,20 @@ input:focus {
 
 .searchBtn {
 
-  margin-top: 12px;
+  margin-top:
+    12px;
 
-  width: 100%;
+  width:
+    100%;
 
-  min-height: 52px;
+  min-height:
+    52px;
 
-  font-size: 16px;
+  font-size:
+    16px;
 
-  border-radius: 14px;
+  border-radius:
+    14px;
 }
 
 
@@ -359,71 +381,89 @@ input:focus {
     1px solid
     var(--border);
 
-  border-radius: 20px;
+  border-radius:
+    20px;
 
-  padding: 16px;
+  padding:
+    16px;
 
-  background: white;
+  background:
+    white;
 
-  box-shadow: var(--shadow);
+  box-shadow:
+    var(--shadow);
 }
 
 
 .resultsTop {
 
-  display: flex;
+  display:
+    flex;
 
-  align-items: center;
+  align-items:
+    center;
 
-  justify-content: space-between;
+  justify-content:
+    space-between;
 
-  gap: 12px;
+  gap:
+    12px;
 
-  margin-bottom: 12px;
+  margin-bottom:
+    12px;
 }
 
 
 .resultsSummary {
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 650;
+  font-weight:
+    650;
 }
 
 
 .pager {
 
-  display: flex;
+  display:
+    flex;
 
-  gap: 8px;
+  gap:
+    8px;
 }
 
 
 /* =========================================
-   STATUS MESSAGE
+   STATUS MESSAGES
    ========================================= */
 
 .statusMessage {
 
-  margin-bottom: 14px;
+  margin-bottom:
+    10px;
 
-  padding: 16px;
+  padding:
+    14px;
 
-  border-radius: 16px;
+  border-radius:
+    15px;
 
-  font-size: 16px;
+  font-size:
+    15px;
 
-  font-weight: 750;
+  font-weight:
+    750;
 
-  line-height: 1.4;
+  line-height:
+    1.4;
 
-  text-align: center;
-
-  box-shadow:
-    0 5px 15px
-    rgba(0,0,0,.08);
+  text-align:
+    center;
 }
 
+
+/* INSTALLED */
 
 .statusInstalled {
 
@@ -443,6 +483,8 @@ input:focus {
 }
 
 
+/* ISSUED */
+
 .statusIssued {
 
   background:
@@ -461,29 +503,70 @@ input:focus {
 }
 
 
+/* NOT REPEATED */
+
+.statusNotRepeated {
+
+  background:
+    #eaf8ef;
+
+  border:
+    1px solid
+    #9bd5ad;
+
+  color:
+    #176b35;
+}
+
+
+/* REPEATED */
+
+.statusRepeated {
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff0e0,
+      #ffe0c2
+    );
+
+  border:
+    1px solid
+    #f0a45b;
+
+  color:
+    #a23d00;
+}
+
+
 /* =========================================
-   MOBILE DATA CARD
+   MOBILE CARDS
    ========================================= */
 
 .mobileResults {
 
-  display: block;
+  display:
+    block;
 }
 
 
 .dataCard {
 
-  background: white;
+  background:
+    white;
 
   border:
     1px solid
     #f0c9a5;
 
-  border-radius: 17px;
+  border-radius:
+    17px;
 
-  padding: 14px;
+  padding:
+    14px;
 
-  margin-bottom: 13px;
+  margin-bottom:
+    13px;
 
   box-shadow:
     0 4px 14px
@@ -515,21 +598,27 @@ input:focus {
       #e65100
     );
 
-  color: white;
+  color:
+    white;
 
-  font-size: 15px;
+  font-size:
+    15px;
 
-  font-weight: 750;
+  font-weight:
+    750;
 }
 
 
 .dataItem {
 
-  display: flex;
+  display:
+    flex;
 
-  flex-direction: column;
+  flex-direction:
+    column;
 
-  gap: 2px;
+  gap:
+    2px;
 
   padding:
     8px
@@ -543,30 +632,37 @@ input:focus {
 
 .dataItem:last-child {
 
-  border-bottom: none;
+  border-bottom:
+    none;
 }
 
 
 .dataLabel {
 
-  font-size: 11px;
+  font-size:
+    11px;
 
-  font-weight: 750;
+  font-weight:
+    750;
 
   color:
     #9a5b25;
 
-  text-transform: uppercase;
+  text-transform:
+    uppercase;
 }
 
 
 .dataValue {
 
-  font-size: 14px;
+  font-size:
+    14px;
 
-  color: #263238;
+  color:
+    #263238;
 
-  word-break: break-word;
+  word-break:
+    break-word;
 }
 
 
@@ -576,25 +672,31 @@ input:focus {
 
 .tableWrap {
 
-  overflow-x: auto;
+  overflow-x:
+    auto;
 
-  max-width: 100%;
+  max-width:
+    100%;
 
   border:
     1px solid
     var(--border);
 
-  border-radius: 14px;
+  border-radius:
+    14px;
 }
 
 
 table {
 
-  border-collapse: collapse;
+  border-collapse:
+    collapse;
 
-  width: 100%;
+  width:
+    100%;
 
-  min-width: 900px;
+  min-width:
+    900px;
 }
 
 
@@ -609,21 +711,27 @@ td {
     10px
     12px;
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  vertical-align: top;
+  vertical-align:
+    top;
 
-  white-space: nowrap;
+  white-space:
+    nowrap;
 }
 
 
 th {
 
-  position: sticky;
+  position:
+    sticky;
 
-  top: 0;
+  top:
+    0;
 
-  z-index: 2;
+  z-index:
+    2;
 
   background:
     linear-gradient(
@@ -635,9 +743,11 @@ th {
   color:
     #7c3600;
 
-  text-align: left;
+  text-align:
+    left;
 
-  font-weight: 750;
+  font-weight:
+    750;
 }
 
 
@@ -661,11 +771,15 @@ tbody tr:hover td {
 
 .error {
 
-  margin-top: 0;
+  margin-top:
+    0;
 
-  padding: 12px 14px;
+  padding:
+    12px
+    14px;
 
-  border-radius: 12px;
+  border-radius:
+    12px;
 
   border:
     1px solid
@@ -677,7 +791,8 @@ tbody tr:hover td {
   color:
     #9f2d20;
 
-  font-size: 14px;
+  font-size:
+    14px;
 }
 
 
@@ -696,14 +811,19 @@ tbody tr:hover td {
 
   .app {
 
-    max-width: 520px;
+    max-width:
+      520px;
 
     padding:
       0
       12px
-      calc(25px + env(safe-area-inset-bottom));
+      calc(
+        25px +
+        env(safe-area-inset-bottom)
+      );
 
-    gap: 13px;
+    gap:
+      13px;
   }
 
 
@@ -714,7 +834,10 @@ tbody tr:hover td {
       -12px;
 
     padding:
-      calc(14px + env(safe-area-inset-top))
+      calc(
+        14px +
+        env(safe-area-inset-top)
+      )
       16px
       16px;
 
@@ -728,81 +851,101 @@ tbody tr:hover td {
 
   .title h1 {
 
-    font-size: 23px;
+    font-size:
+      23px;
   }
 
 
   .subtitle {
 
-    font-size: 12px;
+    font-size:
+      12px;
   }
 
 
   .topActions .secondary {
 
-    width: 46px;
+    width:
+      46px;
 
-    min-width: 46px;
+    min-width:
+      46px;
 
-    padding: 8px;
+    padding:
+      8px;
 
-    font-size: 0;
+    font-size:
+      0;
   }
 
 
   .topActions .secondary::before {
 
-    content: "↻";
+    content:
+      "↻";
 
-    font-size: 23px;
+    font-size:
+      23px;
   }
 
 
   .panel {
 
-    padding: 14px;
+    padding:
+      14px;
 
-    border-radius: 18px;
+    border-radius:
+      18px;
   }
 
 
   input {
 
-    min-height: 51px;
+    min-height:
+      51px;
 
-    font-size: 16px;
+    font-size:
+      16px;
 
-    border-radius: 13px;
+    border-radius:
+      13px;
   }
 
 
   .searchBtn {
 
-    min-height: 52px;
+    min-height:
+      52px;
 
-    font-size: 16px;
+    font-size:
+      16px;
   }
 
 
   .results {
 
-    padding: 13px;
+    padding:
+      13px;
 
-    border-radius: 18px;
+    border-radius:
+      18px;
   }
 
 
   .resultsTop {
 
-    flex-direction: column;
+    flex-direction:
+      column;
 
-    align-items: stretch;
+    align-items:
+      stretch;
   }
 
 
   .pager {
 
-    display: grid;
+    display:
+      grid;
 
     grid-template-columns:
       1fr
@@ -812,72 +955,76 @@ tbody tr:hover td {
 
   .pager button {
 
-    width: 100%;
+    width:
+      100%;
   }
 
-
-  /* Mobile cards ON */
 
   .mobileResults {
 
-    display: block;
+    display:
+      block;
   }
 
-
-  /* Wide table OFF */
 
   .tableWrap {
 
-    display: none !important;
-  }
-
-
-  .dataCard {
-
-    width: 100%;
+    display:
+      none !important;
   }
 
 
   .statusMessage {
 
-    font-size: 15px;
+    font-size:
+      14px;
 
-    padding: 15px 12px;
+    padding:
+      13px
+      10px;
   }
+
 }
 
 
 /* =========================================
-   SMALL PHONES
+   SMALL PHONE
    ========================================= */
 
 @media (max-width: 380px) {
 
   .app {
 
-    padding-left: 9px;
+    padding-left:
+      9px;
 
-    padding-right: 9px;
+    padding-right:
+      9px;
   }
 
 
   .topbar {
 
-    margin-left: -9px;
+    margin-left:
+      -9px;
 
-    margin-right: -9px;
+    margin-right:
+      -9px;
   }
 
 
   .title h1 {
 
-    font-size: 21px;
+    font-size:
+      21px;
   }
 
 
   .panel,
   .results {
 
-    padding: 11px;
+    padding:
+      11px;
   }
+
 }

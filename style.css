@@ -11,6 +11,7 @@
   --border: #f0c9a5;
 
   --shadow: 0 5px 18px rgba(180, 83, 9, 0.10);
+
   --sans: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -28,8 +29,10 @@ body {
   margin: 0;
   width: 100%;
   min-height: 100vh;
+
   background: var(--bg);
   color: var(--text);
+
   font: 16px/1.45 var(--sans);
 }
 
@@ -40,19 +43,23 @@ body {
 .app {
   width: 100%;
   max-width: 1126px;
+
   margin: 0 auto;
+
   padding: 0 16px 30px;
+
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
 /* =========================
-   TOP HEADER
+   HEADER
    ========================= */
 
 .topbar {
   margin: 0 -16px;
+
   padding:
     calc(15px + env(safe-area-inset-top))
     18px
@@ -61,6 +68,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 12px;
 
   background: linear-gradient(
@@ -80,18 +88,23 @@ body {
 
 .title h1 {
   margin: 0;
+
   font-size: 25px;
   line-height: 1.15;
+
   font-weight: 750;
+
   letter-spacing: -0.3px;
+
   color: white;
-  text-transform: none;
 }
 
 .subtitle {
   margin: 4px 0 0;
+
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
+
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .topActions {
@@ -107,9 +120,11 @@ body {
 .primary,
 .secondary,
 .danger {
+
   min-height: 44px;
 
   border-radius: 12px;
+
   border: 1px solid var(--border);
 
   padding: 10px 14px;
@@ -126,18 +141,20 @@ body {
 
 .primary:active,
 .secondary:active,
-.danger:active,
-.link:active {
+.danger:active {
   transform: scale(0.97);
 }
 
 .primary {
+
   border-color: var(--orange);
+
   background: linear-gradient(
     135deg,
     #ff9800,
     #e65100
   );
+
   color: white;
 
   box-shadow:
@@ -145,27 +162,38 @@ body {
 }
 
 .secondary {
+
   background: white;
+
   color: var(--text-h);
 }
 
 .topActions .secondary {
-  color: var(--orange-dark);
-  border-color: rgba(255,255,255,.65);
+
+  color: white;
+
+  border-color: rgba(255, 255, 255, 0.65);
+
+  background: rgba(255, 255, 255, 0.12);
 }
 
 button:disabled {
+
   opacity: 0.5;
+
   cursor: not-allowed;
 }
 
 /* =========================
-   MAIN SEARCH PANEL
+   SEARCH PANEL
    ========================= */
 
 .panel {
+
   border: 1px solid var(--border);
+
   border-radius: 20px;
+
   padding: 16px;
 
   background: var(--card);
@@ -174,7 +202,9 @@ button:disabled {
 }
 
 .row {
+
   display: grid;
+
   grid-template-columns:
     1.5fr
     1fr
@@ -183,18 +213,25 @@ button:disabled {
     auto;
 
   gap: 12px;
+
   align-items: end;
 }
 
 .field {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 6px;
 }
 
 .label {
+
   font-size: 13px;
+
   color: var(--text);
+
   font-weight: 600;
 }
 
@@ -204,7 +241,9 @@ button:disabled {
 
 input,
 select {
+
   width: 100%;
+
   min-height: 46px;
 
   font: 15px/1.4 var(--sans);
@@ -212,9 +251,11 @@ select {
   padding: 10px 12px;
 
   border-radius: 12px;
+
   border: 1px solid #e6c5a5;
 
   background: #fffdfb;
+
   color: var(--text-h);
 
   outline: none;
@@ -225,11 +266,13 @@ select {
 }
 
 input::placeholder {
+
   color: #9ca3af;
 }
 
 input:focus,
 select:focus {
+
   border-color: var(--orange);
 
   box-shadow:
@@ -238,9 +281,10 @@ select:focus {
 
 input:focus-visible,
 select:focus-visible,
-button:focus-visible,
-.link:focus-visible {
+button:focus-visible {
+
   outline: 2px solid var(--orange);
+
   outline-offset: 2px;
 }
 
@@ -249,6 +293,7 @@ button:focus-visible,
    ========================= */
 
 .filters {
+
   margin-top: 18px;
 
   border-top: 1px solid #f1dfcf;
@@ -257,34 +302,51 @@ button:focus-visible,
 }
 
 .filtersHeader {
+
   display: flex;
+
   align-items: center;
+
   gap: 8px;
 }
 
 .filtersTitle {
+
   font-size: 14px;
+
   color: var(--text-h);
+
   font-weight: 700;
+
   margin-right: auto;
 }
 
 .filtersGrid {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 10px;
+
   margin-top: 12px;
 }
 
 .filterRow {
+
   display: grid;
+
   grid-template-columns: 1fr 1fr auto;
+
   gap: 10px;
 }
 
 .hint {
+
   margin: 10px 0 0;
+
   font-size: 12px;
+
   color: #8b735f;
 }
 
@@ -293,6 +355,7 @@ button:focus-visible,
    ========================= */
 
 .error {
+
   margin-top: 12px;
 
   padding: 12px 14px;
@@ -313,360 +376,13 @@ button:focus-visible,
    ========================= */
 
 .results {
+
   border: 1px solid var(--border);
+
   border-radius: 20px;
 
   padding: 16px;
 
   background: white;
 
-  box-shadow: var(--shadow);
-}
-
-.resultsTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 12px;
-
-  margin-bottom: 12px;
-}
-
-.resultsSummary {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.pager {
-  display: flex;
-  gap: 8px;
-}
-
-/* =========================
-   TABLE
-   ========================= */
-
-.tableWrap {
-  overflow-x: auto;
-  overflow-y: auto;
-
-  max-width: 100%;
-
-  border: 1px solid var(--border);
-  border-radius: 14px;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-table {
-  border-collapse: collapse;
-
-  width: 100%;
-  min-width: 900px;
-
-  background: white;
-}
-
-th,
-td {
-  border-bottom: 1px solid #f1e4d9;
-
-  padding: 10px 12px;
-
-  font-size: 13px;
-
-  vertical-align: top;
-
-  white-space: nowrap;
-}
-
-th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-
-  background:
-    linear-gradient(
-      135deg,
-      #fff3e0,
-      #ffe0b2
-    );
-
-  color: #7c3600;
-
-  text-align: left;
-
-  font-weight: 750;
-}
-
-tbody tr:nth-child(even) td {
-  background: #fffaf6;
-}
-
-tbody tr:hover td {
-  background: #fff0df;
-}
-
-/* =========================
-   CSV LINK
-   ========================= */
-
-.link {
-  color: var(--orange-dark);
-
-  text-decoration: none;
-
-  border: 1px solid #f3c79e;
-
-  border-radius: 11px;
-
-  padding: 9px 11px;
-
-  background: white;
-
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* =========================
-   TABLET
-   ========================= */
-
-@media (max-width: 900px) {
-
-  .row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .row .field:first-child {
-    grid-column: 1 / -1;
-  }
-
-  .row .primary {
-    width: 100%;
-  }
-
-  table {
-    min-width: 750px;
-  }
-}
-
-/* =========================
-   MOBILE PORTRAIT
-   ========================= */
-
-@media (max-width: 600px) {
-
-  body {
-    background: var(--orange-soft);
-  }
-
-  .app {
-    width: 100%;
-    max-width: 520px;
-
-    padding:
-      0
-      12px
-      calc(25px + env(safe-area-inset-bottom));
-
-    gap: 13px;
-  }
-
-  /* Header */
-
-  .topbar {
-    margin: 0 -12px;
-
-    padding:
-      calc(14px + env(safe-area-inset-top))
-      16px
-      16px;
-
-    border-radius: 0 0 22px 22px;
-  }
-
-  .title h1 {
-    font-size: 22px;
-  }
-
-  .subtitle {
-    font-size: 12px;
-  }
-
-  .topActions {
-    gap: 5px;
-  }
-
-  .topActions .link {
-    display: none;
-  }
-
-  .topActions .secondary {
-    min-width: 44px;
-    padding: 10px;
-    font-size: 0;
-  }
-
-  .topActions .secondary::before {
-    content: "↻";
-    font-size: 22px;
-  }
-
-  /* Search panel */
-
-  .panel {
-    padding: 14px;
-
-    border-radius: 18px;
-
-    box-shadow:
-      0 4px 15px rgba(180, 83, 9, 0.09);
-  }
-
-  .row {
-    display: flex;
-    flex-direction: column;
-
-    gap: 12px;
-  }
-
-  .field,
-  .field.small {
-    width: 100%;
-  }
-
-  .label {
-    font-size: 13px;
-  }
-
-  input,
-  select {
-    min-height: 49px;
-    font-size: 16px;
-    border-radius: 13px;
-  }
-
-  .row .primary {
-    width: 100%;
-    min-height: 50px;
-
-    font-size: 16px;
-
-    border-radius: 13px;
-  }
-
-  /* Filters */
-
-  .filters {
-    margin-top: 16px;
-    padding-top: 14px;
-  }
-
-  .filtersHeader {
-    flex-wrap: wrap;
-  }
-
-  .filtersTitle {
-    width: 100%;
-    margin-bottom: 2px;
-  }
-
-  .filtersHeader .secondary {
-    flex: 1;
-  }
-
-  .filterRow {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  /* Results */
-
-  .results {
-    padding: 13px;
-    border-radius: 18px;
-  }
-
-  .resultsTop {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .resultsSummary {
-    font-size: 13px;
-  }
-
-  .pager {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .pager button {
-    width: 100%;
-  }
-
-  .tableWrap {
-    border-radius: 12px;
-  }
-
-  table {
-    min-width: 700px;
-  }
-
-  th,
-  td {
-    padding: 9px 10px;
-    font-size: 12px;
-  }
-
-  .hint {
-    font-size: 11px;
-  }
-}
-
-/* =========================
-   VERY SMALL PHONES
-   ========================= */
-
-@media (max-width: 380px) {
-
-  .app {
-    padding-left: 9px;
-    padding-right: 9px;
-  }
-
-  .topbar {
-    margin-left: -9px;
-    margin-right: -9px;
-  }
-
-  .panel,
-  .results {
-    padding: 11px;
-  }
-
-  .title h1 {
-    font-size: 20px;
-  }
-
-  input,
-  select {
-    min-height: 46px;
-  }
-}
-
-/* =========================
-   PORTRAIT PREFERENCE
-   ========================= */
-
-@media (orientation: portrait) and (max-width: 600px) {
-
-  .app {
-    width: 100%;
-    max-width: 520px;
-  }
-}
+  box-shadow

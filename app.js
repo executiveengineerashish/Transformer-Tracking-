@@ -1,41 +1,71 @@
 // ==========================================
-// TRANSFORMER TRACKING
+// PR SEARCH
+// Searches EVERYTHING in the PR Search tab
 // ==========================================
 
-const SHEET_ID = "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
-const SHEET_GID = "1464518527";
+const SHEET_ID =
+  "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
+const SHEET_GID =
+  "1464518527";
+
+
+// Google Sheet CSV
 const CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
-const CACHE_KEY = "transformer_tracking_cache_v1";
-const CACHE_TTL_MS = 10 * 60 * 1000;
+
+// Cache
+const CACHE_KEY =
+  "pr_search_cache_v2";
+
+const CACHE_TTL_MS =
+  10 * 60 * 1000;
 
 
 // ==========================================
 // ELEMENTS
 // ==========================================
 
-const el = (id) => document.getElementById(id);
+const el = (id) =>
+  document.getElementById(id);
 
-const subtitle = el("subtitle");
-const refreshBtn = el("refreshBtn");
 
-const qInput = el("q");
-const searchBtn = el("searchBtn");
+const subtitle =
+  el("subtitle");
 
-const errorBox = el("error");
+const refreshBtn =
+  el("refreshBtn");
 
-const resultsSummary = el("resultsSummary");
+const qInput =
+  el("q");
 
-const prevBtn = el("prevBtn");
-const nextBtn = el("nextBtn");
+const searchBtn =
+  el("searchBtn");
 
-const tableWrap = el("tableWrap");
-const thead = el("thead");
-const tbody = el("tbody");
+const errorBox =
+  el("error");
 
-const mobileResults = el("mobileResults");
+const resultsSummary =
+  el("resultsSummary");
+
+const prevBtn =
+  el("prevBtn");
+
+const nextBtn =
+  el("nextBtn");
+
+const tableWrap =
+  el("tableWrap");
+
+const thead =
+  el("thead");
+
+const tbody =
+  el("tbody");
+
+const mobileResults =
+  el("mobileResults");
 
 
 // ==========================================
@@ -43,7 +73,9 @@ const mobileResults = el("mobileResults");
 // ==========================================
 
 let headers = [];
+
 let rows = [];
+
 let filtered = [];
 
 let offset = 0;
@@ -52,27 +84,31 @@ const limit = 50;
 
 
 // ==========================================
-// ERROR
+// NORMALIZE
 // ==========================================
 
-function showError(msg) {
+function normalize(value) {
 
-  errorBox.style.display = msg ? "block" : "none";
-
-  errorBox.textContent = msg || "";
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 
 }
 
 
 // ==========================================
-// NORMALIZE
+// ERROR
 // ==========================================
 
-function normalize(s) {
+function showError(message) {
 
-  return String(s ?? "")
-    .trim()
-    .toLowerCase();
+  errorBox.style.display =
+    message
+      ? "block"
+      : "none";
+
+  errorBox.textContent =
+    message || "";
 
 }
 
@@ -83,12 +119,14 @@ function normalize(s) {
 
 function parseCSV(text) {
 
-  const out = [];
+  const output = [];
 
   let row = [];
-  let cur = "";
+
+  let current = "";
 
   let i = 0;
+
   let inQuotes = false;
 
 
@@ -101,26 +139,31 @@ function parseCSV(text) {
 
       if (ch === '"') {
 
-        const next = text[i + 1];
+        const next =
+          text[i + 1];
+
 
         if (next === '"') {
 
-          cur += '"';
-          i += 2;
-          continue;
+          current += '"';
 
+          i += 2;
+
+          continue;
         }
+
 
         inQuotes = false;
 
-        i += 1;
+        i++;
 
         continue;
       }
 
-      cur += ch;
 
-      i += 1;
+      current += ch;
+
+      i++;
 
       continue;
     }
@@ -130,101 +173,110 @@ function parseCSV(text) {
 
       inQuotes = true;
 
-      i += 1;
+      i++;
 
       continue;
-
     }
 
 
     if (ch === ",") {
 
-      row.push(cur);
+      row.push(current);
 
-      cur = "";
+      current = "";
 
-      i += 1;
+      i++;
 
       continue;
-
     }
 
 
     if (ch === "\n") {
 
-      row.push(cur);
+      row.push(current);
 
-      out.push(row);
+      output.push(row);
 
       row = [];
 
-      cur = "";
+      current = "";
 
-      i += 1;
+      i++;
 
       continue;
-
     }
 
 
     if (ch === "\r") {
 
-      i += 1;
+      i++;
 
       continue;
-
     }
 
 
-    cur += ch;
+    current += ch;
 
-    i += 1;
-
+    i++;
   }
 
 
-  row.push(cur);
+  row.push(current);
 
-  out.push(row);
+  output.push(row);
 
-  return out;
 
+  return output;
 }
 
 
 // ==========================================
-// FIND HEADER
+// HEADER DETECTION
 // ==========================================
 
 function detectHeaderRow(records) {
 
-  const n = Math.min(records.length, 15);
+  const count =
+    Math.min(
+      records.length,
+      15
+    );
 
-  let bestIdx = 0;
+
+  let bestIndex = 0;
 
   let bestScore = -1;
 
 
-  for (let i = 0; i < n; i++) {
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
 
-    const r = records[i] || [];
+    const row =
+      records[i] || [];
 
-    const nonEmpty =
-      r.filter((c) => normalize(c).length > 0).length;
 
-    if (nonEmpty > bestScore) {
+    const score =
+      row.filter(
+        (cell) =>
+          normalize(cell).length > 0
+      ).length;
 
-      bestScore = nonEmpty;
 
-      bestIdx = i;
+    if (score > bestScore) {
 
+      bestScore = score;
+
+      bestIndex = i;
     }
-
   }
 
 
-  return bestScore >= 3 ? bestIdx : 0;
-
+  return bestScore >= 3
+    ? bestIndex
+    : 0;
 }
 
 
@@ -234,108 +286,130 @@ function detectHeaderRow(records) {
 
 function cleanData(records) {
 
-  const headerIdx = detectHeaderRow(records);
+  const headerIndex =
+    detectHeaderRow(records);
+
 
   const headerRow =
-    (records[headerIdx] || []).map((h, i) => {
+    (records[headerIndex] || [])
+      .map((header, index) => {
 
-      const t = String(h ?? "").trim();
-
-      return t
-        ? t
-        : `Column ${i + 1}`;
-
-    });
+        const value =
+          String(header ?? "")
+            .trim();
 
 
-  const data = records
-    .slice(headerIdx + 1)
+        return value
+          ? value
+          : `Column ${index + 1}`;
+      });
 
-    .map((r) =>
-      r.map((c) => String(c ?? ""))
-    )
 
-    .filter((r) =>
-      r.some((c) => normalize(c))
-    );
+  const data =
+    records
+      .slice(headerIndex + 1)
+
+      .map((row) =>
+        row.map(
+          (cell) =>
+            String(cell ?? "")
+        )
+      )
+
+      .filter((row) =>
+        row.some(
+          (cell) =>
+            normalize(cell)
+        )
+      );
 
 
   return {
     headerRow,
     data
   };
-
 }
 
 
 // ==========================================
-// FETCH CSV
+// FETCH GOOGLE SHEET
 // ==========================================
 
-async function fetchSheetCSV(force = false) {
+async function fetchSheetCSV(
+  force = false
+) {
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
 
   if (!force) {
 
     const cached =
-      localStorage.getItem(CACHE_KEY);
+      localStorage.getItem(
+        CACHE_KEY
+      );
 
 
     if (cached) {
 
       try {
 
-        const parsed = JSON.parse(cached);
+        const parsed =
+          JSON.parse(cached);
 
 
         if (
           parsed &&
-          now - parsed.fetchedAt < CACHE_TTL_MS &&
-          typeof parsed.csvText === "string"
+          typeof parsed.csvText === "string" &&
+          now - parsed.fetchedAt <
+            CACHE_TTL_MS
         ) {
 
           return {
-            csvText: parsed.csvText,
-            fetchedAt: parsed.fetchedAt,
+
+            csvText:
+              parsed.csvText,
+
+            fetchedAt:
+              parsed.fetchedAt,
+
             cached: true
           };
-
         }
 
       } catch {
 
-        // Ignore cache errors
-
+        // Ignore bad cache
       }
-
     }
-
   }
 
 
-  const res =
-    await fetch(CSV_URL, {
-      cache: "no-store"
-    });
-
-
-  if (!res.ok) {
-
-    throw new Error(
-      `CSV fetch failed: ${res.status}`
+  const response =
+    await fetch(
+      CSV_URL,
+      {
+        cache: "no-store"
+      }
     );
 
+
+  if (!response.ok) {
+
+    throw new Error(
+      `Google Sheet fetch failed: ${response.status}`
+    );
   }
 
 
   const csvText =
-    await res.text();
+    await response.text();
 
 
   localStorage.setItem(
     CACHE_KEY,
+
     JSON.stringify({
       fetchedAt: now,
       csvText
@@ -344,146 +418,353 @@ async function fetchSheetCSV(force = false) {
 
 
   return {
+
     csvText,
+
     fetchedAt: now,
+
     cached: false
   };
-
 }
 
 
 // ==========================================
-// SEARCH
+// FIND DATE COLUMNS
+// ==========================================
+
+function findDateColumn(
+  type
+) {
+
+  const wanted =
+    type === "replacement"
+      ? [
+          "replacement date",
+          "replacementdate",
+          "tx replacement date",
+          "transformer replacement date",
+          "date of replacement",
+          "replacement"
+        ]
+      : [
+          "issue date",
+          "issued date",
+          "issuedate",
+          "tx issue date",
+          "transformer issue date",
+          "date of issue",
+          "issue"
+        ];
+
+
+  for (
+    let i = 0;
+    i < headers.length;
+    i++
+  ) {
+
+    const header =
+      normalize(
+        headers[i]
+      )
+      .replace(/[_-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+
+    if (
+      wanted.some(
+        (name) =>
+          header === name
+      )
+    ) {
+
+      return i;
+    }
+  }
+
+
+  // Second-level flexible matching
+
+  for (
+    let i = 0;
+    i < headers.length;
+    i++
+  ) {
+
+    const header =
+      normalize(
+        headers[i]
+      )
+      .replace(/[_-]/g, " ");
+
+
+    if (
+      type === "replacement" &&
+      header.includes("replacement") &&
+      header.includes("date")
+    ) {
+
+      return i;
+    }
+
+
+    if (
+      type === "issue" &&
+      header.includes("issue") &&
+      header.includes("date")
+    ) {
+
+      return i;
+    }
+  }
+
+
+  return -1;
+}
+
+
+// ==========================================
+// CHECK TRANSFORMER STATUS
+// ==========================================
+
+function getTransformerStatus(
+  row
+) {
+
+  const replacementColumn =
+    findDateColumn(
+      "replacement"
+    );
+
+
+  const issueColumn =
+    findDateColumn(
+      "issue"
+    );
+
+
+  const replacementDate =
+    replacementColumn >= 0
+      ? String(
+          row[replacementColumn] ?? ""
+        ).trim()
+      : "";
+
+
+  const issueDate =
+    issueColumn >= 0
+      ? String(
+          row[issueColumn] ?? ""
+        ).trim()
+      : "";
+
+
+  /*
+    Replacement Date has priority.
+
+    If replacement date is filled:
+    Transformer installed.
+
+    Otherwise if issue date is filled:
+    Transformer issued by workshop.
+  */
+
+  if (replacementDate) {
+
+    return {
+      type: "installed",
+      date: replacementDate
+    };
+  }
+
+
+  if (issueDate) {
+
+    return {
+      type: "issued",
+      date: issueDate
+    };
+  }
+
+
+  return {
+    type: "none",
+    date: ""
+  };
+}
+
+
+// ==========================================
+// SEARCH ENTIRE PR SEARCH SHEET
 // ==========================================
 
 function applySearch() {
 
-  const q =
-    normalize(qInput.value);
+  const query =
+    normalize(
+      qInput.value
+    );
 
 
-  // Empty search = show all data
+  /*
+    Empty search:
+    Show complete PR Search sheet.
+  */
 
-  if (!q) {
+  if (!query) {
 
-    filtered = [...rows];
+    filtered =
+      [...rows];
 
     offset = 0;
 
     renderPage();
 
     return;
-
   }
 
 
   /*
-    Search PR / Complaint related columns first.
-    If no such column is found, search all columns.
+    IMPORTANT:
+
+    Search EVERY row
+    and EVERY column.
+
+    It is NOT restricted
+    to PR column or
+    Complaint column.
   */
 
-  const searchColumns = [];
+  filtered =
+    rows.filter(
+      (row) => {
 
-
-  headers.forEach((header, index) => {
-
-    const h = normalize(header);
-
-    if (
-      h.includes("pr") ||
-      h.includes("complaint") ||
-      h.includes("complain")
-    ) {
-
-      searchColumns.push(index);
-
-    }
-
-  });
-
-
-  filtered = rows.filter((row) => {
-
-    if (searchColumns.length) {
-
-      return searchColumns.some((index) =>
-        normalize(row[index]).includes(q)
-      );
-
-    }
-
-
-    return row.some((cell) =>
-      normalize(cell).includes(q)
+        return row.some(
+          (cell) =>
+            normalize(
+              cell
+            ).includes(query)
+        );
+      }
     );
-
-  });
 
 
   offset = 0;
 
   renderPage();
-
 }
 
 
 // ==========================================
-// DESKTOP TABLE
+// CREATE STATUS MESSAGE
 // ==========================================
 
-function renderTable(page) {
+function createStatusMessage(
+  status
+) {
 
-  thead.innerHTML = "";
+  if (
+    status.type ===
+    "installed"
+  ) {
 
-  tbody.innerHTML = "";
-
-
-  const trh =
-    document.createElement("tr");
-
-
-  headers.forEach((header) => {
-
-    const th =
-      document.createElement("th");
-
-    th.textContent = header;
-
-    trh.appendChild(th);
-
-  });
+    const div =
+      document.createElement(
+        "div"
+      );
 
 
-  thead.appendChild(trh);
+    div.className =
+      "statusMessage statusInstalled";
 
 
-  page.forEach((row) => {
-
-    const tr =
-      document.createElement("tr");
-
-
-    headers.forEach((_header, index) => {
-
-      const td =
-        document.createElement("td");
-
-      td.textContent =
-        row[index] ?? "";
-
-      tr.appendChild(td);
-
-    });
+    div.innerHTML =
+      `🎉 Congratulations!<br>
+       Your Transformer is installed.`;
 
 
-    tbody.appendChild(tr);
+    if (status.date) {
 
-  });
+      const small =
+        document.createElement(
+          "div"
+        );
+
+      small.style.fontSize =
+        "12px";
+
+      small.style.fontWeight =
+        "500";
+
+      small.style.marginTop =
+        "5px";
+
+      small.textContent =
+        `Replacement Date: ${status.date}`;
 
 
-  tableWrap.style.display =
-    page.length ? "block" : "none";
+      div.appendChild(
+        small
+      );
+    }
 
+
+    return div;
+  }
+
+
+  if (
+    status.type ===
+    "issued"
+  ) {
+
+    const div =
+      document.createElement(
+        "div"
+      );
+
+
+    div.className =
+      "statusMessage statusIssued";
+
+
+    div.innerHTML =
+      `⚡ Your Transformer has been issued by Workshop.<br>
+       Please contact the driver for installation.`;
+
+
+    if (status.date) {
+
+      const small =
+        document.createElement(
+          "div"
+        );
+
+      small.style.fontSize =
+        "12px";
+
+      small.style.fontWeight =
+        "500";
+
+      small.style.marginTop =
+        "5px";
+
+      small.textContent =
+        `Issue Date: ${status.date}`;
+
+
+      div.appendChild(
+        small
+      );
+    }
+
+
+    return div;
+  }
+
+
+  return null;
 }
 
 
@@ -491,83 +772,245 @@ function renderTable(page) {
 // MOBILE CARDS
 // ==========================================
 
-function renderMobileCards(page) {
+function renderMobileCards(
+  page
+) {
 
-  mobileResults.innerHTML = "";
-
-
-  page.forEach((row, rowIndex) => {
-
-    const card =
-      document.createElement("div");
-
-    card.className =
-      "dataCard";
+  mobileResults.innerHTML =
+    "";
 
 
-    const title =
-      document.createElement("div");
+  page.forEach(
+    (row, rowIndex) => {
 
-    title.className =
-      "dataCardTitle";
-
-    title.textContent =
-      `Transformer Record ${offset + rowIndex + 1}`;
-
-
-    card.appendChild(title);
+      const card =
+        document.createElement(
+          "div"
+        );
 
 
-    headers.forEach((header, index) => {
-
-      const value =
-        row[index] ?? "";
+      card.className =
+        "dataCard";
 
 
-      if (!normalize(value)) return;
+      const status =
+        getTransformerStatus(
+          row
+        );
 
 
-      const item =
-        document.createElement("div");
+      /*
+        Show status only when
+        user has actually searched.
+      */
 
-      item.className =
-        "dataItem";
+      if (
+        qInput.value.trim() &&
+        status.type !== "none"
+      ) {
+
+        const statusMessage =
+          createStatusMessage(
+            status
+          );
 
 
-      const label =
-        document.createElement("span");
+        if (statusMessage) {
 
-      label.className =
-        "dataLabel";
+          card.appendChild(
+            statusMessage
+          );
+        }
+      }
 
-      label.textContent =
+
+      const title =
+        document.createElement(
+          "div"
+        );
+
+
+      title.className =
+        "dataCardTitle";
+
+
+      title.textContent =
+        `Transformer Record ${
+          offset + rowIndex + 1
+        }`;
+
+
+      card.appendChild(
+        title
+      );
+
+
+      headers.forEach(
+        (header, index) => {
+
+          const value =
+            row[index] ?? "";
+
+
+          if (
+            !String(value).trim()
+          ) {
+
+            return;
+          }
+
+
+          const item =
+            document.createElement(
+              "div"
+            );
+
+
+          item.className =
+            "dataItem";
+
+
+          const label =
+            document.createElement(
+              "span"
+            );
+
+
+          label.className =
+            "dataLabel";
+
+
+          label.textContent =
+            header;
+
+
+          const val =
+            document.createElement(
+              "span"
+            );
+
+
+          val.className =
+            "dataValue";
+
+
+          val.textContent =
+            value;
+
+
+          item.appendChild(
+            label
+          );
+
+
+          item.appendChild(
+            val
+          );
+
+
+          card.appendChild(
+            item
+          );
+
+        }
+      );
+
+
+      mobileResults.appendChild(
+        card
+      );
+
+    }
+  );
+}
+
+
+// ==========================================
+// DESKTOP TABLE
+// ==========================================
+
+function renderTable(
+  page
+) {
+
+  thead.innerHTML =
+    "";
+
+  tbody.innerHTML =
+    "";
+
+
+  const headerRow =
+    document.createElement(
+      "tr"
+    );
+
+
+  headers.forEach(
+    (header) => {
+
+      const th =
+        document.createElement(
+          "th"
+        );
+
+
+      th.textContent =
         header;
 
 
-      const val =
-        document.createElement("span");
-
-      val.className =
-        "dataValue";
-
-      val.textContent =
-        value;
+      headerRow.appendChild(
+        th
+      );
+    }
+  );
 
 
-      item.appendChild(label);
-
-      item.appendChild(val);
-
-
-      card.appendChild(item);
-
-    });
+  thead.appendChild(
+    headerRow
+  );
 
 
-    mobileResults.appendChild(card);
+  page.forEach(
+    (row) => {
 
-  });
+      const tr =
+        document.createElement(
+          "tr"
+        );
 
+
+      headers.forEach(
+        (_header, index) => {
+
+          const td =
+            document.createElement(
+              "td"
+            );
+
+
+          td.textContent =
+            row[index] ?? "";
+
+
+          tr.appendChild(
+            td
+          );
+        }
+      );
+
+
+      tbody.appendChild(
+        tr
+      );
+    }
+  );
+
+
+  tableWrap.style.display =
+    page.length
+      ? "block"
+      : "none";
 }
 
 
@@ -584,7 +1027,9 @@ function renderPage() {
     );
 
 
-  if (!filtered.length) {
+  if (
+    filtered.length === 0
+  ) {
 
     resultsSummary.textContent =
       "No records found.";
@@ -592,13 +1037,16 @@ function renderPage() {
   } else {
 
     resultsSummary.textContent =
-      `Showing ${offset + 1}–${
+      `Showing ${
+        offset + 1
+      }–${
         Math.min(
           filtered.length,
           offset + page.length
         )
-      } of ${filtered.length}`;
-
+      } of ${
+        filtered.length
+      }`;
   }
 
 
@@ -607,13 +1055,18 @@ function renderPage() {
 
 
   nextBtn.disabled =
-    offset + limit >= filtered.length;
+    offset + limit >=
+    filtered.length;
 
 
-  renderTable(page);
+  renderMobileCards(
+    page
+  );
 
-  renderMobileCards(page);
 
+  renderTable(
+    page
+  );
 }
 
 
@@ -621,11 +1074,15 @@ function renderPage() {
 // INITIAL LOAD
 // ==========================================
 
-async function init(force = false) {
+async function init(
+  force = false
+) {
 
   showError("");
 
-  setSubtitle("Loading transformer data…");
+  setSubtitle(
+    "Loading PR Search…"
+  );
 
 
   try {
@@ -635,15 +1092,21 @@ async function init(force = false) {
       fetchedAt,
       cached
     } =
-      await fetchSheetCSV(force);
+      await fetchSheetCSV(
+        force
+      );
 
 
     const records =
-      parseCSV(csvText);
+      parseCSV(
+        csvText
+      );
 
 
     const cleaned =
-      cleanData(records);
+      cleanData(
+        records
+      );
 
 
     headers =
@@ -655,9 +1118,8 @@ async function init(force = false) {
 
 
     /*
-      IMPORTANT:
-      Automatically show all data
-      without pressing Search.
+      Automatically show
+      complete PR Search sheet.
     */
 
     filtered =
@@ -671,29 +1133,46 @@ async function init(force = false) {
 
 
     setSubtitle(
-      `${rows.length.toLocaleString()} records • Updated ${new Date(
-        fetchedAt
-      ).toLocaleString()}${
-        cached ? " • cached" : ""
+      `${
+        rows.length.toLocaleString()
+      } records • Updated ${
+        new Date(
+          fetchedAt
+        ).toLocaleString()
+      }${
+        cached
+          ? " • cached"
+          : ""
       }`
     );
 
 
-  } catch (e) {
+  } catch (error) {
 
     showError(
-      e instanceof Error
-        ? `${e.message}. If this is on GitHub Pages, check CSV access/CORS.`
-        : String(e)
+      error instanceof Error
+        ? error.message
+        : String(error)
     );
 
 
     setSubtitle(
-      "Failed to load transformer data."
+      "Failed to load PR Search."
     );
-
   }
+}
 
+
+// ==========================================
+// SET SUBTITLE
+// ==========================================
+
+function setSubtitle(
+  text
+) {
+
+  subtitle.textContent =
+    text;
 }
 
 
@@ -701,27 +1180,17 @@ async function init(force = false) {
 // EVENTS
 // ==========================================
 
+
+// Search button
+
 searchBtn.addEventListener(
   "click",
   applySearch
 );
 
 
-qInput.addEventListener(
-  "keydown",
-  (e) => {
-
-    if (e.key === "Enter") {
-
-      applySearch();
-
-    }
-
-  }
-);
-
-
-// Search automatically while typing
+// Search automatically
+// while typing
 
 qInput.addEventListener(
   "input",
@@ -737,10 +1206,28 @@ qInput.addEventListener(
         applySearch,
         250
       );
-
   }
 );
 
+
+// Enter key
+
+qInput.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      event.key ===
+      "Enter"
+    ) {
+
+      applySearch();
+    }
+  }
+);
+
+
+// Previous
 
 prevBtn.addEventListener(
   "click",
@@ -752,11 +1239,13 @@ prevBtn.addEventListener(
         offset - limit
       );
 
-    renderPage();
 
+    renderPage();
   }
 );
 
+
+// Next
 
 nextBtn.addEventListener(
   "click",
@@ -768,18 +1257,19 @@ nextBtn.addEventListener(
         offset + limit
       );
 
-    renderPage();
 
+    renderPage();
   }
 );
 
+
+// Refresh
 
 refreshBtn.addEventListener(
   "click",
   () => {
 
     init(true);
-
   }
 );
 

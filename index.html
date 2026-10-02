@@ -1,52 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-  <title>PR Search</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1,
+  maximum-scale=1,user-scalable=no"
+>
+
+<title>PR Search</title>
+
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="app">
 
-  <header class="top">
-    <div class="title">PR Search</div>
-    <div class="sub" id="status">Connecting to PR SEARCH...</div>
+  <header class="header">
+
+    <div class="title">
+      PR Search
+    </div>
+
+    <div id="status" class="status">
+      Connecting to PR SEARCH...
+    </div>
+
   </header>
+
 
   <main>
 
-    <section class="searchBox">
-      <label>PR / Complaint Number</label>
+    <div class="search-card">
 
-      <div class="searchRow">
+      <div class="search-label">
+        PR / Complaint Number
+      </div>
+
+      <div class="search-row">
+
         <input
           id="searchInput"
           type="search"
-          inputmode="numeric"
           placeholder="Enter PR / Complaint Number"
           autocomplete="off"
         >
-        <button id="searchBtn">SEARCH</button>
+
+        <button id="searchBtn">
+          SEARCH
+        </button>
+
       </div>
 
-      <div class="hint">
-        Search works across all columns
+      <div class="search-hint">
+        Search PR No, Complaint No, DID, Place, JE Name or any value
       </div>
-    </section>
 
-    <section id="message" class="message">
+    </div>
+
+
+    <div id="message" class="message">
       Enter PR / Complaint Number to search.
-    </section>
+    </div>
 
-    <section id="results"></section>
+
+    <div id="results"></div>
 
   </main>
 
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>

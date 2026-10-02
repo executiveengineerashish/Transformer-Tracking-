@@ -5,7 +5,6 @@ let ALL=[];
 let timer=null;
 
 const $=id=>document.getElementById(id);
-
 const clean=x=>String(x??"").trim();
 
 const norm=x=>
@@ -23,7 +22,13 @@ function escapeHTML(x){
 }
 
 
-/* LOCATION NORMALIZATION */
+/* PLACE NORMALIZATION
+   SISREDI
+   SISREDI 1
+   1 SISREDI
+   SISREDI (1)
+   = SAME PLACE
+*/
 
 function locationKey(x){
 
@@ -122,8 +127,7 @@ function loadSheet(){
 
     }
 
-    if(!a.some(clean))
-     return;
+    if(!a.some(clean))return;
 
     a.__row=index+4;
     a.__search=norm(a.join(" "));
@@ -131,7 +135,6 @@ function loadSheet(){
     ALL.push(a);
 
    });
-
 
    buildDashboard();
 
@@ -147,7 +150,6 @@ function loadSheet(){
     "Error reading PR SEARCH data";
 
    $("searchStatus").classList.add("error");
-
   }
 
  };
@@ -155,9 +157,7 @@ function loadSheet(){
 
  let old=$("googleSheetScript");
 
- if(old)
-  old.remove();
-
+ if(old)old.remove();
 
  let script=document.createElement("script");
 
@@ -179,12 +179,9 @@ function loadSheet(){
   $("searchStatus").textContent=
    "Google Sheet connection failed. Refresh page.";
 
-  $("searchStatus").classList.add("error");
-
  };
 
  document.head.appendChild(script);
-
 }
 
 
@@ -194,21 +191,17 @@ function buildDashboard(){
 
  if(!ALL.length)return;
 
- let month=
-  ALL.filter(x=>currentMonth(x[13]));
+ let month=ALL.filter(x=>currentMonth(x[13]));
 
  let issued=0;
  let pending=0;
  let replacement=0;
  let returned=0;
 
-
-/* STATUS */
-
  month.forEach(function(x){
 
   let issue=clean(x[17]);
-  let replace=clean(x[20]);
+  let rep=clean(x[20]);
   let ret=clean(x[22]);
 
   if(!issue){
@@ -219,12 +212,11 @@ function buildDashboard(){
 
    issued++;
 
-   if(!replace)
+   if(!rep)
     replacement++;
 
    else if(!ret)
     returned++;
-
   }
 
  });
@@ -237,16 +229,16 @@ function buildDashboard(){
  $("dashReturn").textContent=returned;
 
 
- let n=new Date();
+ let now=new Date();
 
  $("dashboardMonth").textContent=
-  n.toLocaleString("en-IN",{
+  now.toLocaleString("en-IN",{
    month:"long",
    year:"numeric"
   });
 
 
-/* WORKSHOP */
+ /* ================= WORKSHOP PENDING ================= */
 
  let W={};
 
@@ -257,43 +249,119 @@ function buildDashboard(){
    let w=clean(x[1])||"OTHER";
 
    W[w]=(W[w]||0)+1;
+  }
 
+ });
+
+ let wl=
+  Object.entries(W)
+  .sort((a,b)=>b[1]-a[1]);
+
+ let max=wl[0]?.[1]||1;
+
+ $("workshopDashboard").innerHTML=
+
+ wl.length?
+
+ wl.map(function(x){
+
+  return `
+  <div class="dashboard-row">
+
+   <div class="dashboard-row-title">
+    <span>${escapeHTML(x[0])}</span>
+    <span>${x[1]}</span>
+   </div>
+
+   <div class="dashboard-bar-bg">
+    <div class="dashboard-bar"
+         style="width:${x[1]/max*100}%">
+    </div>
+   </div>
+
+  </div>`;
+
+ }).join("")
+
+ :
+
+ "No pending transformer";
+
+
+ /* ================= WORKSHOP AGEING ================= */
+
+ let AGE={};
+
+ month.forEach(function(x){
+
+  if(!clean(x[17])){
+
+   let w=clean(x[1])||"OTHER";
+
+   if(!AGE[w])
+    AGE[w]={
+     d1:0,
+     d3:0,
+     d7:0
+    };
+
+   let d=parseDate(x[13]);
+
+   if(!d)return;
+
+   let days=
+    (Date.now()-d.getTime())/
+    86400000;
+
+   if(days>1)
+    AGE[w].d1++;
+
+   if(days>3)
+    AGE[w].d3++;
+
+   if(days>7)
+    AGE[w].d7++;
   }
 
  });
 
 
- let list=
-  Object.entries(W)
-  .sort((a,b)=>b[1]-a[1]);
+ let ageList=
+  Object.entries(AGE)
+  .sort((a,b)=>
+   (b[1].d7+b[1].d3+b[1].d1)-
+   (a[1].d7+a[1].d3+a[1].d1)
+  );
 
- let max=list[0]?.[1]||1;
 
+ $("ageingDashboard").innerHTML=
 
- $("workshopDashboard").innerHTML=
+ ageList.length?
 
- list.length?
-
- list.map(function(x){
-
-  let width=x[1]/max*100;
+ ageList.map(function(x){
 
   return `
+  <div class="ageing-row">
 
-  <div class="dashboard-row">
-
-   <div class="dashboard-row-title">
-
-    <span>${escapeHTML(x[0])}</span>
-
-    <span>${x[1]}</span>
-
+   <div class="ageing-name">
+    ${escapeHTML(x[0])}
    </div>
 
-   <div class="dashboard-bar-bg">
+   <div class="ageing-grid">
 
-    <div class="dashboard-bar"
-         style="width:${width}%">
+    <div class="age-box">
+     <span>&gt; 1 Day</span>
+     <strong>${x[1].d1}</strong>
+    </div>
+
+    <div class="age-box">
+     <span>&gt; 3 Days</span>
+     <strong>${x[1].d3}</strong>
+    </div>
+
+    <div class="age-box">
+     <span>&gt; 7 Days</span>
+     <strong>${x[1].d7}</strong>
     </div>
 
    </div>
@@ -304,9 +372,85 @@ function buildDashboard(){
 
  :
 
- `<div class="no-dashboard-data">
-   No pending transformer
+ "No ageing pending";
+
+
+ /* ================= WORKSHOP + CAPACITY ================= */
+
+ let WC={};
+
+ month.forEach(function(x){
+
+  if(!clean(x[17])){
+
+   let w=clean(x[1])||"OTHER";
+   let c=clean(x[9])||"Unknown";
+
+   if(!WC[w])
+    WC[w]={};
+
+   WC[w][c]=(WC[w][c]||0)+1;
+  }
+
+ });
+
+
+ let wcList=
+  Object.entries(WC)
+  .sort((a,b)=>{
+
+   let aa=Object.values(a[1])
+    .reduce((s,v)=>s+v,0);
+
+   let bb=Object.values(b[1])
+    .reduce((s,v)=>s+v,0);
+
+   return bb-aa;
+  });
+
+
+ $("workshopCapacityDashboard").innerHTML=
+
+ wcList.length?
+
+ wcList.map(function(x){
+
+  let caps=
+   Object.entries(x[1])
+   .sort((a,b)=>
+    (parseFloat(a[0])||0)-
+    (parseFloat(b[0])||0)
+   );
+
+  return `
+  <div class="wc-row">
+
+   <div class="wc-name">
+    ${escapeHTML(x[0])}
+   </div>
+
+   <div class="wc-capacity">
+
+    ${caps.map(function(c){
+
+     return `
+     <div class="wc-chip">
+      ${escapeHTML(c[0])} kVA
+      <strong>${c[1]}</strong>
+     </div>`;
+
+    }).join("")}
+
+   </div>
+
   </div>`;
+
+ }).join("")
+
+ :
+
+ "No capacity pendency";
+
 
 }
 
@@ -315,23 +459,16 @@ function buildDashboard(){
 
 function searchRecords(){
 
- let q=norm(
-  $("searchInput").value
- );
+ let q=norm($("searchInput").value);
 
  if(!q){
 
   $("results").innerHTML="";
   return;
-
  }
 
-
  let found=
-  ALL.filter(x=>
-   x.__search.includes(q)
-  );
-
+  ALL.filter(x=>x.__search.includes(q));
 
  if(!found.length){
 
@@ -341,41 +478,32 @@ function searchRecords(){
     </div>`;
 
   return;
-
  }
 
-
  $("results").innerHTML=
-
- `<div class="result-count">
-   ${found.length.toLocaleString("en-IN")}
-   records found
-  </div>`+
-
- found.map((x,i)=>
-  buildCard(x,i+1)
- ).join("");
+  `<div class="result-count">
+    ${found.length} records found
+   </div>`+
+  found.map((x,i)=>
+   buildCard(x,i+1)
+  ).join("");
 
 }
 
 
-/* CARD */
+/* ================= RESULT CARD ================= */
 
 function buildCard(x,no){
 
  let issue=clean(x[17]);
  let replacement=clean(x[20]);
 
-
  let status="";
 
-
- /* ONLY U = REPLACEMENT DATE */
 
  if(replacement){
 
   status=`
-
   <div class="status-box status-installed">
 
    <strong>
@@ -389,11 +517,9 @@ function buildCard(x,no){
 
  }
 
-
  else if(issue){
 
   status=`
-
   <div class="status-box status-issued">
 
    <strong>
@@ -407,25 +533,19 @@ function buildCard(x,no){
    </div>
 
    ${clean(x[18])?
-    `<div>
-      Driver: ${escapeHTML(x[18])}
-     </div>`:""}
+    `<div>Driver: ${escapeHTML(x[18])}</div>`:""}
 
    ${clean(x[19])?
-    `<div>
-      Mobile: ${escapeHTML(x[19])}
-     </div>
+    `<div>Mobile: ${escapeHTML(x[19])}</div>
      ${driverButtons(x)}`:""}
 
   </div>`;
 
  }
 
-
  else{
 
   status=`
-
   <div class="status-box status-pending">
 
    <strong>
@@ -437,45 +557,79 @@ function buildCard(x,no){
  }
 
 
- /* REPEATED DAMAGE
-    ONLY SHOWN INSIDE SEARCH RESULT
- */
+ /* ================= DAMAGE FREQUENCY ================= */
 
- let location=locationKey(x[7]);
- let capacity=capacityKey(x[9]);
+ let loc=locationKey(x[7]);
+ let cap=capacityKey(x[9]);
 
  let history=
   ALL.filter(y=>
-   locationKey(y[7])===location &&
-   capacityKey(y[9])===capacity
+   locationKey(y[7])===loc &&
+   capacityKey(y[9])===cap
   );
 
 
- history.sort((a,b)=>{
+ history.sort(function(a,b){
 
   let da=parseDate(a[13])||parseDate(a[6])||new Date(0);
   let db=parseDate(b[13])||parseDate(b[6])||new Date(0);
 
   return da-db;
-
  });
 
 
- let repeated="";
+ let frequency="";
 
 
- if(history.length>1){
+ if(history.length===1){
 
-  repeated=`
+  frequency=`
+  <div class="damage-frequency">
 
-  <div class="repeated-box">
-
-   <div class="repeated-title">
-    ⚠ It Damaged ${history.length} times
+   <div class="damage-title">
+    ✓ No Repeat Damage
    </div>
 
-   <div class="repeated-warning">
-    Please Ensure Increasing Capacity if Overloaded
+   <div class="damage-subtitle">
+    This transformer has damaged only once
+    at the same place and same capacity.
+   </div>
+
+   <div class="history-item">
+
+    <div class="history-number">
+     1st Time
+    </div>
+
+    <div>
+     PR No: ${escapeHTML(x[12]||"-")}
+    </div>
+
+    <div>
+     PR Date: ${escapeHTML(x[13]||"-")}
+    </div>
+
+    <div>
+     Capacity: ${escapeHTML(x[9]||"-")} kVA
+    </div>
+
+   </div>
+
+  </div>`;
+
+ }
+
+ else{
+
+  frequency=`
+  <div class="damage-frequency">
+
+   <div class="damage-title">
+    🔄 ${history.length} Times Damage
+   </div>
+
+   <div class="damage-subtitle">
+    Same Place + Same Capacity
    </div>
 
    ${history.map(function(y,i){
@@ -486,7 +640,6 @@ function buildCard(x,no){
      i===2?"rd":"th";
 
     return `
-
     <div class="history-item">
 
      <div class="history-number">
@@ -498,14 +651,11 @@ function buildCard(x,no){
      </div>
 
      <div>
-      Date: ${escapeHTML(
-       y[13]||y[6]||"-"
-      )}
+      PR Date: ${escapeHTML(y[13]||"-")}
      </div>
 
      <div>
-      Capacity:
-      ${escapeHTML(y[9]||"-")} kVA
+      Capacity: ${escapeHTML(y[9]||"-")} kVA
      </div>
 
     </div>`;
@@ -517,33 +667,15 @@ function buildCard(x,no){
  }
 
 
- /* DATA */
+ /* ================= DATA ================= */
 
  let names=[
-  "SN",
-  "Workshop",
-  "Division",
-  "Subdivision",
-  "Substation",
-  "Feeder",
-  "Date of Damage",
-  "Place of Damage",
-  "DID No",
-  "Capacity",
-  "Complaint Number",
-  "Complaint Date",
-  "PR No",
-  "PR Date",
-  "JE Name",
-  "JE Mobile",
-  "Issued to Firm",
-  "Issue Date",
-  "Driver Name",
-  "Driver Mobile",
-  "Replacement Date",
-  "Time",
-  "TX Return Date",
-  "Observation DTC"
+  "SN","Workshop","Division","Subdivision","Substation",
+  "Feeder","Date of Damage","Place of Damage","DID No",
+  "Capacity","Complaint Number","Complaint Date","PR No",
+  "PR Date","JE Name","JE Mobile","Issued to Firm","Issue Date",
+  "Driver Name","Driver Mobile","Replacement Date","Time",
+  "TX Return Date","Observation DTC"
  ];
 
 
@@ -554,7 +686,6 @@ function buildCard(x,no){
   if(!clean(x[i]))return;
 
   data+=`
-
   <div class="data-row">
 
    <div class="data-label">
@@ -571,20 +702,16 @@ function buildCard(x,no){
 
 
  return `
-
  <div class="result-card">
 
   <div class="card-top">
-
    <span>#${no}</span>
-
    <span>Row ${x.__row}</span>
-
   </div>
 
   ${status}
 
-  ${repeated}
+  ${frequency}
 
   <div class="data-section">
    ${data}
@@ -605,7 +732,6 @@ function driverButtons(x){
  if(phone.length===10)
   phone="91"+phone;
 
-
  let message=
 `Namaste ${clean(x[18])||"Driver"} ji,
 
@@ -618,9 +744,7 @@ The transformer has been issued from Workshop. Please arrange installation and c
 
 Thank you.`;
 
-
  return `
-
  <div class="driver-buttons">
 
   <a class="call-driver"
@@ -630,7 +754,6 @@ Thank you.`;
 
   <a class="whatsapp-driver"
      target="_blank"
-     rel="noopener"
      href="https://wa.me/${phone}?text=${encodeURIComponent(message)}">
    💬 WHATSAPP
   </a>
@@ -642,37 +765,28 @@ Thank you.`;
 
 /* START */
 
-document.addEventListener(
- "DOMContentLoaded",
- function(){
+document.addEventListener("DOMContentLoaded",function(){
 
-  $("searchBtn").onclick=
-   searchRecords;
+ $("searchBtn").onclick=searchRecords;
 
+ $("searchInput").oninput=function(){
 
-  $("searchInput").oninput=
-   function(){
+  clearTimeout(timer);
 
-    clearTimeout(timer);
+  timer=setTimeout(
+   searchRecords,
+   60
+  );
 
-    timer=setTimeout(
-     searchRecords,
-     60
-    );
+ };
 
-   };
+ $("searchInput").onkeydown=function(e){
 
+  if(e.key==="Enter")
+   searchRecords();
 
-  $("searchInput").onkeydown=
-   function(e){
+ };
 
-    if(e.key==="Enter")
-     searchRecords();
+ loadSheet();
 
-   };
-
-
-  loadSheet();
-
- }
-);
+});

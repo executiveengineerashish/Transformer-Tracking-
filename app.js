@@ -1,1220 +1,843 @@
-const SHEET_ID =
-  "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
-
-const SHEET_GID =
-  "1464518527";
+const SHEET_ID = "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+const SHEET_GID = "1464518527";
 
 const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/" +
-  SHEET_ID +
-  "/export?format=csv&gid=" +
-  SHEET_GID;
-
-
-/* =========================================================
-   GLOBAL DATA
-========================================================= */
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 let ALL_RECORDS = [];
-let DAMAGE_HISTORY = {};
-let DATA_READY = false;
-let SEARCH_TIMER = null;
+let DAMAGE_HISTORY = new Map();
+let HEADERS = [];
 
+/* =========================
+   START
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
 
-/* =========================================================
-   START APP
-========================================================= */
+  const input = document.getElementById("searchInput");
+  const button = document.getElementById("searchBtn");
+  const status = document.getElementById("searchStatus");
 
-document.addEventListener("DOMContentLoaded", function () {
+  if (input) input.disabled = true;
+  if (button) button.disabled = true;
 
-  const input =
-    document.getElementById("searchInput");
-
-  const button =
-    document.getElementById("searchBtn");
-
-  const status =
-    document.getElementById("searchStatus");
-
-  const results =
-    document.getElementById("results");
-
-
-  /*
-    Disable search until ALL data is loaded.
-  */
-
-  input.disabled = true;
-  button.disabled = true;
-
-  input.placeholder =
-    "Loading PR SEARCH data...";
-
-
-  status.textContent =
-    "⏳ Loading all PR SEARCH data...";
-
-
-  results.innerHTML =
-    '<div class="loading">' +
-    '⏳ Loading all transformer records...<br>' +
-    '<small>Please wait. Search will be instant after loading.</small>' +
-    '</div>';
-
-
-  /*
-    FIRST LOAD ALL DATA
-  */
+  if (status) {
+    status.textContent = "Loading all transformer records...";
+  }
 
   loadAllData()
+    .then(() => {
 
-    .then(function () {
+      if (input) input.disabled = false;
+      if (button) button.disabled = false;
 
-      DATA_READY = true;
+      if (status) {
+        status.textContent =
+          `${ALL_RECORDS.length.toLocaleString()} records loaded — Ready to Search`;
+      }
 
-      input.disabled = false;
-      button.disabled = false;
-
-      input.placeholder =
-        "Enter PR / Complaint Number";
-
-
-      status.textContent =
-        "✓ Ready — " +
-        ALL_RECORDS.length +
-        " records loaded. Search now.";
-
-
-      results.innerHTML = "";
-
-
-      /*
-        Automatically put cursor in search box
-      */
-
-      input.focus();
+      console.log("Records loaded:", ALL_RECORDS.length);
+      console.log("Headers:", HEADERS);
 
     })
-
-    .catch(function (error) {
+    .catch(error => {
 
       console.error(error);
 
-
-      status.textContent =
-        "❌ Data loading failed";
-
-
-      results.innerHTML =
-        '<div class="no-result">' +
-
-        '<b>Unable to load PR SEARCH data.</b>' +
-
-        '<br><br>' +
-
-        escapeHTML(
-          error.message
-        ) +
-
-        '<br><br>' +
-
-        'Please check that the Google Sheet is public/viewable.' +
-
-        '</div>';
-
+      if (status) {
+        status.textContent =
+          "Unable to load PR SEARCH data. Please check Sheet sharing.";
+      }
     });
 
+  if (button) {
+    button.addEventListener("click", doSearch);
+  }
 
-  /*
-    SEARCH BUTTON
-  */
+  if (input) {
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        doSearch();
+      }
+    });
 
-  button.addEventListener("click", function () {
+    input.addEventListener("input", () => {
 
-    if (!DATA_READY) {
-      return;
-    }
+      const value = input.value.trim();
 
-    searchRecords(
-      input.value
-    );
+      if (!value) {
+        clearResults();
+        return;
+      }
 
-  });
-
-
-  /*
-    AUTOMATIC SEARCH WHILE TYPING
-  */
-
-  input.addEventListener("input", function () {
-
-    if (!DATA_READY) {
-      return;
-    }
-
-
-    clearTimeout(SEARCH_TIMER);
-
-
-    const value =
-      input.value.trim();
-
-
-    if (!value) {
-
-      status.textContent =
-        "✓ Ready — " +
-        ALL_RECORDS.length +
-        " records loaded. Search now.";
-
-      results.innerHTML = "";
-
-      return;
-
-    }
-
-
-    /*
-      Very short delay only.
-      Data is already in memory.
-    */
-
-    SEARCH_TIMER =
-      setTimeout(function () {
-
-        searchRecords(value);
-
-      }, 180);
-
-  });
-
+      doSearch();
+    });
+  }
 });
 
 
-/* =========================================================
-   LOAD COMPLETE SHEET ONCE
-========================================================= */
+/* =========================
+   LOAD ALL DATA ONCE
+========================= */
+async function loadAllData() {
 
-function loadAllData() {
+  const response = await fetch(SHEET_URL, {
+    cache: "no-store"
+  });
 
-  return fetch(
-    SHEET_URL +
-    "&_=" +
-    Date.now(),
-    {
-      cache: "no-store"
-    }
-  )
+  if (!response.ok) {
+    throw new Error("Google Sheet could not be loaded");
+  }
 
-  .then(function (response) {
+  const csvText = await response.text();
 
-    if (!response.ok) {
+  const rows = parseCSV(csvText);
 
-      throw new Error(
-        "Google Sheet returned HTTP " +
-        response.status
-      );
+  if (!rows || rows.length < 4) {
+    throw new Error("PR SEARCH data not found");
+  }
 
-    }
+  /*
+     IMPORTANT:
+     Your sheet has:
+     Row 1
+     Row 2
+     Row 3 = HEADERS
+     Row 4 onwards = DATA
+  */
 
-    return response.text();
+  HEADERS = rows[2].map((h, index) => {
 
-  })
+    const value = String(h || "").trim();
 
-  .then(function (csvText) {
-
-    const rows =
-      parseCSV(csvText);
-
-
-    if (!rows || rows.length < 2) {
-
-      throw new Error(
-        "No records found in PR SEARCH."
-      );
-
-    }
-
-
-    /*
-      FIRST ROW = HEADERS
-    */
-
-    const headers =
-      rows[0].map(function (header, index) {
-
-        let h =
-          String(header || "")
-            .replace(/^\uFEFF/, "")
-            .trim();
-
-
-        if (!h) {
-          h =
-            "Column " +
-            (index + 1);
-        }
-
-
-        return h;
-
-      });
-
-
-    ALL_RECORDS = [];
-
-
-    /*
-      CONVERT EVERY ROW TO OBJECT
-    */
-
-    for (
-      let r = 1;
-      r < rows.length;
-      r++
-    ) {
-
-      const row =
-        rows[r];
-
-
-      if (!row) {
-        continue;
-      }
-
-
-      /*
-        Ignore completely empty rows.
-      */
-
-      const hasData =
-        row.some(function (cell) {
-
-          return String(
-            cell || ""
-          ).trim() !== "";
-
-        });
-
-
-      if (!hasData) {
-        continue;
-      }
-
-
-      const record = {};
-
-
-      for (
-        let c = 0;
-        c < headers.length;
-        c++
-      ) {
-
-        record[
-          headers[c]
-        ] =
-          String(
-            row[c] || ""
-          ).trim();
-
-      }
-
-
-      /*
-        SEARCH INDEX
-        All columns joined together.
-      */
-
-      record.__search =
-        normalize(
-          row.join(" ")
-        );
-
-
-      ALL_RECORDS.push(record);
-
-    }
-
-
-    /*
-      BUILD REPEATED DAMAGE HISTORY
-      ONCE.
-    */
-
-    buildDamageHistory();
-
-
-    return ALL_RECORDS;
+    return value || columnLetter(index);
 
   });
 
-}
+  ALL_RECORDS = [];
 
+  for (let i = 3; i < rows.length; i++) {
 
-/* =========================================================
-   BUILD DAMAGE HISTORY
-========================================================= */
+    const row = rows[i];
 
-function buildDamageHistory() {
+    if (!row || row.length === 0) continue;
 
-  DAMAGE_HISTORY = {};
+    const hasData = row.some(cell =>
+      String(cell || "").trim() !== ""
+    );
 
+    if (!hasData) continue;
 
-  ALL_RECORDS.forEach(function (record) {
+    const record = {};
 
-    const place =
-      getField(
-        record,
-        [
-          "PLACE OF DAMAGE",
-          "PLACE OF DAMAGE ",
-          "PLACE",
-          "LOCATION"
-        ]
-      );
-
-
-    if (!place) {
-      return;
-    }
-
-
-    const key =
-      normalize(place);
-
-
-    if (!DAMAGE_HISTORY[key]) {
-
-      DAMAGE_HISTORY[key] = [];
-
-    }
-
-
-    DAMAGE_HISTORY[key].push({
-
-      prNo:
-        getField(
-          record,
-          [
-            "PR NO",
-            "PR NO.",
-            "PR NUMBER"
-          ]
-        ),
-
-      prDate:
-        getField(
-          record,
-          [
-            "PR DATE"
-          ]
-        ),
-
-      damageDate:
-        getField(
-          record,
-          [
-            "DATE OF DAMAGE"
-          ]
-        )
-
+    HEADERS.forEach((header, index) => {
+      record[header] = String(row[index] || "").trim();
     });
 
-  });
+    /*
+       Keep original row also.
+       This makes fixed-column fallback 100% reliable.
+    */
+    record.__cells = row.slice();
 
+    /*
+       Search index containing EVERY COLUMN
+    */
+    record.__search = row
+      .map(value => normalize(value))
+      .join(" ");
 
-  /*
-    Sort each place history
-    oldest → newest
-  */
+    record.__rowNumber = i + 1;
 
-  Object.keys(
-    DAMAGE_HISTORY
-  ).forEach(function (key) {
+    ALL_RECORDS.push(record);
+  }
 
-    DAMAGE_HISTORY[key].sort(
-      function (a, b) {
-
-        return dateValue(
-          a.damageDate
-        ) -
-        dateValue(
-          b.damageDate
-        );
-
-      }
-    );
-
-  });
-
+  buildDamageHistory();
 }
 
 
-/* =========================================================
-   SEARCH
-   ========================================================= */
+/* =========================
+   CSV PARSER
+========================= */
+function parseCSV(text) {
 
-function searchRecords(searchText) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let insideQuotes = false;
 
-  const status =
-    document.getElementById(
-      "searchStatus"
-    );
+  for (let i = 0; i < text.length; i++) {
 
-  const results =
-    document.getElementById(
-      "results"
-    );
+    const char = text[i];
+    const next = text[i + 1];
 
+    if (char === '"') {
 
-  const query =
-    normalize(searchText);
-
-
-  if (!query) {
-    results.innerHTML = "";
-    return;
-  }
-
-
-  /*
-    IMPORTANT:
-    NO GOOGLE REQUEST HERE.
-
-    Search happens completely
-    inside already-loaded memory.
-  */
-
-  const matches =
-    ALL_RECORDS.filter(
-      function (record) {
-
-        return record.__search
-          .includes(query);
-
+      if (insideQuotes && next === '"') {
+        cell += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
       }
-    );
 
+    } else if (char === "," && !insideQuotes) {
 
-  status.textContent =
-    matches.length +
-    " record(s) found";
+      row.push(cell);
+      cell = "";
 
+    } else if (
+      (char === "\n" || char === "\r") &&
+      !insideQuotes
+    ) {
 
-  if (!matches.length) {
+      if (char === "\r" && next === "\n") {
+        i++;
+      }
 
-    results.innerHTML =
-      '<div class="no-result">' +
+      row.push(cell);
+      rows.push(row);
 
-      'No matching PR / Complaint Number found.' +
+      row = [];
+      cell = "";
 
-      '</div>';
+    } else {
 
-    return;
-
+      cell += char;
+    }
   }
 
+  if (cell !== "" || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
 
-  let html = "";
-
-
-  matches.forEach(
-    function (record, index) {
-
-      html +=
-        createCard(
-          record,
-          index + 1
-        );
-
-    }
-  );
-
-
-  results.innerHTML =
-    html;
-
+  return rows;
 }
 
 
-/* =========================================================
-   CREATE CARD
-========================================================= */
+/* =========================
+   NORMALIZE SEARCH
+========================= */
+function normalize(value) {
 
-function createCard(
-  record,
-  number
-) {
-
-  const f =
-    getFields(record);
-
-
-  /* -------------------------------------------------------
-     STATUS
-  ------------------------------------------------------- */
-
-  let statusHTML = "";
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\s\-\/\\().,+]/g, "")
+    .trim();
+}
 
 
-  if (f.replacementDate) {
+/* =========================
+   COLUMN LETTER
+========================= */
+function columnLetter(index) {
 
-    statusHTML =
+  let result = "";
+  let n = index + 1;
 
-      '<div class="status status-installed">' +
+  while (n > 0) {
 
-      '🎉 Congratulations Your Transformer installed' +
+    const remainder = (n - 1) % 26;
 
-      '<br>' +
+    result =
+      String.fromCharCode(65 + remainder) + result;
 
-      '<span style="font-weight:normal">' +
-
-      'Replacement Date: ' +
-
-      escapeHTML(
-        f.replacementDate
-      ) +
-
-      '</span>' +
-
-      '</div>';
-
+    n = Math.floor((n - 1) / 26);
   }
 
-  else if (f.issueDate) {
-
-    statusHTML =
-
-      '<div class="status status-issued">' +
-
-      '🔧 Your Transformer Issued by Workshop' +
-
-      '<br>' +
-
-      '<span style="font-weight:normal">' +
-
-      'Please Contact Driver for Installation' +
-
-      '<br>Issue Date: ' +
-
-      escapeHTML(
-        f.issueDate
-      );
+  return result;
+}
 
 
-    if (f.driver) {
+/* =========================
+   FIXED COLUMN FALLBACK
+========================= */
 
-      statusHTML +=
-        '<br>Driver: ' +
-        escapeHTML(
-          f.driver
-        );
+const COL = {
 
+  SN: 0,
+  WORKSHOP: 1,
+  DIVISION: 2,
+  SUBDIVISION: 3,
+  SUBSTATION: 4,
+  FEEDER: 5,
+
+  DATE_DAMAGE: 6,
+  PLACE_DAMAGE: 7,
+  DID_NO: 8,
+  CAPACITY: 9,
+  COMPLAINT_NO: 10,
+  COMPLAINT_DATE: 11,
+  PR_NO: 12,
+  PR_DATE: 13,
+  JE_NAME: 14,
+  JE_MOBILE: 15,
+  ISSUED_TO_FIRM: 16,
+  ISSUE_DATE: 17,
+  DRIVER_NAME: 18,
+  DRIVER_MOBILE: 19,
+  REPLACEMENT_DATE: 20,
+  TIME: 21,
+  TX_RETURN_DATE: 22,
+  OBSERVATION_DTC: 23
+
+};
+
+
+/* =========================
+   GET FIELD
+========================= */
+function getField(record, aliases, fallbackIndex) {
+
+  const keys = Object.keys(record);
+
+  /*
+     First try header names
+  */
+  for (const alias of aliases) {
+
+    const target = normalizeHeader(alias);
+
+    for (const key of keys) {
+
+      if (key.startsWith("__")) continue;
+
+      if (normalizeHeader(key) === target) {
+
+        const value = String(record[key] || "").trim();
+
+        if (value !== "") {
+          return value;
+        }
+      }
     }
-
-
-    if (f.driverMobile) {
-
-      statusHTML +=
-        '<br>Mobile: ' +
-        escapeHTML(
-          f.driverMobile
-        );
-
-    }
-
-
-    statusHTML +=
-      '</span></div>';
-
   }
 
-  else {
-
-    statusHTML =
-
-      '<div class="status status-pending">' +
-
-      '⏳ Transformer Replacement Pending' +
-
-      '</div>';
-
-  }
-
-
-  /* -------------------------------------------------------
-     REPEATED DAMAGE
-  ------------------------------------------------------- */
-
-  const placeKey =
-    normalize(f.place);
-
-
-  const history =
-    DAMAGE_HISTORY[
-      placeKey
-    ] || [];
-
-
-  let repeatHTML = "";
-
-
+  /*
+     Fixed column fallback
+  */
   if (
-    placeKey &&
-    history.length > 1
+    record.__cells &&
+    fallbackIndex !== undefined
   ) {
 
-    let historyHTML = "";
-
-
-    history.forEach(
-      function (item, index) {
-
-        historyHTML +=
-
-          '<div class="history-row">' +
-
-          '<b>' +
-
-          ordinal(index + 1) +
-
-          ' Time</b> – ' +
-
-          escapeHTML(
-            item.prNo ||
-            "PR Not Available"
-          ) +
-
-          ' – ' +
-
-          escapeHTML(
-            item.prDate ||
-            "Date Not Available"
-          ) +
-
-          '</div>';
-
-      }
-    );
-
-
-    repeatHTML =
-
-      '<div class="repeat-box">' +
-
-      '<div class="repeat-title">' +
-
-      '⚠️ Repeated Damage' +
-
-      '</div>' +
-
-      '<div class="repeat-message">' +
-
-      'It Damaged ' +
-
-      history.length +
-
-      ' times. Please Ensure Increasing Capacity if Overloaded.' +
-
-      '</div>' +
-
-      '<div class="history">' +
-
-      historyHTML +
-
-      '</div>' +
-
-      '</div>';
-
+    return String(
+      record.__cells[fallbackIndex] || ""
+    ).trim();
   }
 
-  else {
-
-    repeatHTML =
-
-      '<div class="repeat-box">' +
-
-      '<div class="repeat-title">' +
-
-      '✓ Not a repeated damage' +
-
-      '</div>' +
-
-      '</div>';
-
-  }
-
-
-  /* -------------------------------------------------------
-     DATA
-  ------------------------------------------------------- */
-
-  let dataHTML = "";
-
-
-  addRow(
-    "PR Number",
-    f.prNo
-  );
-
-  addRow(
-    "PR Date",
-    f.prDate
-  );
-
-  addRow(
-    "Complaint Number",
-    f.complaintNo
-  );
-
-  addRow(
-    "Complaint Date",
-    f.complaintDate
-  );
-
-  addRow(
-    "Date of Damage",
-    f.damageDate
-  );
-
-  addRow(
-    "Place of Damage",
-    f.place
-  );
-
-  addRow(
-    "DID No",
-    f.didNo
-  );
-
-  addRow(
-    "Capacity",
-    f.capacity
-  );
-
-  addRow(
-    "JE Name",
-    f.jeName
-  );
-
-  addRow(
-    "JE Mobile",
-    f.jeMobile
-  );
-
-  addRow(
-    "Issued To Firm",
-    f.firm
-  );
-
-  addRow(
-    "Issue Date",
-    f.issueDate
-  );
-
-  addRow(
-    "Driver Name",
-    f.driver
-  );
-
-  addRow(
-    "Driver Mobile",
-    f.driverMobile
-  );
-
-  addRow(
-    "Replacement Date",
-    f.replacementDate
-  );
-
-  addRow(
-    "Time",
-    f.time
-  );
-
-  addRow(
-    "TX Return Date",
-    f.returnDate
-  );
-
-  addRow(
-    "Observation DTC",
-    f.observation
-  );
-
-
-  function addRow(
-    label,
-    value
-  ) {
-
-    if (!value) {
-      return;
-    }
-
-
-    dataHTML +=
-
-      '<div class="data-row">' +
-
-      '<div class="data-label">' +
-
-      escapeHTML(label) +
-
-      '</div>' +
-
-      '<div class="data-value">' +
-
-      escapeHTML(value) +
-
-      '</div>' +
-
-      '</div>';
-
-  }
-
-
-  /*
-    IMPORTANT:
-    Return directly.
-    No undefined.
-  */
-
-  return (
-
-    '<div class="result-card">' +
-
-      '<div class="card-title">' +
-
-      'Transformer Record #' +
-
-      number +
-
-      '</div>' +
-
-      statusHTML +
-
-      repeatHTML +
-
-      '<div class="data">' +
-
-      dataHTML +
-
-      '</div>' +
-
-    '</div>'
-
-  );
-
+  return "";
 }
 
 
-/* =========================================================
-   GET FIELDS
-========================================================= */
+/* =========================
+   HEADER NORMALIZATION
+========================= */
+function normalizeHeader(value) {
 
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+
+/* =========================
+   GET ALL IMPORTANT FIELDS
+========================= */
 function getFields(record) {
 
   return {
 
-    damageDate:
-      getField(
-        record,
-        [
-          "DATE OF DAMAGE"
-        ]
-      ),
+    sn: getField(
+      record,
+      ["SN", "S NO", "SERIAL NO"],
+      COL.SN
+    ),
 
-    place:
-      getField(
-        record,
-        [
-          "PLACE OF DAMAGE",
-          "PLACE",
-          "LOCATION"
-        ]
-      ),
+    workshop: getField(
+      record,
+      ["WORKSHOP"],
+      COL.WORKSHOP
+    ),
 
-    didNo:
-      getField(
-        record,
-        [
-          "DID NO",
-          "DID NO."
-        ]
-      ),
+    division: getField(
+      record,
+      ["DIVISION"],
+      COL.DIVISION
+    ),
 
-    capacity:
-      getField(
-        record,
-        [
-          "CAPACITY",
-          "CAPACITY IN KVA",
-          "KVA"
-        ]
-      ),
+    subdivision: getField(
+      record,
+      ["SUBDIVISION", "SUB DIVISION"],
+      COL.SUBDIVISION
+    ),
 
-    complaintNo:
-      getField(
-        record,
-        [
-          "COMPLAIN NUMBER",
-          "COMPLAINT NUMBER",
-          "COMPLAINT NO"
-        ]
-      ),
+    substation: getField(
+      record,
+      ["SUBSTATION"],
+      COL.SUBSTATION
+    ),
 
-    complaintDate:
-      getField(
-        record,
-        [
-          "COMPLAIN DATE",
-          "COMPLAINT DATE"
-        ]
-      ),
+    feeder: getField(
+      record,
+      ["FEEDER"],
+      COL.FEEDER
+    ),
 
-    prNo:
-      getField(
-        record,
-        [
-          "PR NO",
-          "PR NO.",
-          "PR NUMBER"
-        ]
-      ),
+    damageDate: getField(
+      record,
+      ["DATE OF DAMAGE", "DAMAGE DATE"],
+      COL.DATE_DAMAGE
+    ),
 
-    prDate:
-      getField(
-        record,
-        [
-          "PR DATE"
-        ]
-      ),
+    place: getField(
+      record,
+      ["PLACE OF DAMAGE"],
+      COL.PLACE_DAMAGE
+    ),
 
-    jeName:
-      getField(
-        record,
-        [
-          "JE NAME",
-          "JE Name",
-          "JE"
-        ]
-      ),
+    didNo: getField(
+      record,
+      ["DID NO", "DIDNO"],
+      COL.DID_NO
+    ),
 
-    jeMobile:
-      getField(
-        record,
-        [
-          "JE MOBILE",
-          "JE Mobile"
-        ]
-      ),
+    capacity: getField(
+      record,
+      ["CAPACITY", "CAPACITY IN KVA"],
+      COL.CAPACITY
+    ),
 
-    firm:
-      getField(
-        record,
-        [
-          "ISSUED TO FIRM",
-          "FIRM",
-          "FIRM NAME"
-        ]
-      ),
+    complaintNo: getField(
+      record,
+      ["COMPLAIN NUMBER", "COMPLAINT NUMBER", "COMPLAINT NO"],
+      COL.COMPLAINT_NO
+    ),
 
-    issueDate:
-      getField(
-        record,
-        [
-          "ISSUE DATE",
-          "ISSUED DATE"
-        ]
-      ),
+    complaintDate: getField(
+      record,
+      ["COMPLAIN DATE", "COMPLAINT DATE"],
+      COL.COMPLAINT_DATE
+    ),
 
-    driver:
-      getField(
-        record,
-        [
-          "DRIVER NAME",
-          "DRIVER"
-        ]
-      ),
+    prNo: getField(
+      record,
+      ["PR NO", "PR NUMBER", "PR NUMBER"],
+      COL.PR_NO
+    ),
 
-    driverMobile:
-      getField(
-        record,
-        [
-          "DRIVER MOBILE",
-          "DRIVER MOBILE NO"
-        ]
-      ),
+    prDate: getField(
+      record,
+      ["PR DATE"],
+      COL.PR_DATE
+    ),
 
-    replacementDate:
-      getField(
-        record,
-        [
-          "REPLACEMENT DATE"
-        ]
-      ),
+    jeName: getField(
+      record,
+      ["JE NAME", "JE"],
+      COL.JE_NAME
+    ),
 
-    time:
-      getField(
-        record,
-        [
-          "TIME"
-        ]
-      ),
+    jeMobile: getField(
+      record,
+      ["JE MOBILE", "JE MOBILE NO", "JE PHONE"],
+      COL.JE_MOBILE
+    ),
 
-    returnDate:
-      getField(
-        record,
-        [
-          "TX RETURN DATE",
-          "RETURN DATE",
-          "TX Return Date"
-        ]
-      ),
+    issuedToFirm: getField(
+      record,
+      ["ISSUED TO FIRM", "ISSUE TO FIRM"],
+      COL.ISSUED_TO_FIRM
+    ),
 
-    observation:
-      getField(
-        record,
-        [
-          "OBSERVATION DTC",
-          "OBSERVATION"
-        ]
-      )
+    issueDate: getField(
+      record,
+      ["ISSUE DATE"],
+      COL.ISSUE_DATE
+    ),
 
+    driverName: getField(
+      record,
+      ["DRIVER NAME"],
+      COL.DRIVER_NAME
+    ),
+
+    driverMobile: getField(
+      record,
+      ["DRIVER MOBILE", "DRIVER MOBILE NO"],
+      COL.DRIVER_MOBILE
+    ),
+
+    replacementDate: getField(
+      record,
+      ["REPLACEMENT DATE", "REPLACEMENT"],
+      COL.REPLACEMENT_DATE
+    ),
+
+    time: getField(
+      record,
+      ["TIME"],
+      COL.TIME
+    ),
+
+    txReturnDate: getField(
+      record,
+      ["TX RETURN DATE", "RETURN DATE"],
+      COL.TX_RETURN_DATE
+    ),
+
+    observation: getField(
+      record,
+      ["OBSERVATION DTC"],
+      COL.OBSERVATION_DTC
+    )
   };
-
 }
 
 
-/* =========================================================
-   FIELD FINDER
-========================================================= */
+/* =========================
+   REPEATED DAMAGE HISTORY
+========================= */
+function buildDamageHistory() {
 
-function getField(
-  record,
-  aliases
-) {
+  DAMAGE_HISTORY = new Map();
 
-  const keys =
-    Object.keys(record);
+  ALL_RECORDS.forEach(record => {
 
+    const fields = getFields(record);
 
-  for (
-    let a = 0;
-    a < aliases.length;
-    a++
-  ) {
+    const place = normalize(fields.place);
 
-    const wanted =
-      normalizeHeader(
-        aliases[a]
-      );
+    if (!place) return;
 
-
-    for (
-      let k = 0;
-      k < keys.length;
-      k++
-    ) {
-
-      if (
-        keys[k] === "__search"
-      ) {
-        continue;
-      }
-
-
-      if (
-        normalizeHeader(
-          keys[k]
-        ) === wanted
-      ) {
-
-        return String(
-          record[keys[k]] || ""
-        ).trim();
-
-      }
-
+    if (!DAMAGE_HISTORY.has(place)) {
+      DAMAGE_HISTORY.set(place, []);
     }
 
-  }
+    DAMAGE_HISTORY.get(place).push({
+      record: record,
+      fields: fields
+    });
+  });
 
+  /*
+     Sort each location by Damage Date / PR Date
+  */
+  DAMAGE_HISTORY.forEach(list => {
 
-  return "";
+    list.sort((a, b) => {
 
+      const da = parseDateValue(
+        a.fields.damageDate || a.fields.prDate
+      );
+
+      const db = parseDateValue(
+        b.fields.damageDate || b.fields.prDate
+      );
+
+      return da - db;
+    });
+  });
 }
 
 
-/* =========================================================
-   NORMALIZE SEARCH
-========================================================= */
+/* =========================
+   SEARCH
+========================= */
+function doSearch() {
 
-function normalize(value) {
+  const input = document.getElementById("searchInput");
+  const status = document.getElementById("searchStatus");
+  const results = document.getElementById("results");
 
-  return String(
-    value || ""
-  )
-  .toLowerCase()
-  .replace(
-    /[\s\-\/\\().,]/g,
-    ""
+  if (!input) return;
+
+  const query = normalize(input.value);
+
+  if (!query) {
+
+    clearResults();
+
+    if (status) {
+      status.textContent =
+        `${ALL_RECORDS.length.toLocaleString()} records loaded — Ready to Search`;
+    }
+
+    return;
+  }
+
+  /*
+     LOCAL SEARCH ONLY
+     No Google request here.
+  */
+  const found = ALL_RECORDS.filter(record =>
+    record.__search.includes(query)
   );
 
+  if (status) {
+
+    status.textContent =
+      `${found.length.toLocaleString()} record(s) found`;
+  }
+
+  if (!results) return;
+
+  if (found.length === 0) {
+
+    results.innerHTML = `
+      <div class="no-results">
+        No record found
+      </div>
+    `;
+
+    return;
+  }
+
+  results.innerHTML = found
+    .slice(0, 100)
+    .map((record, index) =>
+      createCard(record, index + 1)
+    )
+    .join("");
 }
 
 
-/* =========================================================
-   NORMALIZE HEADER
-========================================================= */
+/* =========================
+   CREATE RESULT CARD
+========================= */
+function createCard(record, number) {
 
-function normalizeHeader(value) {
+  const f = getFields(record);
 
-  return String(
-    value || ""
-  )
-  .toLowerCase()
-  .replace(
-    /[^a-z0-9]/g,
-    ""
+  const placeKey = normalize(f.place);
+
+  const history =
+    DAMAGE_HISTORY.get(placeKey) || [];
+
+  const isRepeated = history.length > 1;
+
+  let statusHTML = "";
+
+  /*
+     REPLACEMENT DATE HAS HIGHEST PRIORITY
+  */
+  if (hasValue(f.replacementDate)) {
+
+    statusHTML = `
+      <div class="status-box installed">
+        <strong>Congratulations Your Transformer installed</strong>
+        <div>Replacement Date: ${escapeHTML(f.replacementDate)}</div>
+      </div>
+    `;
+
+  } else if (hasValue(f.issueDate)) {
+
+    statusHTML = `
+      <div class="status-box issued">
+        <strong>
+          Your Transformer Issued by Workshop
+        </strong>
+
+        <div>Please Contact Driver for Installation</div>
+
+        <div>Issue Date: ${escapeHTML(f.issueDate)}</div>
+
+        ${
+          f.driverName
+            ? `<div>Driver: ${escapeHTML(f.driverName)}</div>`
+            : ""
+        }
+
+        ${
+          f.driverMobile
+            ? `<div>Mobile: ${escapeHTML(f.driverMobile)}</div>`
+            : ""
+        }
+      </div>
+    `;
+
+  } else {
+
+    statusHTML = `
+      <div class="status-box pending">
+        <strong>Transformer Replacement Pending</strong>
+      </div>
+    `;
+  }
+
+
+  let repeatHTML = "";
+
+  if (!isRepeated) {
+
+    repeatHTML = `
+      <div class="repeat-box normal">
+        Not a repeated damage
+      </div>
+    `;
+
+  } else {
+
+    const position =
+      history.findIndex(item =>
+        item.record === record
+      ) + 1;
+
+    let historyRows = "";
+
+    history.forEach((item, index) => {
+
+      const hf = item.fields;
+
+      historyRows += `
+        <div class="repeat-row">
+          <strong>${ordinal(index + 1)} Time</strong>
+
+          <span>
+            PR No:
+            ${escapeHTML(hf.prNo || "-")}
+          </span>
+
+          <span>
+            Date:
+            ${escapeHTML(
+              hf.prDate ||
+              hf.damageDate ||
+              "-"
+            )}
+          </span>
+        </div>
+      `;
+    });
+
+    repeatHTML = `
+      <div class="repeat-box repeated">
+
+        <strong>
+          It Damaged ${history.length} times
+        </strong>
+
+        <div class="repeat-warning">
+          Please Ensure Increasing Capacity if Overloaded
+        </div>
+
+        <div class="repeat-history">
+          ${historyRows}
+        </div>
+
+      </div>
+    `;
+  }
+
+
+  return `
+    <div class="result-card">
+
+      <div class="card-title">
+        Record #${number}
+      </div>
+
+      ${statusHTML}
+
+      <div class="data-grid">
+
+        ${dataRow("PR Number", f.prNo)}
+        ${dataRow("PR Date", f.prDate)}
+
+        ${dataRow("Complaint Number", f.complaintNo)}
+        ${dataRow("Complaint Date", f.complaintDate)}
+
+        ${dataRow("Date of Damage", f.damageDate)}
+        ${dataRow("Place of Damage", f.place)}
+
+        ${dataRow("Capacity", f.capacity)}
+        ${dataRow("DID No", f.didNo)}
+
+        ${dataRow("Workshop", f.workshop)}
+        ${dataRow("Division", f.division)}
+
+        ${dataRow("Subdivision", f.subdivision)}
+        ${dataRow("Substation", f.substation)}
+
+        ${dataRow("Feeder", f.feeder)}
+        ${dataRow("JE Name", f.jeName)}
+
+        ${dataRow("JE Mobile", f.jeMobile)}
+        ${dataRow("Issued To Firm", f.issuedToFirm)}
+
+        ${dataRow("Issue Date", f.issueDate)}
+        ${dataRow("Driver Name", f.driverName)}
+
+        ${dataRow("Driver Mobile", f.driverMobile)}
+        ${dataRow("Replacement Date", f.replacementDate)}
+
+        ${dataRow("Time", f.time)}
+        ${dataRow("TX Return Date", f.txReturnDate)}
+
+        ${dataRow("Observation DTC", f.observation)}
+
+      </div>
+
+      ${repeatHTML}
+
+    </div>
+  `;
+}
+
+
+/* =========================
+   DATA ROW
+========================= */
+function dataRow(label, value) {
+
+  if (!hasValue(value)) return "";
+
+  return `
+    <div class="data-row">
+
+      <div class="data-label">
+        ${escapeHTML(label)}
+      </div>
+
+      <div class="data-value">
+        ${escapeHTML(value)}
+      </div>
+
+    </div>
+  `;
+}
+
+
+/* =========================
+   HELPERS
+========================= */
+function hasValue(value) {
+
+  return String(value || "").trim() !== "";
+}
+
+
+function ordinal(number) {
+
+  if (number === 1) return "First";
+  if (number === 2) return "Second";
+  if (number === 3) return "Third";
+
+  return `${number}th`;
+}
+
+
+function parseDateValue(value) {
+
+  const text = String(value || "").trim();
+
+  if (!text) return 0;
+
+  /*
+     DD.MM.YYYY
+  */
+  const match = text.match(
+    /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/
   );
-
-}
-
-
-/* =========================================================
-   DATE
-========================================================= */
-
-function dateValue(value) {
-
-  if (!value) {
-    return 0;
-  }
-
-
-  const text =
-    String(value).trim();
-
-
-  let d =
-    new Date(text);
-
-
-  if (!isNaN(d.getTime())) {
-
-    return d.getTime();
-
-  }
-
-
-  const match =
-    text.match(
-      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
-    );
-
 
   if (match) {
 
@@ -1223,177 +846,33 @@ function dateValue(value) {
       Number(match[2]) - 1,
       Number(match[1])
     ).getTime();
-
   }
 
+  const d = new Date(text);
 
-  return 0;
-
+  return isNaN(d.getTime())
+    ? 0
+    : d.getTime();
 }
 
-
-/* =========================================================
-   ORDINAL
-========================================================= */
-
-function ordinal(n) {
-
-  if (n === 1) return "First";
-
-  if (n === 2) return "Second";
-
-  if (n === 3) return "Third";
-
-  if (n === 4) return "Fourth";
-
-  if (n === 5) return "Fifth";
-
-  return n + "th";
-
-}
-
-
-/* =========================================================
-   CSV PARSER
-========================================================= */
-
-function parseCSV(text) {
-
-  const rows = [];
-
-  let row = [];
-
-  let cell = "";
-
-  let inQuotes = false;
-
-
-  for (
-    let i = 0;
-    i < text.length;
-    i++
-  ) {
-
-    const char =
-      text[i];
-
-    const next =
-      text[i + 1];
-
-
-    if (char === '"') {
-
-      if (
-        inQuotes &&
-        next === '"'
-      ) {
-
-        cell += '"';
-
-        i++;
-
-      }
-
-      else {
-
-        inQuotes =
-          !inQuotes;
-
-      }
-
-    }
-
-    else if (
-      char === "," &&
-      !inQuotes
-    ) {
-
-      row.push(cell);
-
-      cell = "";
-
-    }
-
-    else if (
-      (char === "\n" ||
-       char === "\r") &&
-      !inQuotes
-    ) {
-
-      if (
-        char === "\r" &&
-        next === "\n"
-      ) {
-
-        i++;
-
-      }
-
-
-      row.push(cell);
-
-      rows.push(row);
-
-      row = [];
-
-      cell = "";
-
-    }
-
-    else {
-
-      cell += char;
-
-    }
-
-  }
-
-
-  if (
-    cell !== "" ||
-    row.length > 0
-  ) {
-
-    row.push(cell);
-
-    rows.push(row);
-
-  }
-
-
-  return rows;
-
-}
-
-
-/* =========================================================
-   HTML ESCAPE
-========================================================= */
 
 function escapeHTML(value) {
 
-  return String(
-    value || ""
-  )
-  .replace(
-    /&/g,
-    "&amp;"
-  )
-  .replace(
-    /</g,
-    "&lt;"
-  )
-  .replace(
-    />/g,
-    "&gt;"
-  )
-  .replace(
-    /"/g,
-    "&quot;"
-  )
-  .replace(
-    /'/g,
-    "&#039;"
-  );
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
+
+function clearResults() {
+
+  const results =
+    document.getElementById("results");
+
+  if (results) {
+    results.innerHTML = "";
+  }
 }

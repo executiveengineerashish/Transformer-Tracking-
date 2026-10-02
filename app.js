@@ -1,16 +1,8 @@
-/* =========================================================
-   TRANSFORMER TRACKING
-   Google Sheet - PR SEARCH
-   ========================================================= */
-
 const SHEET_ID =
   "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
 const SHEET_GID =
   "1464518527";
-
-
-/* Google Sheet CSV URL */
 
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/" +
@@ -19,30 +11,72 @@ const SHEET_URL =
   SHEET_GID;
 
 
-/* DATA */
+/*
+  PR SEARCH columns
 
-let allData = [];
-let headers = [];
-let sheetLoaded = false;
-let loadingPromise = null;
+  A = 0
+  B = 1
+  C = 2
+  D = 3
+  E = 4
+  F = 5
+
+  G = 6  DATE OF DAMAGE
+  H = 7  PLACE OF DAMAGE
+  I = 8  DID NO
+  J = 9  CAPACITY
+  K = 10 COMPLAIN NUMBER
+  L = 11 COMPLAIN DATE
+  M = 12 PR NO
+  N = 13 PR DATE
+  O = 14 JE NAME
+  P = 15 JE MOBILE
+  Q = 16 ISSUED TO FIRM
+  R = 17 ISSUE DATE
+  S = 18 DRIVER NAME
+  T = 19 DRIVER MOBILE
+  U = 20 REPLACEMENT DATE
+  V = 21 TIME
+  W = 22 TX RETURN DATE
+  X = 23 OBSERVATION DTC
+*/
 
 
-/* =========================================================
+let sheetRows = [];
+let loaded = false;
+let loading = null;
+
+
+/* ---------------------------------------------------------
    START
-   ========================================================= */
+--------------------------------------------------------- */
 
 document.addEventListener("DOMContentLoaded", function () {
 
-  const input = document.getElementById("searchInput");
-  const button = document.getElementById("searchBtn");
+  const input =
+    document.getElementById("searchInput");
+
+  const button =
+    document.getElementById("searchBtn");
+
+
+  button.addEventListener("click", function () {
+
+    searchNow(input.value);
+
+  });
+
 
   input.addEventListener("input", function () {
 
     clearTimeout(window.searchTimer);
 
-    const value = input.value.trim();
+    const value =
+      input.value.trim();
+
 
     if (!value) {
+
       document.getElementById("results").innerHTML = "";
 
       document.getElementById("searchStatus").textContent =
@@ -51,133 +85,105 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+
     /*
-      Wait a little before searching so that typing
-      does not trigger multiple searches.
+      Automatic search after typing stops
     */
 
-    window.searchTimer = setTimeout(function () {
-      searchRecords(value);
-    }, 500);
+    window.searchTimer =
+      setTimeout(function () {
 
-  });
+        searchNow(value);
 
-
-  button.addEventListener("click", function () {
-
-    const value = input.value.trim();
-
-    if (value) {
-      searchRecords(value);
-    }
+      }, 600);
 
   });
 
 });
 
 
-/* =========================================================
-   LOAD GOOGLE SHEET
-   ========================================================= */
+/* ---------------------------------------------------------
+   LOAD SHEET
+--------------------------------------------------------- */
 
 function loadSheet() {
 
-  if (sheetLoaded) {
-    return Promise.resolve(allData);
+  if (loaded) {
+    return Promise.resolve(sheetRows);
   }
 
-  if (loadingPromise) {
-    return loadingPromise;
+  if (loading) {
+    return loading;
   }
 
 
-  loadingPromise = fetch(SHEET_URL, {
-    method: "GET",
-    cache: "no-store"
-  })
+  loading =
+    fetch(SHEET_URL + "&t=" + Date.now())
 
-  .then(function (response) {
+      .then(function (response) {
 
-    if (!response.ok) {
-      throw new Error(
-        "Google Sheet could not be loaded. HTTP " +
-        response.status
-      );
-    }
-
-    return response.text();
-
-  })
-
-  .then(function (csvText) {
-
-    const rows = parseCSV(csvText);
-
-    if (!rows || rows.length === 0) {
-      throw new Error("No data found in PR SEARCH.");
-    }
-
-    headers = rows[0].map(function (x) {
-      return String(x || "").trim();
-    });
-
-    allData = [];
-
-    for (let i = 1; i < rows.length; i++) {
-
-      if (!rows[i]) continue;
-
-      let row = rows[i];
-
-      let hasValue = row.some(function (cell) {
-        return String(cell || "").trim() !== "";
-      });
-
-      if (!hasValue) continue;
-
-      let obj = {};
-
-      for (let c = 0; c < headers.length; c++) {
-
-        let header = headers[c];
-
-        if (!header) {
-          header = "Column " + (c + 1);
+        if (!response.ok) {
+          throw new Error(
+            "Unable to load Google Sheet"
+          );
         }
 
-        obj[header] = row[c] || "";
-      }
+        return response.text();
 
-      obj.__row = row;
+      })
 
-      allData.push(obj);
-    }
+      .then(function (csv) {
 
-
-    sheetLoaded = true;
-
-    return allData;
-
-  })
-
-  .catch(function (error) {
-
-    loadingPromise = null;
-
-    throw error;
-
-  });
+        const rows =
+          parseCSV(csv);
 
 
-  return loadingPromise;
+        if (!rows.length) {
+          throw new Error("No data found");
+        }
+
+
+        /*
+          First row = headers
+          Remaining rows = data
+        */
+
+        sheetRows =
+          rows.slice(1).filter(function (row) {
+
+            return row.some(function (cell) {
+
+              return String(cell || "").trim() !== "";
+
+            });
+
+          });
+
+
+        loaded = true;
+
+        return sheetRows;
+
+      })
+
+      .catch(function (error) {
+
+        loading = null;
+
+        throw error;
+
+      });
+
+
+  return loading;
 }
 
 
-/* =========================================================
+/* ---------------------------------------------------------
    SEARCH
-   ========================================================= */
+--------------------------------------------------------- */
 
-function searchRecords(searchText) {
+function searchNow(value) {
 
   const status =
     document.getElementById("searchStatus");
@@ -186,39 +192,41 @@ function searchRecords(searchText) {
     document.getElementById("results");
 
 
+  const query =
+    clean(value);
+
+
+  if (!query) {
+    return;
+  }
+
+
   status.textContent =
-    "Connecting to PR SEARCH...";
+    "Searching PR SEARCH...";
+
 
   results.innerHTML =
-    '<div class="loading">Loading data...</div>';
+    '<div class="loading">Loading records...</div>';
 
 
   loadSheet()
 
-    .then(function (data) {
-
-      const query =
-        normalize(searchText);
-
+    .then(function (rows) {
 
       /*
-        Search EVERYTHING / ALL COLUMNS
+        Search ALL A:X columns
       */
 
-      const matches = data.filter(function (record) {
+      const matches =
+        rows.filter(function (row) {
 
-        return Object.keys(record).some(function (key) {
+          return row.some(function (cell) {
 
-          if (key === "__row") {
-            return false;
-          }
+            return clean(cell).includes(query);
 
-          return normalize(record[key])
-            .includes(query);
+          });
 
         });
-
-      });
 
 
       status.textContent =
@@ -226,7 +234,7 @@ function searchRecords(searchText) {
         " record(s) found";
 
 
-      if (matches.length === 0) {
+      if (!matches.length) {
 
         results.innerHTML =
           '<div class="no-result">' +
@@ -234,53 +242,29 @@ function searchRecords(searchText) {
           '</div>';
 
         return;
+
       }
-
-
-      /*
-        Sort latest PR date first where possible
-      */
-
-      matches.sort(function (a, b) {
-
-        const dateA =
-          getField(a, [
-            "PR DATE",
-            "PR Date",
-            "PR DATE "
-          ]);
-
-        const dateB =
-          getField(b, [
-            "PR DATE",
-            "PR Date",
-            "PR DATE "
-          ]);
-
-        return parseDateValue(dateB) -
-               parseDateValue(dateA);
-
-      });
 
 
       /*
         Build repeated damage history
       */
 
-      const historyMap =
-        buildDamageHistory(data);
+      const history =
+        buildHistory(rows);
 
 
       let html = "";
 
 
-      matches.forEach(function (record, index) {
+      matches.forEach(function (row, index) {
 
-        html += createCard(
-          record,
-          index + 1,
-          historyMap
-        );
+        html +=
+          createCard(
+            row,
+            index + 1,
+            history
+          );
 
       });
 
@@ -294,15 +278,12 @@ function searchRecords(searchText) {
       console.error(error);
 
       status.textContent =
-        "Unable to load PR SEARCH.";
+        "Error loading PR SEARCH";
 
       results.innerHTML =
         '<div class="no-result">' +
-        '<b>Unable to connect to PR SEARCH.</b><br><br>' +
-        escapeHTML(error.message) +
-        '<br><br>' +
-        'Please check that the Google Sheet is shared as ' +
-        '"Anyone with the link - Viewer".' +
+        '<b>Unable to load data.</b><br><br>' +
+        error.message +
         '</div>';
 
     });
@@ -310,228 +291,114 @@ function searchRecords(searchText) {
 }
 
 
-/* =========================================================
-   NORMALIZE SEARCH
-   ========================================================= */
+/* ---------------------------------------------------------
+   CREATE RESULT CARD
+--------------------------------------------------------- */
 
-function normalize(value) {
+function createCard(row, number, history) {
 
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[\s\-\/\\().]/g, "");
-
-}
-
-
-/* =========================================================
-   CREATE CARD
-   ========================================================= */
-
-function createCard(record, number, historyMap) {
+  const damageDate =
+    val(row, 6);
 
   const place =
-    getField(record, [
-      "PLACE OF DAMAGE",
-      "Place Of Damage",
-      "PLACE OF DAMAGE "
-    ]);
-
-
-  const prNo =
-    getField(record, [
-      "PR NO",
-      "PR NO.",
-      "PR NUMBER",
-      "PR Number"
-    ]);
-
-
-  const prDate =
-    getField(record, [
-      "PR DATE",
-      "PR Date"
-    ]);
-
-
-  const complaintNo =
-    getField(record, [
-      "COMPLAIN NUMBER",
-      "COMPLAINT NUMBER",
-      "Complaint Number"
-    ]);
-
-
-  const complaintDate =
-    getField(record, [
-      "COMPLAIN DATE",
-      "COMPLAINT DATE"
-    ]);
-
-
-  const dateDamage =
-    getField(record, [
-      "DATE OF DAMAGE",
-      "DATE OF DAMAGE "
-    ]);
-
+    val(row, 7);
 
   const didNo =
-    getField(record, [
-      "DID NO",
-      "DID NO."
-    ]);
-
+    val(row, 8);
 
   const capacity =
-    getField(record, [
-      "CAPACITY",
-      "CAPACITY IN KVA",
-      "KVA"
-    ]);
+    val(row, 9);
 
+  const complaintNo =
+    val(row, 10);
 
-  const division =
-    getField(record, [
-      "DIVISION",
-      "DIVISION NAME"
-    ]);
+  const complaintDate =
+    val(row, 11);
 
+  const prNo =
+    val(row, 12);
 
-  const subdivision =
-    getField(record, [
-      "SUBDIVISION",
-      "SUB DIVISION",
-      "SUBDIVISION NAME"
-    ]);
-
-
-  const substation =
-    getField(record, [
-      "SUBSTATION",
-      "SUB STATION",
-      "SUBSTATION NAME"
-    ]);
-
+  const prDate =
+    val(row, 13);
 
   const jeName =
-    getField(record, [
-      "JE Name",
-      "JE NAME",
-      "JE"
-    ]);
-
+    val(row, 14);
 
   const jeMobile =
-    getField(record, [
-      "JE Mobile",
-      "JE MOBILE"
-    ]);
-
+    val(row, 15);
 
   const firm =
-    getField(record, [
-      "ISSUED TO FIRM",
-      "FIRM",
-      "FIRM NAME"
-    ]);
-
+    val(row, 16);
 
   const issueDate =
-    getField(record, [
-      "ISSUE DATE",
-      "ISSUED DATE"
-    ]);
-
+    val(row, 17);
 
   const driver =
-    getField(record, [
-      "DRIVER NAME",
-      "DRIVER"
-    ]);
-
+    val(row, 18);
 
   const driverMobile =
-    getField(record, [
-      "DRIVER MOBILE",
-      "DRIVER MOBILE NO",
-      "DRIVER PHONE"
-    ]);
-
+    val(row, 19);
 
   const replacementDate =
-    getField(record, [
-      "REPLACEMENT DATE",
-      "TX REPLACEMENT DATE"
-    ]);
-
+    val(row, 20);
 
   const time =
-    getField(record, [
-      "TIME"
-    ]);
-
+    val(row, 21);
 
   const returnDate =
-    getField(record, [
-      "TX RETURN DATE",
-      "RETURN DATE",
-      "W RETURN DATE",
-      "TX Return Date"
-    ]);
-
+    val(row, 22);
 
   const observation =
-    getField(record, [
-      "OBSERVATION DTC",
-      "OBSERVATION"
-    ]);
+    val(row, 23);
 
 
   /* STATUS */
 
   let statusHTML = "";
 
-  if (replacementDate.trim() !== "") {
+
+  if (replacementDate) {
 
     statusHTML =
-      '<div class="status-box status-installed">' +
+      '<div class="status status-installed">' +
       '🎉 Congratulations! Your Transformer installed' +
-      '<br>' +
-      '<span style="font-weight:normal">' +
+      '<br><span style="font-weight:normal">' +
       'Replacement Date: ' +
-      escapeHTML(replacementDate) +
+      esc(replacementDate) +
       '</span>' +
       '</div>';
 
   }
 
-  else if (issueDate.trim() !== "") {
+  else if (issueDate) {
 
     statusHTML =
-      '<div class="status-box status-issued">' +
+      '<div class="status status-issued">' +
       '🔧 Your Transformer Issued by Workshop' +
       '<br>' +
       '<span style="font-weight:normal">' +
       'Please Contact Driver for Installation' +
-      '<br>' +
-      'Issue Date: ' +
-      escapeHTML(issueDate);
+      '<br>Issue Date: ' +
+      esc(issueDate);
+
 
     if (driver) {
 
       statusHTML +=
         '<br>Driver: ' +
-        escapeHTML(driver);
+        esc(driver);
 
     }
+
 
     if (driverMobile) {
 
       statusHTML +=
         '<br>Mobile: ' +
-        escapeHTML(driverMobile);
+        esc(driverMobile);
 
     }
+
 
     statusHTML +=
       '</span></div>';
@@ -541,7 +408,7 @@ function createCard(record, number, historyMap) {
   else {
 
     statusHTML =
-      '<div class="status-box status-pending">' +
+      '<div class="status status-pending">' +
       '⏳ Transformer Replacement Pending' +
       '</div>';
 
@@ -552,15 +419,39 @@ function createCard(record, number, historyMap) {
 
   let repeatHTML = "";
 
+
   const key =
-    normalize(place);
+    clean(place);
 
 
-  const history =
-    historyMap[key] || [];
+  const list =
+    history[key] || [];
 
 
-  if (key && history.length > 1) {
+  if (key && list.length > 1) {
+
+    let historyRows = "";
+
+
+    list.forEach(function (item, index) {
+
+      historyRows +=
+        '<div class="history-row">' +
+
+        '<b>' +
+        ordinal(index + 1) +
+        ' Time</b> – ' +
+
+        esc(item.prNo || "PR Not Available") +
+
+        ' – ' +
+
+        esc(item.prDate || "Date Not Available") +
+
+        '</div>';
+
+    });
+
 
     repeatHTML =
       '<div class="repeat-box">' +
@@ -569,101 +460,77 @@ function createCard(record, number, historyMap) {
       '⚠️ Repeated Damage' +
       '</div>' +
 
-      '<div>' +
+      '<div class="repeat-message">' +
       'It Damaged ' +
-      history.length +
+      list.length +
       ' times. Please Ensure Increasing Capacity if Overloaded.' +
       '</div>' +
 
-      '<br>' +
-
-      history.map(function (item, i) {
-
-        return (
-          '<div class="history-item">' +
-          '<b>' +
-          getOrdinal(i + 1) +
-          ' Time</b> – ' +
-          escapeHTML(item.prNo || "PR Not Available") +
-          ' – ' +
-          escapeHTML(item.prDate || "Date Not Available") +
-          '</div>'
-        );
-
-      }).join("") +
+      '<div class="history">' +
+      historyRows +
+      '</div>' +
 
       '</div>';
 
   }
 
-  else if (key) {
+  else {
 
     repeatHTML =
       '<div class="repeat-box">' +
+
       '<div class="repeat-title">' +
       '✓ Not a repeated damage' +
       '</div>' +
+
       '</div>';
 
   }
 
+
+  /* CARD */
 
   return (
 
     '<div class="result-card">' +
 
-      '<div class="card-heading">' +
+      '<div class="card-title">' +
       'Transformer Record #' +
       number +
       '</div>' +
 
-      '<div class="card-body">' +
+      statusHTML +
 
-        statusHTML +
+      repeatHTML +
 
-        repeatHTML +
+      '<div class="data">' +
 
-        infoRow("PR Number", prNo) +
+        rowHTML("PR Number", prNo) +
+        rowHTML("PR Date", prDate) +
 
-        infoRow("PR Date", prDate) +
+        rowHTML("Complaint Number", complaintNo) +
+        rowHTML("Complaint Date", complaintDate) +
 
-        infoRow("Complaint Number", complaintNo) +
+        rowHTML("Date of Damage", damageDate) +
+        rowHTML("Place of Damage", place) +
 
-        infoRow("Complaint Date", complaintDate) +
+        rowHTML("DID No", didNo) +
+        rowHTML("Capacity", capacity) +
 
-        infoRow("Date of Damage", dateDamage) +
+        rowHTML("JE Name", jeName) +
+        rowHTML("JE Mobile", jeMobile) +
 
-        infoRow("Place of Damage", place) +
+        rowHTML("Issued To Firm", firm) +
+        rowHTML("Issue Date", issueDate) +
 
-        infoRow("DID No", didNo) +
+        rowHTML("Driver Name", driver) +
+        rowHTML("Driver Mobile", driverMobile) +
 
-        infoRow("Capacity", capacity) +
+        rowHTML("Replacement Date", replacementDate) +
+        rowHTML("Time", time) +
 
-        infoRow("Division", division) +
-
-        infoRow("Subdivision", subdivision) +
-
-        infoRow("Substation", substation) +
-
-        infoRow("JE Name", jeName) +
-
-        infoRow("JE Mobile", jeMobile) +
-
-        infoRow("Issued To Firm", firm) +
-
-        infoRow("Issue Date", issueDate) +
-
-        infoRow("Driver Name", driver) +
-
-        infoRow("Driver Mobile", driverMobile) +
-
-        infoRow("Replacement Date", replacementDate) +
-
-        infoRow("Time", time) +
-
-        infoRow("TX Return Date", returnDate) +
-
-        infoRow("Observation DTC", observation) +
+        rowHTML("TX Return Date", returnDate) +
+        rowHTML("Observation DTC", observation) +
 
       '</div>' +
 
@@ -674,31 +541,27 @@ function createCard(record, number, historyMap) {
 }
 
 
-/* =========================================================
-   INFO ROW
-   ========================================================= */
+/* ---------------------------------------------------------
+   DATA ROW
+--------------------------------------------------------- */
 
-function infoRow(label, value) {
+function rowHTML(label, value) {
 
-  if (
-    value === undefined ||
-    value === null ||
-    String(value).trim() === ""
-  ) {
+  if (!value) {
     return "";
   }
 
 
   return (
 
-    '<div class="info-row">' +
+    '<div class="data-row">' +
 
-      '<div class="info-label">' +
-      escapeHTML(label) +
+      '<div class="data-label">' +
+      esc(label) +
       '</div>' +
 
-      '<div class="info-value">' +
-      escapeHTML(value) +
+      '<div class="data-value">' +
+      esc(value) +
       '</div>' +
 
     '</div>'
@@ -708,24 +571,19 @@ function infoRow(label, value) {
 }
 
 
-/* =========================================================
-   REPEATED DAMAGE HISTORY
-   Same PLACE OF DAMAGE
-   ========================================================= */
+/* ---------------------------------------------------------
+   REPEATED DAMAGE
+--------------------------------------------------------- */
 
-function buildDamageHistory(data) {
+function buildHistory(rows) {
 
   const map = {};
 
 
-  data.forEach(function (record) {
+  rows.forEach(function (row) {
 
     const place =
-      getField(record, [
-        "PLACE OF DAMAGE",
-        "Place Of Damage",
-        "PLACE OF DAMAGE "
-      ]);
+      val(row, 7);
 
 
     if (!place) {
@@ -734,22 +592,7 @@ function buildDamageHistory(data) {
 
 
     const key =
-      normalize(place);
-
-
-    const prNo =
-      getField(record, [
-        "PR NO",
-        "PR NO.",
-        "PR NUMBER"
-      ]);
-
-
-    const prDate =
-      getField(record, [
-        "PR DATE",
-        "PR Date"
-      ]);
+      clean(place);
 
 
     if (!map[key]) {
@@ -759,28 +602,30 @@ function buildDamageHistory(data) {
 
     map[key].push({
 
-      prNo: prNo,
+      prNo:
+        val(row, 12),
 
-      prDate: prDate,
+      prDate:
+        val(row, 13),
 
-      dateDamage:
-        getField(record, [
-          "DATE OF DAMAGE"
-        ])
+      damageDate:
+        val(row, 6)
 
     });
 
   });
 
 
-  /* Sort each history by date */
+  /*
+    Sort by damage date
+  */
 
   Object.keys(map).forEach(function (key) {
 
     map[key].sort(function (a, b) {
 
-      return parseDateValue(a.dateDamage) -
-             parseDateValue(b.dateDamage);
+      return dateValue(a.damageDate) -
+             dateValue(b.damageDate);
 
     });
 
@@ -792,74 +637,47 @@ function buildDamageHistory(data) {
 }
 
 
-/* =========================================================
-   GET FIELD
-   ========================================================= */
+/* ---------------------------------------------------------
+   GET VALUE
+--------------------------------------------------------- */
 
-function getField(record, possibleNames) {
+function val(row, index) {
 
-  for (let i = 0; i < possibleNames.length; i++) {
-
-    const wanted =
-      normalizeHeader(possibleNames[i]);
-
-
-    const keys =
-      Object.keys(record);
-
-
-    for (let k = 0; k < keys.length; k++) {
-
-      if (
-        normalizeHeader(keys[k]) === wanted
-      ) {
-
-        return String(
-          record[keys[k]] || ""
-        ).trim();
-
-      }
-
-    }
-
+  if (!row || index >= row.length) {
+    return "";
   }
 
-
-  return "";
+  return String(row[index] || "").trim();
 
 }
 
 
-/* =========================================================
-   HEADER NORMALIZE
-   ========================================================= */
+/* ---------------------------------------------------------
+   SEARCH CLEANING
+--------------------------------------------------------- */
 
-function normalizeHeader(value) {
+function clean(value) {
 
   return String(value || "")
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[\s\-\/\\().]/g, "");
 
 }
 
 
-/* =========================================================
-   DATE PARSER
-   ========================================================= */
+/* ---------------------------------------------------------
+   DATE
+--------------------------------------------------------- */
 
-function parseDateValue(value) {
+function dateValue(value) {
 
   if (!value) {
     return 0;
   }
 
 
-  const text =
-    String(value).trim();
-
-
   let d =
-    new Date(text);
+    new Date(value);
 
 
   if (!isNaN(d.getTime())) {
@@ -867,10 +685,8 @@ function parseDateValue(value) {
   }
 
 
-  /* DD/MM/YYYY */
-
-  let m =
-    text.match(
+  const m =
+    String(value).match(
       /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
     );
 
@@ -891,27 +707,26 @@ function parseDateValue(value) {
 }
 
 
-/* =========================================================
+/* ---------------------------------------------------------
    ORDINAL
-   ========================================================= */
+--------------------------------------------------------- */
 
-function getOrdinal(number) {
+function ordinal(n) {
 
-  if (number === 1) return "First";
-  if (number === 2) return "Second";
-  if (number === 3) return "Third";
-  if (number === 4) return "Fourth";
-  if (number === 5) return "Fifth";
+  if (n === 1) return "First";
+  if (n === 2) return "Second";
+  if (n === 3) return "Third";
+  if (n === 4) return "Fourth";
+  if (n === 5) return "Fifth";
 
-  return number + "th";
+  return n + "th";
 
 }
 
 
-/* =========================================================
+/* ---------------------------------------------------------
    CSV PARSER
-   Handles commas inside quoted cells
-   ========================================================= */
+--------------------------------------------------------- */
 
 function parseCSV(text) {
 
@@ -921,38 +736,36 @@ function parseCSV(text) {
 
   let cell = "";
 
-  let insideQuotes = false;
+  let quotes = false;
 
 
   for (let i = 0; i < text.length; i++) {
 
-    const char = text[i];
+    const c = text[i];
 
-    const next = text[i + 1];
+    const next =
+      text[i + 1];
 
 
-    if (char === '"') {
+    if (c === '"') {
 
-      if (insideQuotes && next === '"') {
+      if (quotes && next === '"') {
 
         cell += '"';
 
         i++;
 
-      }
+      } else {
 
-      else {
-
-        insideQuotes =
-          !insideQuotes;
+        quotes = !quotes;
 
       }
 
     }
 
     else if (
-      char === "," &&
-      !insideQuotes
+      c === "," &&
+      !quotes
     ) {
 
       row.push(cell);
@@ -962,12 +775,12 @@ function parseCSV(text) {
     }
 
     else if (
-      (char === "\n" || char === "\r") &&
-      !insideQuotes
+      (c === "\n" || c === "\r") &&
+      !quotes
     ) {
 
       if (
-        char === "\r" &&
+        c === "\r" &&
         next === "\n"
       ) {
         i++;
@@ -976,32 +789,27 @@ function parseCSV(text) {
 
       row.push(cell);
 
-      cell = "";
-
-
-      if (row.length > 0) {
-
-        rows.push(row);
-
-      }
-
+      rows.push(row);
 
       row = [];
+
+      cell = "";
 
     }
 
     else {
 
-      cell += char;
+      cell += c;
 
     }
 
   }
 
 
-  /* Last cell */
-
-  if (cell !== "" || row.length > 0) {
+  if (
+    cell !== "" ||
+    row.length
+  ) {
 
     row.push(cell);
 
@@ -1015,11 +823,11 @@ function parseCSV(text) {
 }
 
 
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
+/* ---------------------------------------------------------
+   ESCAPE
+--------------------------------------------------------- */
 
-function escapeHTML(value) {
+function esc(value) {
 
   return String(value || "")
     .replace(/&/g, "&amp;")

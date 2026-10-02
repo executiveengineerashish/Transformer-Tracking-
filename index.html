@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 <title>Transformer Tracking</title>
 
@@ -15,244 +15,130 @@
 
 <div class="app">
 
-  <!-- HEADER -->
-  <div class="topbar">
+<header class="topbar">
 
-    <div class="title-row">
+  <div class="header-icon">⚡</div>
 
-      <div class="bolt">⚡</div>
+  <div class="header-text">
+    <div class="app-title">Transformer Tracking</div>
+    <div class="app-subtitle">PR / Complaint Search</div>
+  </div>
 
-      <div>
-        <div class="app-title">
-          Transformer Tracking
-        </div>
+</header>
 
-        <div class="app-subtitle">
-          PR / Complaint Search
-        </div>
-      </div>
 
+<!-- DASHBOARD -->
+
+<section class="dashboard">
+
+  <div class="dashboard-title">
+    📊 Transformer Pendency Dashboard
+  </div>
+
+  <div id="dashboardMonth" class="dashboard-month">
+    Current Month
+  </div>
+
+
+  <div class="dashboard-cards">
+
+    <div class="dash-card total">
+      <div>Total</div>
+      <strong id="dashTotal">0</strong>
+    </div>
+
+    <div class="dash-card issued">
+      <div>Issued</div>
+      <strong id="dashIssued">0</strong>
+    </div>
+
+    <div class="dash-card pending">
+      <div>Pending to Issue</div>
+      <strong id="dashPending">0</strong>
     </div>
 
   </div>
 
 
-  <!-- DASHBOARD -->
-  <section class="dashboard-card">
+  <div class="dashboard-section">
+    Workshop-wise Pending to Issue
+  </div>
 
-    <div class="dashboard-title">
-      <span>📊</span>
-      <span>Transformer Monitoring Dashboard</span>
-    </div>
+  <div id="workshopDashboard">
+    Loading dashboard...
+  </div>
 
-    <div id="dashboardMonth"
-         class="dashboard-month">
-      Loading...
-    </div>
 
+  <div class="dashboard-section">
+    Capacity-wise Pending to Issue
+  </div>
 
-    <!-- MAIN COUNTERS -->
+  <div id="capacityDashboard">
+    Loading dashboard...
+  </div>
 
-    <div class="counter-grid">
 
-      <div class="counter-card total">
-        <div class="counter-label">
-          Total PR
-        </div>
+  <div class="dashboard-section">
+    Ageing of Pending to Issue
+  </div>
 
-        <div id="totalPR"
-             class="counter-number">
-          0
-        </div>
-      </div>
+  <div id="ageingDashboard">
+    Loading dashboard...
+  </div>
 
 
-      <div class="counter-card issued">
-        <div class="counter-label">
-          Issued
-        </div>
+  <div class="dashboard-section">
+    🔄 Repeated Damage
+  </div>
 
-        <div id="totalIssued"
-             class="counter-number">
-          0
-        </div>
-      </div>
+  <div id="repeatedDashboard">
+    Loading dashboard...
+  </div>
 
+</section>
 
-      <div class="counter-card pending">
-        <div class="counter-label">
-          Pending Issue
-        </div>
 
-        <div id="totalPendingIssue"
-             class="counter-number">
-          0
-        </div>
-      </div>
+<!-- SEARCH -->
 
+<section class="search-panel">
 
-      <div class="counter-card replacement">
-        <div class="counter-label">
-          Replacement Pending
-        </div>
+  <div class="search-title">
+    PR / Complaint Number
+  </div>
 
-        <div id="totalReplacementPending"
-             class="counter-number">
-          0
-        </div>
-      </div>
+  <div class="search-row">
 
+    <input
+      id="searchInput"
+      type="search"
+      placeholder="Enter PR / Complaint Number"
+      autocomplete="off"
+      spellcheck="false"
+    >
 
-      <div class="counter-card return">
-        <div class="counter-label">
-          TX Return Pending
-        </div>
+    <button id="searchBtn">
+      SEARCH
+    </button>
 
-        <div id="totalReturnPending"
-             class="counter-number">
-          0
-        </div>
-      </div>
+  </div>
 
-    </div>
+  <div id="searchStatus" class="search-status">
+    Loading transformer records...
+  </div>
 
+</section>
 
-    <!-- TODAY ACTION -->
 
-    <div class="section-title action-title">
-      ⚠️ Today's Action
-    </div>
+<!-- RESULTS -->
 
-    <div class="action-grid">
+<div id="results"></div>
 
-      <div class="action-card">
-        <div>
-          Issue &gt; 24 Hours
-        </div>
 
-        <strong id="issue24">
-          0
-        </strong>
-      </div>
-
-
-      <div class="action-card">
-        <div>
-          Issue &gt; 72 Hours
-        </div>
-
-        <strong id="issue72">
-          0
-        </strong>
-      </div>
-
-
-      <div class="action-card">
-        <div>
-          Issue &gt; 7 Days
-        </div>
-
-        <strong id="issue7">
-          0
-        </strong>
-      </div>
-
-    </div>
-
-
-    <!-- WORKSHOP -->
-
-    <div class="section-title">
-      Workshop-wise Pending to Issue
-    </div>
-
-    <div id="workshopDashboard">
-      Loading...
-    </div>
-
-
-    <!-- CAPACITY -->
-
-    <div class="section-title">
-      Capacity-wise Pending to Issue
-    </div>
-
-    <div id="capacityDashboard">
-      Loading...
-    </div>
-
-
-    <!-- AGEING -->
-
-    <div class="section-title">
-      Ageing of Pending to Issue
-    </div>
-
-    <div id="ageingDashboard">
-      Loading...
-    </div>
-
-
-    <!-- REPEATED DAMAGE -->
-
-    <div class="section-title repeated-heading">
-      🔄 Repeated Damage
-    </div>
-
-    <div id="repeatedDashboard">
-      Loading...
-    </div>
-
-  </section>
-
-
-  <!-- SEARCH -->
-
-  <section class="search-section">
-
-    <label for="searchInput">
-      PR / Complaint Number
-    </label>
-
-    <div class="search-box">
-
-      <span class="search-icon">
-        🔎
-      </span>
-
-      <input
-        id="searchInput"
-        type="search"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="Enter PR or Complaint Number"
-      >
-
-      <button
-        id="clearBtn"
-        type="button">
-        ✕
-      </button>
-
-    </div>
-
-
-    <div id="searchStatus"
-         class="search-status">
-      Loading transformer records...
-    </div>
-
-  </section>
-
-
-  <!-- SEARCH RESULTS -->
-
-  <div id="results"></div>
+<footer>
+  Transformer Tracking
+</footer>
 
 </div>
-
 
 <script src="app.js"></script>
 

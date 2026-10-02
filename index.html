@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
   <title>Transformer Tracking</title>
 
@@ -11,54 +12,50 @@
 
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <header class="app-header">
-      <div class="header-title">⚡ Transformer Tracking</div>
-      <div class="header-subtitle">PR / Complaint Search</div>
-    </header>
+  <header class="top-header">
+    <div class="title">⚡ Transformer Tracking</div>
+    <div class="subtitle">PR / Complaint Search</div>
+  </header>
 
-    <main class="container">
+  <main>
 
-      <div class="search-box">
+    <section class="search-panel">
 
-        <label for="searchInput">
-          PR / Complaint Number
-        </label>
+      <label>PR / Complaint Number</label>
 
-        <div class="search-row">
+      <div class="search-line">
 
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Enter PR or Complaint Number"
-            autocomplete="off"
-          >
+        <input
+          id="searchInput"
+          type="text"
+          inputmode="numeric"
+          placeholder="Enter PR / Complaint Number"
+          autocomplete="off"
+        >
 
-          <button id="searchBtn">
-            SEARCH
-          </button>
-
-        </div>
-
-        <div id="searchStatus" class="search-status">
-          Enter PR / Complaint Number to search.
-        </div>
+        <button id="searchBtn">SEARCH</button>
 
       </div>
 
+      <div id="searchStatus">
+        Enter PR / Complaint Number to search.
+      </div>
 
-      <div id="results"></div>
+    </section>
 
-    </main>
+    <div id="results"></div>
 
-    <footer>
-      Transformer Tracking
-    </footer>
+  </main>
 
-  </div>
+  <footer>
+    Transformer Tracking
+  </footer>
 
-  <script src="app.js"></script>
+</div>
+
+<script src="app.js"></script>
 
 </body>
 </html>

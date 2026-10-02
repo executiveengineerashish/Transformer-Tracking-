@@ -4,9 +4,6 @@ const SHEET_GID="1464518527";
 let ALL=[];
 let timer=null;
 
-
-/* ================= BASIC ================= */
-
 const $=id=>document.getElementById(id);
 
 const clean=x=>String(x??"").trim();
@@ -26,20 +23,20 @@ function escapeHTML(x){
 }
 
 
-/* ================= LOCATION ================= */
+/* LOCATION NORMALIZATION */
 
 function locationKey(x){
 
  return norm(
-   String(x??"")
-   .replace(/[0-9]+/g," ")
-   .replace(/[\(\)\[\]\{\}]/g," ")
+  String(x??"")
+  .replace(/[0-9]+/g," ")
+  .replace(/[\(\)\[\]\{\}]/g," ")
  );
 
 }
 
 
-/* ================= CAPACITY ================= */
+/* CAPACITY */
 
 function capacityKey(x){
 
@@ -52,7 +49,7 @@ function capacityKey(x){
 }
 
 
-/* ================= DATE ================= */
+/* DATE */
 
 function parseDate(x){
 
@@ -80,7 +77,7 @@ function parseDate(x){
 }
 
 
-function sameMonth(x){
+function currentMonth(x){
 
  let d=parseDate(x);
  let n=new Date();
@@ -88,110 +85,81 @@ function sameMonth(x){
  return d &&
  d.getFullYear()===n.getFullYear() &&
  d.getMonth()===n.getMonth();
+
 }
 
 
-/* ================= LOAD SHEET ================= */
+/* LOAD */
 
 function loadSheet(){
 
- const status=$("searchStatus");
+ $("searchStatus").textContent=
+  "Loading transformer records...";
 
- if(status)
-  status.textContent="Loading transformer records...";
-
- const callback="transformer_"+Date.now();
+ let callback="TT_"+Date.now();
 
  window[callback]=function(response){
 
   try{
 
-   const rows=response.table.rows||[];
-
    ALL=[];
 
-   /*
-    A:X = 24 columns
+   (response.table.rows||[]).forEach(function(row,index){
 
-    IMPORTANT:
-    gviz range A3:X with headers=1
-    returns row 4 as first data row.
-   */
-
-   rows.forEach(function(row,index){
-
-    let record=[];
+    let a=[];
 
     for(let i=0;i<24;i++){
 
-     let cell=row.c?.[i];
+     let c=row.c?.[i];
 
-     if(!cell){
-      record.push("");
-      continue;
-     }
-
-     record.push(
-      cell.f!==undefined?
-      String(cell.f):
-      cell.v!==undefined?
-      String(cell.v):
+     a.push(
+      c?.f!==undefined?
+      String(c.f):
+      c?.v!==undefined?
+      String(c.v):
       ""
      );
 
     }
 
-    if(!record.some(clean))
+    if(!a.some(clean))
      return;
 
-    record.__row=index+4;
+    a.__row=index+4;
+    a.__search=norm(a.join(" "));
 
-    record.__search=norm(record.join(" "));
-
-    ALL.push(record);
+    ALL.push(a);
 
    });
 
 
    buildDashboard();
 
-   if(status){
+   $("searchStatus").textContent=
+    ALL.length.toLocaleString("en-IN")+
+    " transformer records loaded • Search ready";
 
-    status.textContent=
-     ALL.length.toLocaleString("en-IN")+
-     " transformer records loaded • Search ready";
+  }catch(e){
 
-   }
+   console.error(e);
 
-  }catch(error){
+   $("searchStatus").textContent=
+    "Error reading PR SEARCH data";
 
-   console.error(error);
-
-   if(status){
-
-    status.textContent=
-     "Error reading PR SEARCH data";
-
-    status.classList.add("error");
-
-   }
+   $("searchStatus").classList.add("error");
 
   }
-
-  try{
-   delete window[callback];
-  }catch(e){}
 
  };
 
 
- const old=$("googleSheetScript");
+ let old=$("googleSheetScript");
 
  if(old)
   old.remove();
 
 
- const script=document.createElement("script");
+ let script=document.createElement("script");
 
  script.id="googleSheetScript";
 
@@ -208,14 +176,10 @@ function loadSheet(){
 
  script.onerror=function(){
 
-  if(status){
+  $("searchStatus").textContent=
+   "Google Sheet connection failed. Refresh page.";
 
-   status.textContent=
-    "Google Sheet connection failed. Refresh page.";
-
-   status.classList.add("error");
-
-  }
+  $("searchStatus").classList.add("error");
 
  };
 
@@ -224,329 +188,146 @@ function loadSheet(){
 }
 
 
-/* ================= DASHBOARD ================= */
+/* DASHBOARD */
 
 function buildDashboard(){
 
  if(!ALL.length)return;
 
- const now=new Date();
-
-
- /* CURRENT MONTH = PR DATE N = index 13 */
-
- const monthRecords=
-  ALL.filter(x=>sameMonth(x[13]));
-
-
- /* STATUS */
+ let month=
+  ALL.filter(x=>currentMonth(x[13]));
 
  let issued=0;
- let pendingIssue=0;
- let replacementPending=0;
- let returnPending=0;
+ let pending=0;
+ let replacement=0;
+ let returned=0;
 
- monthRecords.forEach(function(x){
 
-  const issue=clean(x[17]);       // R
-  const replacement=clean(x[20]); // U
-  const returned=clean(x[22]);    // W
+/* STATUS */
+
+ month.forEach(function(x){
+
+  let issue=clean(x[17]);
+  let replace=clean(x[20]);
+  let ret=clean(x[22]);
 
   if(!issue){
 
-   pendingIssue++;
+   pending++;
 
   }else{
 
    issued++;
 
-   if(!replacement){
+   if(!replace)
+    replacement++;
 
-    replacementPending++;
-
-   }else if(!returned){
-
-    returnPending++;
-
-   }
+   else if(!ret)
+    returned++;
 
   }
 
  });
 
 
- if($("dashTotal"))
-  $("dashTotal").textContent=monthRecords.length;
-
- if($("dashIssued"))
-  $("dashIssued").textContent=issued;
-
- if($("dashPending"))
-  $("dashPending").textContent=pendingIssue;
-
- if($("dashReplacement"))
-  $("dashReplacement").textContent=replacementPending;
-
- if($("dashReturn"))
-  $("dashReturn").textContent=returnPending;
+ $("dashTotal").textContent=month.length;
+ $("dashIssued").textContent=issued;
+ $("dashPending").textContent=pending;
+ $("dashReplacement").textContent=replacement;
+ $("dashReturn").textContent=returned;
 
 
- if($("dashboardMonth"))
-  $("dashboardMonth").textContent=
-   now.toLocaleString("en-IN",{
-    month:"long",
-    year:"numeric"
-   });
+ let n=new Date();
+
+ $("dashboardMonth").textContent=
+  n.toLocaleString("en-IN",{
+   month:"long",
+   year:"numeric"
+  });
 
 
- /* ================= WORKSHOP ================= */
+/* WORKSHOP */
 
- let workshop={};
+ let W={};
 
- monthRecords.forEach(function(x){
+ month.forEach(function(x){
 
   if(!clean(x[17])){
 
    let w=clean(x[1])||"OTHER";
 
-   workshop[w]=(workshop[w]||0)+1;
+   W[w]=(W[w]||0)+1;
 
   }
 
  });
 
- let wlist=
-  Object.entries(workshop)
+
+ let list=
+  Object.entries(W)
   .sort((a,b)=>b[1]-a[1]);
 
- let wmax=wlist[0]?.[1]||1;
-
- if($("workshopDashboard")){
-
-  $("workshopDashboard").innerHTML=
-   wlist.map(function(x){
-
-    let width=(x[1]/wmax)*100;
-
-    return `
-    <div class="dashboard-row">
-
-     <div class="dashboard-row-title">
-      <span>${escapeHTML(x[0])}</span>
-      <span>${x[1]}</span>
-     </div>
-
-     <div class="dashboard-bar-bg">
-      <div class="dashboard-bar"
-           style="width:${width}%">
-      </div>
-     </div>
-
-    </div>`;
-
-   }).join("")||
-
-   `<div class="no-dashboard-data">
-     No pending transformer
-    </div>`;
-
- }
+ let max=list[0]?.[1]||1;
 
 
- /* ================= CAPACITY ================= */
+ $("workshopDashboard").innerHTML=
 
- let capacity={};
+ list.length?
 
- monthRecords.forEach(function(x){
+ list.map(function(x){
 
-  if(!clean(x[17])){
+  let width=x[1]/max*100;
 
-   let c=clean(x[9])||"Unknown";
+  return `
 
-   capacity[c]=(capacity[c]||0)+1;
+  <div class="dashboard-row">
 
-  }
+   <div class="dashboard-row-title">
 
- });
+    <span>${escapeHTML(x[0])}</span>
 
- if($("capacityDashboard")){
+    <span>${x[1]}</span>
 
-  let list=
-   Object.entries(capacity)
-   .sort((a,b)=>{
-    let aa=parseFloat(a[0])||0;
-    let bb=parseFloat(b[0])||0;
-    return aa-bb;
-   });
-
-  $("capacityDashboard").innerHTML=
-   `<div class="capacity-grid">`+
-
-   list.map(function(x){
-
-    return `
-    <div class="capacity-box">
-
-     <span>${escapeHTML(x[0])} kVA</span>
-
-     <strong>${x[1]}</strong>
-
-    </div>`;
-
-   }).join("")+
-
-   `</div>`;
-
- }
-
-
- /* ================= AGEING ================= */
-
- let age24=0;
- let age72=0;
- let age7=0;
-
- monthRecords.forEach(function(x){
-
-  if(!clean(x[17])){
-
-   let d=parseDate(x[13]);
-
-   if(!d)return;
-
-   let days=
-    (now.getTime()-d.getTime())/
-    86400000;
-
-   if(days>1)age24++;
-   if(days>3)age72++;
-   if(days>7)age7++;
-
-  }
-
- });
-
-
- if($("ageingDashboard")){
-
-  $("ageingDashboard").innerHTML=`
-
-  <div class="ageing-grid">
-
-   <div class="ageing-box">
-    <div>&gt; 1 Day</div>
-    <strong>${age24}</strong>
    </div>
 
-   <div class="ageing-box">
-    <div>&gt; 3 Days</div>
-    <strong>${age72}</strong>
-   </div>
+   <div class="dashboard-bar-bg">
 
-   <div class="ageing-box">
-    <div>&gt; 7 Days</div>
-    <strong>${age7}</strong>
+    <div class="dashboard-bar"
+         style="width:${width}%">
+    </div>
+
    </div>
 
   </div>`;
 
- }
+ }).join("")
 
+ :
 
- /* ================= TODAY ACTION ================= */
-
- if($("action24"))
-  $("action24").textContent=age24;
-
- if($("action72"))
-  $("action72").textContent=age72;
-
- if($("action7"))
-  $("action7").textContent=age7;
-
-
- /* ================= REPEATED DAMAGE ================= */
-
- let groups={};
-
- ALL.forEach(function(x){
-
-  let location=locationKey(x[7]);
-  let capacity=capacityKey(x[9]);
-
-  if(!location||!capacity)return;
-
-  let key=location+"|"+capacity;
-
-  if(!groups[key])
-   groups[key]=[];
-
-  groups[key].push(x);
-
- });
-
-
- let repeated=
-  Object.values(groups)
-  .filter(x=>x.length>1)
-  .sort((a,b)=>b.length-a.length);
-
-
- if($("repeatedDashboard")){
-
-  $("repeatedDashboard").innerHTML=
-
-   repeated.length?
-
-   repeated.map(function(x){
-
-    return `
-    <div class="repeated-dashboard-item">
-
-     <div class="repeated-dashboard-title">
-      🔄 ${escapeHTML(x[0][7])}
-      — ${x.length} Times
-     </div>
-
-     <div class="repeated-dashboard-detail">
-      Capacity:
-      <b>${escapeHTML(x[0][9])} kVA</b>
-     </div>
-
-    </div>`;
-
-   }).join(""):
-
-   `<div class="no-dashboard-data">
-     No repeated damage found
-    </div>`;
-
- }
+ `<div class="no-dashboard-data">
+   No pending transformer
+  </div>`;
 
 }
 
 
-/* ================= SEARCH ================= */
+/* SEARCH */
 
 function searchRecords(){
 
- const input=$("searchInput");
-
- const results=$("results");
-
- if(!input||!results)return;
-
- const q=norm(input.value);
+ let q=norm(
+  $("searchInput").value
+ );
 
  if(!q){
 
-  results.innerHTML="";
+  $("results").innerHTML="";
   return;
 
  }
 
 
- const found=
+ let found=
   ALL.filter(x=>
    x.__search.includes(q)
   );
@@ -554,7 +335,7 @@ function searchRecords(){
 
  if(!found.length){
 
-  results.innerHTML=
+  $("results").innerHTML=
    `<div class="no-results">
      No record found
     </div>`;
@@ -564,68 +345,36 @@ function searchRecords(){
  }
 
 
- results.innerHTML=
-  `<div class="result-count">
-    ${found.length.toLocaleString("en-IN")}
-    records found
-   </div>`+
+ $("results").innerHTML=
 
-  found.map(function(x,i){
+ `<div class="result-count">
+   ${found.length.toLocaleString("en-IN")}
+   records found
+  </div>`+
 
-   return buildCard(x,i+1);
-
-  }).join("");
+ found.map((x,i)=>
+  buildCard(x,i+1)
+ ).join("");
 
 }
 
 
-/* ================= CARD ================= */
+/* CARD */
 
-function buildCard(x,number){
+function buildCard(x,no){
 
- /*
- A SN
- B Workshop
- C Division
- D Subdivision
- E Substation
- F Feeder
- G Date of Damage
- H Place
- I DID
- J Capacity
- K Complaint
- L Complaint Date
- M PR No
- N PR Date
- O JE
- P JE Mobile
- Q Firm
- R Issue Date
- S Driver
- T Driver Mobile
- U Replacement Date
- V Time
- W TX Return
- X Observation
- */
+ let issue=clean(x[17]);
+ let replacement=clean(x[20]);
 
 
- const issue=clean(x[17]);
- const replacement=clean(x[20]);
- const returned=clean(x[22]);
+ let status="";
 
 
- let statusHTML="";
-
-
- /* IMPORTANT:
-    CONGRATULATIONS ONLY IF U / REPLACEMENT DATE EXISTS
- */
+ /* ONLY U = REPLACEMENT DATE */
 
  if(replacement){
 
-  statusHTML=`
+  status=`
 
   <div class="status-box status-installed">
 
@@ -633,18 +382,17 @@ function buildCard(x,number){
     ✓ Congratulations Your Transformer Installed
    </strong>
 
-   <div>
-    Replacement Date:
-    ${escapeHTML(replacement)}
-   </div>
+   Replacement Date:
+   ${escapeHTML(replacement)}
 
   </div>`;
 
  }
 
+
  else if(issue){
 
-  statusHTML=`
+  status=`
 
   <div class="status-box status-issued">
 
@@ -652,36 +400,31 @@ function buildCard(x,number){
     ✓ Your Transformer Issued by Workshop
    </strong>
 
-   <div>
-    Please Contact Driver for Installation
-   </div>
+   Please Contact Driver for Installation
 
    <div>
-    Issue Date:
-    ${escapeHTML(issue)}
+    Issue Date: ${escapeHTML(issue)}
    </div>
 
    ${clean(x[18])?
     `<div>
-      Driver:
-      ${escapeHTML(x[18])}
+      Driver: ${escapeHTML(x[18])}
      </div>`:""}
 
    ${clean(x[19])?
     `<div>
-      Mobile:
-      ${escapeHTML(x[19])}
+      Mobile: ${escapeHTML(x[19])}
      </div>
-
      ${driverButtons(x)}`:""}
 
   </div>`;
 
  }
 
+
  else{
 
-  statusHTML=`
+  status=`
 
   <div class="status-box status-pending">
 
@@ -694,47 +437,36 @@ function buildCard(x,number){
  }
 
 
- /* ================= REPEATED ================= */
+ /* REPEATED DAMAGE
+    ONLY SHOWN INSIDE SEARCH RESULT
+ */
 
- const location=
-  locationKey(x[7]);
-
- const capacity=
-  capacityKey(x[9]);
-
+ let location=locationKey(x[7]);
+ let capacity=capacityKey(x[9]);
 
  let history=
-  ALL.filter(function(y){
-
-   return locationKey(y[7])===location &&
-          capacityKey(y[9])===capacity;
-
-  });
+  ALL.filter(y=>
+   locationKey(y[7])===location &&
+   capacityKey(y[9])===capacity
+  );
 
 
- history.sort(function(a,b){
+ history.sort((a,b)=>{
 
-  let da=
-   parseDate(a[13])||
-   parseDate(a[6])||
-   new Date(0);
-
-  let db=
-   parseDate(b[13])||
-   parseDate(b[6])||
-   new Date(0);
+  let da=parseDate(a[13])||parseDate(a[6])||new Date(0);
+  let db=parseDate(b[13])||parseDate(b[6])||new Date(0);
 
   return da-db;
 
  });
 
 
- let repeatedHTML="";
+ let repeated="";
 
 
  if(history.length>1){
 
-  repeatedHTML=`
+  repeated=`
 
   <div class="repeated-box">
 
@@ -762,16 +494,12 @@ function buildCard(x,number){
      </div>
 
      <div>
-      PR No:
-      ${escapeHTML(y[12]||"-")}
+      PR No: ${escapeHTML(y[12]||"-")}
      </div>
 
      <div>
-      Date:
-      ${escapeHTML(
-       y[13]||
-       y[6]||
-       "-"
+      Date: ${escapeHTML(
+       y[13]||y[6]||"-"
       )}
      </div>
 
@@ -789,9 +517,9 @@ function buildCard(x,number){
  }
 
 
- /* ================= DATA ================= */
+ /* DATA */
 
- const names=[
+ let names=[
   "SN",
   "Workshop",
   "Division",
@@ -819,14 +547,13 @@ function buildCard(x,number){
  ];
 
 
- let dataHTML="";
-
+ let data="";
 
  names.forEach(function(name,i){
 
   if(!clean(x[i]))return;
 
-  dataHTML+=`
+  data+=`
 
   <div class="data-row">
 
@@ -849,24 +576,18 @@ function buildCard(x,number){
 
   <div class="card-top">
 
-   <span>
-    #${number}
-   </span>
+   <span>#${no}</span>
 
-   <span>
-    Row ${x.__row}
-   </span>
+   <span>Row ${x.__row}</span>
 
   </div>
 
-  ${statusHTML}
+  ${status}
 
-  ${repeatedHTML}
+  ${repeated}
 
   <div class="data-section">
-
-   ${dataHTML}
-
+   ${data}
   </div>
 
  </div>`;
@@ -874,7 +595,7 @@ function buildCard(x,number){
 }
 
 
-/* ================= DRIVER BUTTONS ================= */
+/* DRIVER */
 
 function driverButtons(x){
 
@@ -919,55 +640,39 @@ Thank you.`;
 }
 
 
-/* ================= START ================= */
+/* START */
 
-document.addEventListener("DOMContentLoaded",function(){
+document.addEventListener(
+ "DOMContentLoaded",
+ function(){
 
- const input=$("searchInput");
-
- const button=$("searchBtn");
-
-
- if(button){
-
-  button.addEventListener(
-   "click",
-   searchRecords
-  );
-
- }
+  $("searchBtn").onclick=
+   searchRecords;
 
 
- if(input){
-
-  input.addEventListener(
-   "keydown",
-   function(e){
-
-    if(e.key==="Enter")
-     searchRecords();
-
-   }
-  );
-
-
-  input.addEventListener(
-   "input",
+  $("searchInput").oninput=
    function(){
 
     clearTimeout(timer);
 
     timer=setTimeout(
      searchRecords,
-     70
+     60
     );
 
-   }
-  );
+   };
+
+
+  $("searchInput").onkeydown=
+   function(e){
+
+    if(e.key==="Enter")
+     searchRecords();
+
+   };
+
+
+  loadSheet();
 
  }
-
-
- loadSheet();
-
-});
+);

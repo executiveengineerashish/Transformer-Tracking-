@@ -1,123 +1,227 @@
-const SID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
+const SHEET_ID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 const GID="1464518527";
 
-let DATA=[],HIST={},FILTERS={};
+let DATA=[];
+let HISTORY={};
 
 const C={
-W:1,D:2,SD:3,SS:4,F:5,DD:6,PLACE:7,DID:8,CAP:9,
-CN:10,CD:11,PR:12,PRD:13,JE:14,JEM:15,FIRM:16,
-ISSUE:17,DRIVER:18,MOBILE:19,REP:20,TIME:21,RET:22,OBS:23
+ W:1,D:2,SD:3,SS:4,F:5,
+ DAMAGE:6,PLACE:7,DID:8,CAP:9,
+ COMPLAINT:10,COMPLAINT_DATE:11,
+ PR:12,PR_DATE:13,
+ JE:14,JE_MOBILE:15,
+ FIRM:16,ISSUE:17,
+ DRIVER:18,MOBILE:19,
+ REPLACE:20,TIME:21,
+ RETURN:22,OBS:23
 };
 
 const $=id=>document.getElementById(id);
-const s=v=>String(v??"").trim();
-const norm=v=>s(v).toLowerCase().replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
 
-function esc(v){
- return s(v).replace(/&/g,"&amp;").replace(/</g,"&lt;")
- .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function text(v){
+ return String(v??"").trim();
 }
 
-function loc(v){
- return norm(s(v).replace(/[0-9]/g,""));
+function norm(v){
+ return text(v)
+  .toLowerCase()
+  .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
 }
 
-function cap(v){
- return s(v).toLowerCase().replace(/kva/g,"").replace(/[^0-9.]/g,"");
+/* Location:
+   SISREDI
+   SISREDI 1
+   1 SISREDI
+   SISREDI (25)
+   all treated as same
+*/
+
+function location(v){
+ return norm(text(v).replace(/[0-9]/g,""));
+}
+
+function capacity(v){
+ return text(v)
+  .toLowerCase()
+  .replace(/kva/g,"")
+  .replace(/[^0-9.]/g,"");
 }
 
 function date(v){
- if(!s(v))return null;
- let x=s(v),m=x.match(/Date\((\d+),(\d+),(\d+)/);
- if(m)return new Date(+m[1],+m[2],+m[3]);
- m=x.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
- if(m)return new Date(+m[3],+m[2]-1,+m[1]);
- m=x.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
- if(m)return new Date(+m[1],+m[2]-1,+m[3]);
- let d=new Date(x);
+
+ if(!text(v)) return null;
+
+ let s=text(v);
+
+ let m=s.match(
+   /Date\((\d+),(\d+),(\d+)/
+ );
+
+ if(m)
+   return new Date(+m[1],+m[2],+m[3]);
+
+ m=s.match(
+   /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
+ );
+
+ if(m)
+   return new Date(
+     +m[3],+m[2]-1,+m[1]
+   );
+
+ let d=new Date(s);
+
  return isNaN(d)?null:d;
 }
 
-function thisMonth(v){
- let d=date(v),n=new Date();
- return d&&d.getMonth()==n.getMonth()&&d.getFullYear()==n.getFullYear();
+function currentMonth(v){
+
+ let d=date(v);
+ let n=new Date();
+
+ return d &&
+   d.getMonth()==n.getMonth() &&
+   d.getFullYear()==n.getFullYear();
 }
 
-function status(r){
- if(!s(r[C.ISSUE]))return"PENDING";
- if(!s(r[C.REP]))return"REPLACE";
- if(!s(r[C.RET]))return"RETURN";
- return"DONE";
-}
 
-
-/* ================= LOAD ================= */
+/* ================= LOAD DATA ================= */
 
 function load(){
 
- let cb="sheetCB";
- window[cb]=r=>{
+ window.sheetLoaded=function(response){
+
   try{
+
    DATA=[];
-   (r.table.rows||[]).forEach((row,i)=>{
-    if(i==0)return;
-    let a=[];
-    for(let j=0;j<24;j++){
-     let c=row.c?.[j];
-     a.push(c?.f??c?.v??"");
-    }
-    if(a.some(x=>s(x))){
-     a.__row=i+4;
-     a.__search=norm(a.join(" "));
-     DATA.push(a);
-    }
-   });
 
-   buildHistory();
+   response.table.rows.forEach(
+    (row,i)=>{
+
+     if(i==0)return;
+
+     let r=[];
+
+     for(let j=0;j<24;j++){
+
+      let c=row.c?.[j];
+
+      r.push(
+       c?.f ??
+       c?.v ??
+       ""
+      );
+
+     }
+
+     if(r.some(x=>text(x))){
+
+      r._row=i+4;
+      r._search=norm(r.join(" "));
+
+      DATA.push(r);
+
+     }
+
+    }
+   );
+
+   makeHistory();
+
    dashboard();
-   filters();
 
-   $("searchStatus").textContent=
-    DATA.length.toLocaleString("en-IN")+" transformer records loaded • Search ready";
+   $("status").textContent=
+    DATA.length.toLocaleString("en-IN")+
+    " transformer records loaded • Search ready";
 
-  }catch(e){
-   console.error(e);
-   $("searchStatus").textContent="Error loading PR SEARCH";
   }
+  catch(e){
+
+   console.error(e);
+
+   $("status").textContent=
+    "Error loading PR SEARCH";
+
+  }
+
  };
 
- let u="https://docs.google.com/spreadsheets/d/"+SID+
- "/gviz/tq?gid="+GID+
- "&range=A3:X&headers=1&tqx=out%3Ajson%3BresponseHandler%3A"+cb+
- "&_="+Date.now();
+ let url=
+  "https://docs.google.com/spreadsheets/d/"+
+  SHEET_ID+
+  "/gviz/tq"+
+  "?gid="+GID+
+  "&range=A3:X"+
+  "&headers=1"+
+  "&tqx=out%3Ajson%3BresponseHandler%3AsheetLoaded"+
+  "&_="+Date.now();
 
  let old=$("sheetScript");
+
  if(old)old.remove();
 
- let sc=document.createElement("script");
- sc.id="sheetScript";
- sc.src=u;
- sc.onerror=()=>$("searchStatus").textContent="Google Sheet connection failed";
- document.head.appendChild(sc);
+ let script=
+  document.createElement("script");
+
+ script.id="sheetScript";
+ script.src=url;
+
+ script.onerror=()=>{
+  $("status").textContent=
+   "Google Sheet connection failed";
+ };
+
+ document.head.appendChild(script);
 }
 
 
-/* ================= REPEATED DAMAGE ================= */
+/* ================= HISTORY ================= */
 
-function buildHistory(){
+function makeHistory(){
 
- HIST={};
+ HISTORY={};
 
  DATA.forEach(r=>{
-  let l=loc(r[C.PLACE]),k=cap(r[C.CAP]);
+
+  let l=location(r[C.PLACE]);
+  let k=capacity(r[C.CAP]);
+
   if(!l||!k)return;
+
   let key=l+"|"+k;
-  (HIST[key]??=[]).push(r);
+
+  if(!HISTORY[key])
+   HISTORY[key]=[];
+
+  HISTORY[key].push(r);
+
  });
 
- Object.values(HIST).forEach(a=>a.sort((x,y)=>
-  (date(x[C.PRD])||new Date(0))-(date(y[C.PRD])||new Date(0))
- ));
+ Object.values(HISTORY).forEach(a=>{
+  a.sort(
+   (x,y)=>
+    (date(x[C.PR_DATE])||0)-
+    (date(y[C.PR_DATE])||0)
+  );
+ });
+
+}
+
+
+/* ================= STATUS ================= */
+
+function getStatus(r){
+
+ if(!text(r[C.ISSUE]))
+  return "pending";
+
+ if(!text(r[C.REPLACE]))
+  return "issue";
+
+ if(!text(r[C.RETURN]))
+  return "return";
+
+ return "done";
 }
 
 
@@ -125,361 +229,345 @@ function buildHistory(){
 
 function dashboard(){
 
- let total=0,issued=0,pending=0,replace=0,ret=0;
- let a24=0,a72=0,a168=0;
- let workshops={},caps={},age=[0,0,0,0];
+ let total=0;
+ let issued=0;
+ let pending=0;
+ let replacement=0;
+ let ret=0;
+
+ let a24=0;
+ let a72=0;
+ let a168=0;
 
  DATA.forEach(r=>{
 
-  if(!thisMonth(r[C.PRD]))return;
+  /* Dashboard uses PR DATE */
+
+  if(!currentMonth(r[C.PR_DATE]))
+   return;
 
   total++;
 
-  let st=status(r);
+  let st=getStatus(r);
 
-  if(st!="PENDING")issued++;
+  if(st!="pending")
+   issued++;
 
-  if(st=="PENDING"){
+  if(st=="pending")
    pending++;
 
-   let w=s(r[C.W])||"Workshop Not Available";
-   workshops[w]=(workshops[w]||0)+1;
+  if(st=="issue"){
 
-   let c=s(r[C.CAP])||"Unknown";
-   caps[c]=(caps[c]||0)+1;
+   replacement++;
 
-   let d=date(r[C.PRD]);
-   if(d){
-    let days=Math.floor((Date.now()-d)/86400000);
-    if(days<=1)age[0]++;
-    else if(days<=3)age[1]++;
-    else if(days<=7)age[2]++;
-    else age[3]++;
-   }
-  }
-
-  if(st=="REPLACE"){
-   replace++;
    let d=date(r[C.ISSUE]);
+
    if(d){
-    let h=(Date.now()-d)/3600000;
+
+    let h=
+     (Date.now()-d.getTime())/
+     3600000;
+
     if(h>24)a24++;
     if(h>72)a72++;
     if(h>168)a168++;
+
    }
+
   }
 
-  if(st=="RETURN")ret++;
+  if(st=="return")
+   ret++;
+
  });
 
- set("dashTotal",total);
- set("dashIssued",issued);
- set("dashPending",pending);
- set("dashReplacement",replace);
- set("dashReturn",ret);
- set("age24",a24);
- set("age72",a72);
- set("age168",a168);
+ $("total").textContent=total;
+ $("issued").textContent=issued;
+ $("pending").textContent=pending;
+ $("replacement").textContent=replacement;
+ $("return").textContent=ret;
 
- if($("dashboardMonth"))
-  $("dashboardMonth").textContent=
-   new Date().toLocaleString("en-IN",{month:"long",year:"numeric"});
+ $("a24").textContent=a24;
+ $("a72").textContent=a72;
+ $("a168").textContent=a168;
 
- let wl=Object.entries(workshops).sort((a,b)=>b[1]-a[1]);
- let mx=wl[0]?.[1]||1;
+ $("month").textContent=
+  new Date().toLocaleString(
+   "en-IN",
+   {
+    month:"long",
+    year:"numeric"
+   }
+  );
 
- if($("workshopDashboard"))
-  $("workshopDashboard").innerHTML=wl.length?
-   wl.map(x=>`
-    <div class="workshop-row">
-     <div class="workshop-name-line">
-      <span class="workshop-name">${esc(x[0])}</span>
-      <span class="workshop-count">${x[1]}</span>
-     </div>
-     <div class="bar-background">
-      <div class="bar-fill" style="width:${Math.max(5,x[1]/mx*100)}%"></div>
-     </div>
-    </div>`).join("")
-   :"<div class='dashboard-loading'>No pending transformer</div>";
-
- if($("capacityDashboard"))
-  $("capacityDashboard").innerHTML=
-   Object.entries(caps).sort((a,b)=>b[1]-a[1]).map(x=>
-    `<span class="capacity-chip">${esc(x[0])} kVA: <b>${x[1]}</b></span>`
-   ).join("")||"<div class='dashboard-loading'>No pending transformer</div>";
-
- if($("ageingDashboard"))
-  $("ageingDashboard").innerHTML=`
-   <div class="age-box">0–1 day<b>${age[0]}</b></div>
-   <div class="age-box">2–3 days<b>${age[1]}</b></div>
-   <div class="age-box">4–7 days<b>${age[2]}</b></div>
-   <div class="age-box">&gt;7 days<b>${age[3]}</b></div>`;
-
- let rep=Object.entries(HIST)
-  .filter(x=>x[1].length>1)
-  .sort((a,b)=>b[1].length-a[1].length)
-  .slice(0,15);
-
- if($("repeatedDashboard"))
-  $("repeatedDashboard").innerHTML=
-   rep.map(x=>{
-    let r=x[1][0];
-    return `<button class="repeated-link" data-repeat="${esc(x[0])}">
-     🔁 ${esc(r[C.PLACE])} — ${esc(r[C.CAP])} kVA
-     <b>${x[1].length} times</b>
-    </button>`;
-   }).join("")||"<div class='dashboard-loading'>No repeated damage found</div>";
-}
-
-function set(id,v){
- if($(id))$(id).textContent=Number(v).toLocaleString("en-IN");
-}
-
-
-/* ================= FILTERS ================= */
-
-function uniq(c){
- return [...new Set(DATA.map(r=>s(r[c])).filter(Boolean))]
- .sort((a,b)=>a.localeCompare(b));
-}
-
-function fill(id,a){
- let e=$(id);
- if(!e)return;
- e.innerHTML="<option value=''>All</option>"+
- a.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
-}
-
-function filters(){
- fill("fWorkshop",uniq(C.W));
- fill("fDivision",uniq(C.D));
- fill("fSubdivision",uniq(C.SD));
- fill("fSubstation",uniq(C.SS));
- fill("fCapacity",uniq(C.CAP));
 }
 
 
 /* ================= SEARCH ================= */
 
-function filtered(){
+$("search").addEventListener(
+ "input",
+ function(){
 
- let q=norm($("searchInput")?.value||"");
+  let q=norm(this.value);
 
- return DATA.filter(r=>{
+  if(!q){
 
-  if(q&&!r.__search.includes(q))return false;
+   $("results").innerHTML="";
+   return;
 
-  if(FILTERS.w&&s(r[C.W])!=FILTERS.w)return false;
-  if(FILTERS.d&&s(r[C.D])!=FILTERS.d)return false;
-  if(FILTERS.sd&&s(r[C.SD])!=FILTERS.sd)return false;
-  if(FILTERS.ss&&s(r[C.SS])!=FILTERS.ss)return false;
-  if(FILTERS.cap&&s(r[C.CAP])!=FILTERS.cap)return false;
-  if(FILTERS.st&&status(r)!=FILTERS.st)return false;
+  }
 
-  return true;
- });
-}
+  let found=
+   DATA.filter(
+    r=>r._search.includes(q)
+   );
 
-function search(){
+  show(found);
 
- let q=$("searchInput")?.value.trim()||"";
+ }
+);
 
- if(!q&&!Object.keys(FILTERS).length){
-  $("results").innerHTML="";
+
+/* ================= SHOW RESULTS ================= */
+
+function show(records){
+
+ if(!records.length){
+
+  $("results").innerHTML=
+   `<div class="no-result">
+     No record found
+   </div>`;
+
   return;
+
  }
 
- let a=filtered();
+ $("results").innerHTML=
+  `<div class="result-count">
+    ${records.length} record(s) found
+   </div>`+
+  records.map(
+   (r,i)=>card(r,i+1)
+  ).join("");
 
- $("results").innerHTML=a.length?
-  `<div class="result-count">${a.length.toLocaleString("en-IN")} record(s) found</div>`+
-  a.map((r,i)=>card(r,i+1)).join("")
-  :"<div class='no-results'>No record found</div>";
 }
 
 
 /* ================= CARD ================= */
 
-function card(r,n){
+function card(r,no){
 
- let st=status(r);
- let driver=s(r[C.DRIVER]),mobile=s(r[C.MOBILE]);
- let stat="";
+ let st=getStatus(r);
 
- if(st=="DONE")
-  stat=`<div class="status-box installed">
-   <strong>Congratulations Your Transformer Installed</strong>
-   <div>Replacement Date: ${esc(r[C.REP])}</div>
-  </div>`;
+ let statusHTML="";
 
- else if(st=="REPLACE")
-  stat=`<div class="status-box issued">
-   <strong>Your Transformer Issued by Workshop</strong>
-   <div>Please Contact Driver for Installation</div>
-   <div class="status-detail">Issue Date: ${esc(r[C.ISSUE])}</div>
-   ${driver?`<div class="status-detail">Driver: ${esc(driver)}</div>`:""}
-   ${mobile?`<div class="status-detail">Mobile: ${esc(mobile)}</div>
-   ${buttons(r)}`:""}
-  </div>`;
+ if(st=="done"){
 
- else if(st=="RETURN")
-  stat=`<div class="status-box issued">
-   <strong>Transformer Installed</strong>
-   <div>TX Return Pending</div>
-   <div class="status-detail">Replacement Date: ${esc(r[C.REP])}</div>
-  </div>`;
+  statusHTML=
+   `<div class="status done">
+    <strong>
+     Congratulations Your Transformer Installed
+    </strong>
+    Replacement Date:
+    ${text(r[C.REPLACE])}
+   </div>`;
 
- else
-  stat=`<div class="status-box pending">
-   <strong>Transformer Pending to Issue</strong>
-  </div>`;
+ }
 
- let key=loc(r[C.PLACE])+"|"+cap(r[C.CAP]);
- let h=HIST[key]||[];
+ else if(st=="issue"){
+
+  statusHTML=
+   `<div class="status issue">
+    <strong>
+     Your Transformer Issued by Workshop
+    </strong>
+
+    Please Contact Driver for Installation
+
+    <div class="driver">
+     Issue Date: ${text(r[C.ISSUE])}
+    </div>
+
+    <div class="driver">
+     Driver: ${text(r[C.DRIVER])||"-"}
+    </div>
+
+    <div class="driver">
+     Mobile: ${text(r[C.MOBILE])||"-"}
+    </div>
+
+    ${driverButtons(r)}
+
+   </div>`;
+
+ }
+
+ else if(st=="return"){
+
+  statusHTML=
+   `<div class="status return">
+    <strong>
+     Transformer Installed
+    </strong>
+    TX Return Pending
+    <div>
+     Replacement Date:
+     ${text(r[C.REPLACE])}
+    </div>
+   </div>`;
+
+ }
+
+ else{
+
+  statusHTML=
+   `<div class="status pending">
+    <strong>
+     Transformer Pending to Issue
+    </strong>
+   </div>`;
+
+ }
+
+
+ /* Repeated damage */
+
+ let key=
+  location(r[C.PLACE])+
+  "|"+
+  capacity(r[C.CAP]);
+
+ let history=
+  HISTORY[key]||[];
+
  let repeat="";
 
- if(h.length>1)
-  repeat=`<div class="repeated-box">
-   <div class="repeated-title">🔁 It Damaged ${h.length} times</div>
-   <div class="repeated-warning">
-    Please Ensure Increasing Capacity if Overloaded
-   </div>
-   ${h.map(x=>`
-    <div class="history-item">
-     <span>PR: <strong>${esc(x[C.PR]||"-")}</strong></span>
-     <span>Date: ${esc(x[C.PRD]||x[C.DD]||"-")}</span>
-     <span>Capacity: <strong>${esc(x[C.CAP]||"-")} kVA</strong></span>
-    </div>`).join("")}
-  </div>`;
+ if(history.length>1){
 
- let f=[
-  ["Workshop",C.W],["Division",C.D],["Subdivision",C.SD],
-  ["Substation",C.SS],["Feeder",C.F],["Date of Damage",C.DD],
-  ["Place of Damage",C.PLACE],["DID No",C.DID],["Capacity",C.CAP],
-  ["Complaint Number",C.CN],["Complaint Date",C.CD],
-  ["PR No",C.PR],["PR Date",C.PRD],["JE Name",C.JE],
-  ["JE Mobile",C.JEM],["Issued to Firm",C.FIRM],
-  ["Issue Date",C.ISSUE],["Driver Name",C.DRIVER],
-  ["Driver Mobile",C.MOBILE],["Replacement Date",C.REP],
-  ["Time",C.TIME],["TX Return Date",C.RET],
+  repeat=
+   `<div class="repeat">
+
+    <div class="repeat-title">
+     🔁 It Damaged ${history.length} times
+    </div>
+
+    <div>
+     Please Ensure Increasing Capacity if Overloaded
+    </div>
+
+    ${history.map(x=>
+     `<div class="history">
+       PR: <b>${text(x[C.PR])||"-"}</b>
+       &nbsp; | &nbsp;
+       Date: ${text(x[C.PR_DATE])||"-"}
+       &nbsp; | &nbsp;
+       Capacity: <b>${text(x[C.CAP])||"-"} kVA</b>
+      </div>`
+    ).join("")}
+
+   </div>`;
+
+ }
+
+
+ let fields=[
+  ["Workshop",C.W],
+  ["Division",C.D],
+  ["Subdivision",C.SD],
+  ["Substation",C.SS],
+  ["Feeder",C.F],
+  ["Date of Damage",C.DAMAGE],
+  ["Place of Damage",C.PLACE],
+  ["DID No",C.DID],
+  ["Capacity",C.CAP],
+  ["Complaint Number",C.COMPLAINT],
+  ["Complaint Date",C.COMPLAINT_DATE],
+  ["PR No",C.PR],
+  ["PR Date",C.PR_DATE],
+  ["JE Name",C.JE],
+  ["JE Mobile",C.JE_MOBILE],
+  ["Issued to Firm",C.FIRM],
+  ["Issue Date",C.ISSUE],
+  ["Driver Name",C.DRIVER],
+  ["Driver Mobile",C.MOBILE],
+  ["Replacement Date",C.REPLACE],
+  ["Time",C.TIME],
+  ["TX Return Date",C.RETURN],
   ["Observation DTC",C.OBS]
  ];
 
- let data=f.map(x=>s(r[x[1]])?
-  `<div class="data-row">
-   <div class="data-label">${esc(x[0])}</div>
-   <div class="data-value">${esc(r[x[1]])}</div>
-  </div>`:"").join("");
+ let html=fields.map(f=>{
 
- return `<div class="result-card">
-  <div class="card-number">#${n} • Sheet Row ${r.__row}</div>
-  ${stat}
-  ${repeat}
-  <div class="data-section">${data}</div>
- </div>`;
+  if(!text(r[f[1]]))
+   return "";
+
+  return `
+   <div class="row">
+    <div class="label">${f[0]}</div>
+    <div class="value">${text(r[f[1]])}</div>
+   </div>`;
+
+ }).join("");
+
+
+ return `
+  <div class="card">
+
+   <div class="card-title">
+    #${no} • Sheet Row ${r._row}
+   </div>
+
+   ${statusHTML}
+
+   ${repeat}
+
+   ${html}
+
+  </div>`;
 }
 
 
-/* ================= DRIVER BUTTONS ================= */
+/* ================= DRIVER ================= */
 
-function buttons(r){
+function driverButtons(r){
 
- let p=s(r[C.MOBILE]).replace(/[^\d+]/g,"");
- let msg=`Namaste ${s(r[C.DRIVER])||"Driver"} ji,
+ let phone=
+  text(r[C.MOBILE])
+   .replace(/[^\d+]/g,"");
 
-Transformer PR No.: ${s(r[C.PR])||"-"}
-Capacity: ${s(r[C.CAP])||"-"} kVA
-Place: ${s(r[C.PLACE])||"-"}
-Workshop: ${s(r[C.W])||"-"}
+ let msg=
+`Namaste ${text(r[C.DRIVER])||"Driver"} ji,
 
-The transformer has been issued from Workshop. Please arrange installation and confirm the installation status.
+Transformer PR No.: ${text(r[C.PR])||"-"}
+Capacity: ${text(r[C.CAP])||"-"} kVA
+Place: ${text(r[C.PLACE])||"-"}
+
+Transformer has been issued from Workshop. Please arrange installation and confirm installation status.
 
 Thank you.`;
 
- return `<div class="driver-buttons">
-  <a class="call-driver" href="tel:${p}">📞 CALL DRIVER</a>
-  <a class="whatsapp-driver" target="_blank"
-   href="https://wa.me/${p}?text=${encodeURIComponent(msg)}">
-   💬 WHATSAPP
-  </a>
- </div>`;
+ return `
+  <div class="buttons">
+
+   <a
+    class="call"
+    href="tel:${phone}">
+    📞 CALL DRIVER
+   </a>
+
+   <a
+    class="whatsapp"
+    target="_blank"
+    href="https://wa.me/${phone}?text=${encodeURIComponent(msg)}">
+    💬 WHATSAPP
+   </a>
+
+  </div>`;
 }
 
 
-/* ================= FILTER APPLY ================= */
+/* ================= START ================= */
 
-function apply(){
-
- FILTERS={
-  w:$("fWorkshop")?.value||"",
-  d:$("fDivision")?.value||"",
-  sd:$("fSubdivision")?.value||"",
-  ss:$("fSubstation")?.value||"",
-  cap:$("fCapacity")?.value||"",
-  st:$("fStatus")?.value||""
- };
-
- Object.keys(FILTERS).forEach(k=>{
-  if(!FILTERS[k])delete FILTERS[k];
- });
-
- $("filterModal")?.classList.add("hidden");
- search();
-}
-
-
-/* ================= INITIALIZE ================= */
-
-document.addEventListener("DOMContentLoaded",()=>{
-
- $("searchInput")?.addEventListener("input",()=>{
-  clearTimeout(searchTimer);
-  searchTimer=setTimeout(search,30);
- });
-
- $("filterBtn")?.addEventListener("click",()=>
-  $("filterModal")?.classList.remove("hidden"));
-
- $("closeFilter")?.addEventListener("click",()=>
-  $("filterModal")?.classList.add("hidden"));
-
- $("applyFilter")?.addEventListener("click",apply);
-
- $("clearBtn")?.addEventListener("click",()=>{
-  FILTERS={};
-  if($("searchInput"))$("searchInput").value="";
-  search();
- });
-
- document.querySelectorAll("[data-action='status']")
- .forEach(b=>b.addEventListener("click",()=>{
-  FILTERS=b.dataset.value=="ALL"?{}:{st:b.dataset.value};
-  search();
- }));
-
- document.querySelectorAll("[data-action='age']")
- .forEach(b=>b.addEventListener("click",()=>{
-  let h=+b.dataset.value;
-  let a=DATA.filter(r=>
-   status(r)=="REPLACE"&&
-   (Date.now()-(date(r[C.ISSUE])||Date.now()))/3600000>h
-  );
-  $("results").innerHTML=a.length?
-   `<div class="result-count">${a.length} record(s) found</div>`+
-   a.map((r,i)=>card(r,i+1)).join("")
-   :"<div class='no-results'>No record found</div>";
- }));
-
- $("repeatedDashboard")?.addEventListener("click",e=>{
-  let b=e.target.closest("[data-repeat]");
-  if(!b)return;
-  let h=HIST[b.dataset.repeat];
-  if(h?.length){
-   FILTERS={};
-   $("searchInput").value=h[0][C.PLACE]||"";
-   search();
-  }
- });
-
- load();
-});
+load();

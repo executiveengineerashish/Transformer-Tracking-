@@ -4,1230 +4,629 @@ const SHEET_ID =
 const SHEET_GID =
   "1464518527";
 
-
 let ALL_RECORDS = [];
-
 let DAMAGE_HISTORY = {};
-
 let searchTimer = null;
 
-
 /* =========================
-   COLUMNS
+   COLUMN POSITIONS
 ========================= */
 
 const COL = {
-
   SN: 0,
-
   WORKSHOP: 1,
   DIVISION: 2,
   SUBDIVISION: 3,
   SUBSTATION: 4,
   FEEDER: 5,
-
   DATE_DAMAGE: 6,
   PLACE_DAMAGE: 7,
   DID_NO: 8,
   CAPACITY: 9,
-
   COMPLAINT_NO: 10,
   COMPLAINT_DATE: 11,
-
   PR_NO: 12,
   PR_DATE: 13,
-
   JE_NAME: 14,
   JE_MOBILE: 15,
-
   ISSUED_TO_FIRM: 16,
   ISSUE_DATE: 17,
-
   DRIVER_NAME: 18,
   DRIVER_MOBILE: 19,
-
   REPLACEMENT_DATE: 20,
   TIME: 21,
-
   TX_RETURN_DATE: 22,
   OBSERVATION: 23
-
 };
 
 
 /* =========================
-   HELPERS
+   BASIC FUNCTIONS
 ========================= */
 
 function clean(value) {
-
   return String(value ?? "").trim();
-
 }
 
-
 function normalize(value) {
-
   return String(value ?? "")
     .toLowerCase()
     .replace(/[\s\-\/\\().,\[\]{}:;_]+/g, "")
     .trim();
-
-}
-
-
-/*
-  LOCATION NORMALIZATION
-
-  Numbers are ignored anywhere
-  in the location.
-
-  Examples:
-
-  SISREDI
-  SISREDI 1
-  SISREDI 25
-  25 SISREDI
-  SISREDI (25)
-  (25) SISREDI
-  SISREDI [25]
-
-  All become:
-
-  sisredi
-*/
-
-function normalizeLocation(value) {
-
-  let text =
-    String(value ?? "")
-      .toLowerCase();
-
-
-  /*
-    Remove numbers
-  */
-
-  text =
-    text.replace(
-      /[0-9]+/g,
-      " "
-    );
-
-
-  /*
-    Remove bracket characters
-  */
-
-  text =
-    text.replace(
-      /[\(\)\[\]\{\}]/g,
-      " "
-    );
-
-
-  /*
-    Remove punctuation
-  */
-
-  text =
-    text.replace(
-      /[-_/\\.,:;]+/g,
-      " "
-    );
-
-
-  /*
-    Remove extra spaces
-  */
-
-  text =
-    text.replace(
-      /\s+/g,
-      " "
-    )
-    .trim();
-
-
-  /*
-    Final compact comparison key
-  */
-
-  return normalize(text);
-
-}
-
-
-/*
-  Date parser
-
-  Supports:
-
-  02.10.2026
-  02/10/2026
-  02-10-2026
-  2026-10-02
-  Google date strings
-  Date objects
-*/
-
-function parseDate(value) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return null;
-  }
-
-
-  if (
-    Object.prototype.toString
-      .call(value) ===
-    "[object Date]"
-  ) {
-
-    if (
-      isNaN(value.getTime())
-    ) {
-      return null;
-    }
-
-    return value;
-
-  }
-
-
-  const text =
-    String(value).trim();
-
-
-  /*
-    Google visualization date:
-
-    Date(2026,9,2)
-  */
-
-  let match =
-    text.match(
-      /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[1]),
-      Number(match[2]),
-      Number(match[3])
-    );
-
-  }
-
-
-  /*
-    yyyy-mm-dd
-  */
-
-  match =
-    text.match(
-      /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[1]),
-      Number(match[2]) - 1,
-      Number(match[3])
-    );
-
-  }
-
-
-  /*
-    dd.mm.yyyy
-    dd/mm/yyyy
-    dd-mm-yyyy
-  */
-
-  match =
-    text.match(
-      /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
-    );
-
-
-  if (match) {
-
-    return new Date(
-      Number(match[3]),
-      Number(match[2]) - 1,
-      Number(match[1])
-    );
-
-  }
-
-
-  /*
-    Try normal JS date
-  */
-
-  const parsed =
-    new Date(text);
-
-
-  if (
-    !isNaN(parsed.getTime())
-  ) {
-
-    return parsed;
-
-  }
-
-
-  return null;
-
-}
-
-
-/*
-  Check whether date belongs
-  to current month/year
-*/
-
-function isCurrentMonth(value) {
-
-  const date =
-    parseDate(value);
-
-
-  if (!date) {
-
-    return false;
-
-  }
-
-
-  const now =
-    new Date();
-
-
-  return (
-
-    date.getFullYear() ===
-    now.getFullYear()
-
-    &&
-
-    date.getMonth() ===
-    now.getMonth()
-
-  );
-
-}
-
-
-/*
-  Month label
-*/
-
-function currentMonthLabel() {
-
-  return new Intl.DateTimeFormat(
-    "en-IN",
-    {
-      month: "long",
-      year: "numeric"
-    }
-  ).format(
-    new Date()
-  );
-
-}
-
-
-function escapeHTML(value) {
-
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-
-function setStatus(
-  text,
-  type
-) {
-
-  const el =
-    document.getElementById(
-      "searchStatus"
-    );
-
-  if (!el) return;
-
-  el.textContent = text;
-
-  el.className =
-    "search-status " +
-    (type || "");
-
 }
 
 
 /* =========================
-   LOAD SHEET
+   LOCATION NORMALIZATION
+
+   SISREDI
+   SISREDI 1
+   1 SISREDI
+   SISREDI (1)
+   (1) SISREDI
+   SISREDI [25]
+
+   ALL = SISREDI
+========================= */
+
+function normalizeLocation(value) {
+
+  let text = String(value ?? "").toLowerCase();
+
+  // Remove numbers
+  text = text.replace(/[0-9]+/g, " ");
+
+  // Remove brackets
+  text = text.replace(/[\(\)\[\]\{\}]/g, " ");
+
+  // Remove punctuation
+  text = text.replace(/[-_/\\.,:;]+/g, " ");
+
+  // Remove extra spaces
+  text = text.replace(/\s+/g, " ").trim();
+
+  return normalize(text);
+}
+
+
+/* =========================
+   DATE PARSER
+========================= */
+
+function parseDate(value) {
+
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const text = String(value).trim();
+
+  // Google Visualization:
+  // Date(2026,9,2)
+  let m = text.match(
+    /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
+  );
+
+  if (m) {
+    return new Date(
+      Number(m[1]),
+      Number(m[2]),
+      Number(m[3])
+    );
+  }
+
+  // YYYY-MM-DD
+  m = text.match(
+    /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
+  );
+
+  if (m) {
+    return new Date(
+      Number(m[1]),
+      Number(m[2]) - 1,
+      Number(m[3])
+    );
+  }
+
+  // DD.MM.YYYY / DD-MM-YYYY / DD/MM/YYYY
+  m = text.match(
+    /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
+  );
+
+  if (m) {
+    return new Date(
+      Number(m[3]),
+      Number(m[2]) - 1,
+      Number(m[1])
+    );
+  }
+
+  const d = new Date(text);
+
+  if (!isNaN(d.getTime())) {
+    return d;
+  }
+
+  return null;
+}
+
+
+/* =========================
+   CURRENT MONTH
+
+   IMPORTANT:
+   Dashboard uses PR DATE
+   Column N
+========================= */
+
+function isCurrentMonth(value) {
+
+  const d = parseDate(value);
+
+  if (!d) return false;
+
+  const now = new Date();
+
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth()
+  );
+}
+
+
+/* =========================
+   LOAD GOOGLE SHEET
 ========================= */
 
 function loadSheet() {
 
-  setStatus(
-    "Loading transformer records...",
-    "loading"
-  );
-
+  setStatus("Connecting to PR SEARCH...", false);
 
   const callbackName =
+    "__transformerCallback_" + Date.now();
 
-    "TransformerTracking_" +
-    Date.now() +
-    "_" +
-    Math.floor(
-      Math.random() * 99999
-    );
+  const script = document.createElement("script");
 
-
-  let script =
-    document.createElement(
-      "script"
-    );
-
-
-  let completed = false;
-
-
-  window[callbackName] =
-
-    function(response) {
-
-      if (completed) return;
-
-      completed = true;
-
-
-      try {
-
-
-        if (
-          !response ||
-          !response.table ||
-          !response.table.rows
-        ) {
-
-          throw new Error(
-            "No data received from Google Sheet"
-          );
-
-        }
-
-
-        const rows =
-          response.table.rows;
-
-
-        ALL_RECORDS =
-
-          rows
-            .map(
-              function(
-                row,
-                index
-              ) {
-
-
-                const record = [];
-
-
-                for (
-                  let i = 0;
-                  i < 24;
-                  i++
-                ) {
-
-
-                  const cell =
-                    row.c &&
-                    row.c[i];
-
-
-                  if (!cell) {
-
-                    record.push("");
-
-                  }
-
-                  else if (
-                    cell.f !== undefined
-                  ) {
-
-                    record.push(
-                      cell.f
-                    );
-
-                  }
-
-                  else if (
-                    cell.v !== undefined
-                  ) {
-
-                    record.push(
-                      cell.v
-                    );
-
-                  }
-
-                  else {
-
-                    record.push("");
-
-                  }
-
-                }
-
-
-                const hasData =
-                  record.some(
-                    function(value) {
-
-                      return clean(
-                        value
-                      ) !== "";
-
-                    }
-                  );
-
-
-                if (!hasData) {
-
-                  return null;
-
-                }
-
-
-                /*
-                  Actual sheet row
-
-                  A3 is header
-
-                  A4 is first data row
-                */
-
-                record.__rowNumber =
-                  index + 4;
-
-
-                /*
-                  Complete search index
-                */
-
-                record.__search =
-                  normalize(
-                    record.join(" ")
-                  );
-
-
-                return record;
-
-              }
-            )
-
-            .filter(
-              function(record) {
-
-                return record !== null;
-
-              }
-            );
-
-
-        console.log(
-          "TOTAL RECORDS:",
-          ALL_RECORDS.length
-        );
-
-
-        /*
-          Build repeated history
-        */
-
-        buildDamageHistory();
-
-
-        /*
-          Build CURRENT MONTH dashboard
-        */
-
-        buildDashboard();
-
-
-        /*
-          Ready
-        */
-
-        setStatus(
-
-          ALL_RECORDS.length
-            .toLocaleString() +
-
-          " transformer records loaded • Search ready",
-
-          "ready"
-
-        );
-
-
-        /*
-          Search if user
-          typed while loading
-        */
-
-        const input =
-          document.getElementById(
-            "searchInput"
-          );
-
-
-        if (
-          input &&
-          input.value.trim()
-        ) {
-
-          performSearch();
-
-        }
-
-
-      }
-
-      catch (error) {
-
-        console.error(
-          "Sheet processing error:",
-          error
-        );
-
-
-        setStatus(
-          "Unable to process transformer data",
-          "error"
-        );
-
-      }
-
-
-      cleanup();
-
-    };
-
-
-  const url =
-
+  const base =
     "https://docs.google.com/spreadsheets/d/" +
-
     SHEET_ID +
+    "/gviz/tq";
 
-    "/gviz/tq" +
+  const params = new URLSearchParams();
 
-    "?gid=" +
+  params.set("gid", SHEET_GID);
+  params.set("range", "A3:X");
+  params.set("headers", "1");
 
-    encodeURIComponent(
-      SHEET_GID
-    ) +
-
-    "&range=" +
-
-    encodeURIComponent(
-      "A3:X"
-    ) +
-
-    "&headers=1" +
-
-    "&tq=" +
-
-    encodeURIComponent(
-      "select *"
-    ) +
-
-    "&tqx=" +
-
-    encodeURIComponent(
-      "out:json;responseHandler:" +
-      callbackName
-    );
-
-
-  console.log(
-    "Loading PR SEARCH:",
-    url
+  params.set(
+    "tqx",
+    "out:json;responseHandler:" + callbackName
   );
 
+  // Prevent browser/CDN cached old response
+  params.set("_", Date.now());
 
-  script.src = url;
+  const url = base + "?" + params.toString();
 
-  script.async = true;
+  let finished = false;
 
+  window[callbackName] = function(response) {
 
-  script.onerror =
-    function() {
+    if (finished) return;
 
-      if (completed) return;
+    finished = true;
 
-      completed = true;
-
-
-      setStatus(
-        "Google Sheet connection failed",
-        "error"
-      );
-
-
-      cleanup();
-
-    };
-
-
-  document.head.appendChild(
-    script
-  );
-
-
-  setTimeout(
-    function() {
+    try {
 
       if (
-        !completed
+        !response ||
+        !response.table ||
+        !response.table.rows
       ) {
-
-        completed = true;
-
-
-        setStatus(
-          "Loading timed out. Please refresh.",
-          "error"
-        );
-
-
-        cleanup();
-
+        throw new Error("Invalid Google Sheet response");
       }
 
-    },
-    45000
-  );
+      processSheetData(response);
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "Unable to read PR SEARCH data. Please refresh.",
+        true
+      );
+    }
+
+    cleanup();
+  };
+
+
+  script.onerror = function() {
+
+    if (finished) return;
+
+    finished = true;
+
+    console.error(
+      "Google Sheet JSONP request failed"
+    );
+
+    setStatus(
+      "Google Sheet connection failed. Please refresh.",
+      true
+    );
+
+    cleanup();
+  };
+
+
+  // Give a clear message if Google does not respond
+  setTimeout(function() {
+
+    if (finished) return;
+
+    finished = true;
+
+    console.error(
+      "Google Sheet loading timeout"
+    );
+
+    setStatus(
+      "Google Sheet is taking too long to respond. Please refresh.",
+      true
+    );
+
+    cleanup();
+
+  }, 20000);
 
 
   function cleanup() {
 
     try {
+      delete window[callbackName];
+    } catch (e) {}
 
-      delete window[
-        callbackName
-      ];
-
+    if (script.parentNode) {
+      script.parentNode.removeChild(script);
     }
-    catch (e) {
-
-      window[
-        callbackName
-      ] = undefined;
-
-    }
-
-
-    if (script) {
-
-      script.remove();
-
-      script = null;
-
-    }
-
   }
 
+
+  script.src = url;
+
+  document.head.appendChild(script);
 }
 
 
 /* =========================
-   REPEATED DAMAGE
+   PROCESS DATA
+========================= */
+
+function processSheetData(response) {
+
+  const rows = response.table.rows || [];
+
+  ALL_RECORDS = [];
+
+  rows.forEach(function(row, index) {
+
+    const cells = row.c || [];
+
+    const record = [];
+    const raw = [];
+
+    for (let i = 0; i < 24; i++) {
+
+      const cell = cells[i];
+
+      if (!cell) {
+
+        record.push("");
+        raw.push("");
+
+        continue;
+      }
+
+      // Formatted value for display
+      if (
+        cell.f !== undefined &&
+        cell.f !== null
+      ) {
+        record.push(String(cell.f));
+      } else if (
+        cell.v !== undefined &&
+        cell.v !== null
+      ) {
+        record.push(String(cell.v));
+      } else {
+        record.push("");
+      }
+
+      // Raw value for date calculations
+      if (
+        cell.v !== undefined &&
+        cell.v !== null
+      ) {
+        raw.push(String(cell.v));
+      } else {
+        raw.push("");
+      }
+    }
+
+    // Ignore completely blank rows
+    if (
+      record.every(function(x) {
+        return clean(x) === "";
+      })
+    ) {
+      return;
+    }
+
+    // Header row is row 3.
+    // Data starts row 4.
+    if (index === 0) {
+      return;
+    }
+
+    record.__raw = raw;
+
+    record.__search = normalize(
+      record.join(" ")
+    );
+
+    record.__sheetRow = index + 4;
+
+    ALL_RECORDS.push(record);
+  });
+
+
+  buildDamageHistory();
+
+  buildDashboard();
+
+  setStatus(
+    ALL_RECORDS.length.toLocaleString("en-IN") +
+      " transformer records loaded • Search ready",
+    false
+  );
+
+  console.log(
+    "Transformer records:",
+    ALL_RECORDS.length
+  );
+}
+
+
+/* =========================
+   DAMAGE HISTORY
 ========================= */
 
 function buildDamageHistory() {
 
   DAMAGE_HISTORY = {};
 
+  ALL_RECORDS.forEach(function(record) {
 
-  ALL_RECORDS.forEach(
-
-    function(record) {
-
-
-      const location =
-        normalizeLocation(
-          record[
-            COL.PLACE_DAMAGE
-          ]
-        );
-
-
-      if (!location) {
-
-        return;
-
-      }
-
-
-      /*
-        IMPORTANT:
-
-        Repeated damage is
-        LOCATION based.
-
-        Capacity is NOT used
-        to discard history.
-
-        Every actual occurrence
-        remains visible.
-
-        Capacity of each occurrence
-        is shown separately.
-      */
-
-      if (
-        !DAMAGE_HISTORY[location]
-      ) {
-
-        DAMAGE_HISTORY[location] = [];
-
-      }
-
-
-      DAMAGE_HISTORY[location]
-        .push(record);
-
-    }
-
-  );
-
-
-  /*
-    Sort every history by date
-    oldest to newest where possible
-  */
-
-  Object.keys(
-    DAMAGE_HISTORY
-  ).forEach(
-
-    function(key) {
-
-      DAMAGE_HISTORY[key].sort(
-        function(a, b) {
-
-          const da =
-            parseDate(
-              a[COL.PR_DATE]
-            ) ||
-            parseDate(
-              a[COL.DATE_DAMAGE]
-            );
-
-          const db =
-            parseDate(
-              b[COL.PR_DATE]
-            ) ||
-            parseDate(
-              b[COL.DATE_DAMAGE]
-            );
-
-
-          if (!da && !db)
-            return 0;
-
-          if (!da)
-            return 1;
-
-          if (!db)
-            return -1;
-
-
-          return da - db;
-
-        }
+    const location =
+      normalizeLocation(
+        record[COL.PLACE_DAMAGE]
       );
 
+    if (!location) return;
+
+    if (!DAMAGE_HISTORY[location]) {
+      DAMAGE_HISTORY[location] = [];
     }
 
-  );
+    DAMAGE_HISTORY[location].push(record);
+  });
 
+
+  Object.keys(DAMAGE_HISTORY).forEach(function(key) {
+
+    DAMAGE_HISTORY[key].sort(function(a, b) {
+
+      const da =
+        parseDate(
+          a.__raw
+            ? a.__raw[COL.PR_DATE]
+            : a[COL.PR_DATE]
+        ) ||
+        parseDate(a[COL.DATE_DAMAGE]) ||
+        new Date(0);
+
+      const db =
+        parseDate(
+          b.__raw
+            ? b.__raw[COL.PR_DATE]
+            : b[COL.PR_DATE]
+        ) ||
+        parseDate(b[COL.DATE_DAMAGE]) ||
+        new Date(0);
+
+      return da - db;
+    });
+
+  });
 }
 
 
 /* =========================
-   CURRENT MONTH DASHBOARD
+   DASHBOARD
+   CURRENT MONTH = PR DATE
 ========================= */
 
 function buildDashboard() {
 
-
   const totalEl =
-    document.getElementById(
-      "dashTotal"
-    );
-
+    document.getElementById("dashTotal");
 
   const issuedEl =
-    document.getElementById(
-      "dashIssued"
-    );
-
+    document.getElementById("dashIssued");
 
   const pendingEl =
-    document.getElementById(
-      "dashPending"
-    );
+    document.getElementById("dashPending");
 
-
-  const container =
-    document.getElementById(
-      "workshopDashboard"
-    );
-
+  const workshopEl =
+    document.getElementById("workshopDashboard");
 
   const monthEl =
-    document.getElementById(
-      "dashboardMonth"
-    );
+    document.getElementById("dashboardMonth");
 
 
-  if (
-    !totalEl ||
-    !issuedEl ||
-    !pendingEl ||
-    !container
-  ) {
+  if (!totalEl ||
+      !issuedEl ||
+      !pendingEl ||
+      !workshopEl) {
 
     console.error(
-      "Dashboard elements missing"
+      "Dashboard elements not found"
     );
 
     return;
-
   }
 
 
-  /*
-    Show current month
-  */
+  const now = new Date();
 
-  if (monthEl) {
-
-    monthEl.textContent =
-      currentMonthLabel() +
-      " • Based on Date of Damage";
-
-  }
+  monthEl.textContent =
+    now.toLocaleString("en-IN", {
+      month: "long",
+      year: "numeric"
+    });
 
 
   let total = 0;
-
   let issued = 0;
-
   let pending = 0;
-
 
   const workshopPending = {};
 
 
-  /*
-    ONLY CURRENT MONTH
-  */
+  ALL_RECORDS.forEach(function(record) {
 
-  ALL_RECORDS.forEach(
+    /*
+      IMPORTANT:
+      USE PR DATE — COLUMN N
+    */
 
-    function(record) {
+    const rawPRDate =
+      record.__raw
+        ? record.__raw[COL.PR_DATE]
+        : "";
 
+    const displayPRDate =
+      record[COL.PR_DATE];
 
-      const damageDate =
-        record[
-          COL.DATE_DAMAGE
-        ];
-
-
-      if (
-        !isCurrentMonth(
-          damageDate
-        )
-      ) {
-
-        return;
-
-      }
+    const prDate =
+      rawPRDate || displayPRDate;
 
 
-      total++;
-
-
-      const issueDate =
-        clean(
-          record[
-            COL.ISSUE_DATE
-          ]
-        );
-
-
-      if (issueDate) {
-
-        issued++;
-
-      }
-
-      else {
-
-        pending++;
-
-
-        const workshop =
-          clean(
-            record[
-              COL.WORKSHOP
-            ]
-          ) ||
-          "Workshop Not Available";
-
-
-        if (
-          !workshopPending[
-            workshop
-          ]
-        ) {
-
-          workshopPending[
-            workshop
-          ] = 0;
-
-        }
-
-
-        workshopPending[
-          workshop
-        ]++;
-
-      }
-
+    if (!isCurrentMonth(prDate)) {
+      return;
     }
-  );
 
 
-  /*
-    Update summary
-  */
+    total++;
+
+
+    if (
+      clean(record[COL.ISSUE_DATE]) !== ""
+    ) {
+
+      issued++;
+
+    } else {
+
+      pending++;
+
+      const workshop =
+        clean(record[COL.WORKSHOP]) ||
+        "Workshop Not Available";
+
+      workshopPending[workshop] =
+        (workshopPending[workshop] || 0) + 1;
+    }
+
+  });
+
 
   totalEl.textContent =
-    total.toLocaleString();
-
+    total.toLocaleString("en-IN");
 
   issuedEl.textContent =
-    issued.toLocaleString();
-
+    issued.toLocaleString("en-IN");
 
   pendingEl.textContent =
-    pending.toLocaleString();
+    pending.toLocaleString("en-IN");
 
 
-  /*
-    No current month records
-  */
+  const list =
+    Object.entries(workshopPending)
+      .sort(function(a, b) {
+        return b[1] - a[1];
+      });
 
-  if (total === 0) {
 
-    container.innerHTML =
+  if (!list.length) {
 
-      `
-      <div class="dashboard-loading">
-
-        No transformer record found
-        for ${escapeHTML(
-          currentMonthLabel()
-        )}.
-
-      </div>
-      `;
+    workshopEl.innerHTML =
+      '<div class="dashboard-loading">' +
+      'No pending transformer found' +
+      '</div>';
 
     return;
-
   }
 
 
-  const workshopList =
-
-    Object.entries(
-      workshopPending
-    )
-    .sort(
-      function(a, b) {
-
-        return b[1] - a[1];
-
-      }
+  const maxValue =
+    Math.max.apply(
+      null,
+      list.map(function(x) {
+        return x[1];
+      })
     );
 
 
-  /*
-    No pending
-  */
+  workshopEl.innerHTML =
+    list.map(function(item, index) {
 
-  if (
-    !workshopList.length
-  ) {
+      const workshop = item[0];
+      const count = item[1];
 
-    container.innerHTML =
-
-      `
-      <div class="dashboard-loading">
-
-        No pending transformer
-        to issue in
-        ${escapeHTML(
-          currentMonthLabel()
-        )}.
-
-      </div>
-      `;
-
-    return;
-
-  }
-
-
-  const max =
-    workshopList[0][1];
-
-
-  const colors = [
-
-    "bar-1",
-    "bar-2",
-    "bar-3",
-    "bar-4",
-    "bar-5",
-    "bar-6",
-    "bar-7",
-    "bar-8",
-    "bar-9",
-    "bar-10"
-
-  ];
-
-
-  let html = "";
-
-
-  workshopList.forEach(
-
-    function(item, index) {
-
-
-      const workshop =
-        item[0];
-
-
-      const count =
-        item[1];
-
-
-      const percentage =
-
+      const width =
         Math.max(
-
-          4,
-
-          (
-            count /
-            max
-          ) * 100
-
+          8,
+          (count / maxValue) * 100
         );
 
 
-      const color =
-        colors[
-          index %
-          colors.length
-        ];
+      return `
+        <div class="workshop-row">
 
-
-      html += `
-
-        <div
-          class="workshop-row">
-
-
-          <div
-            class="workshop-name-line">
-
-
-            <span
-              class="workshop-name">
-
-              ${escapeHTML(
-                workshop
-              )}
-
+          <div class="workshop-name-line">
+            <span class="workshop-name">
+              ${escapeHtml(workshop)}
             </span>
 
-
-            <span
-              class="workshop-count">
-
+            <span class="workshop-count">
               ${count}
-
             </span>
-
-
           </div>
 
-
-          <div
-            class="bar-background">
-
-
+          <div class="bar-background">
             <div
-              class="bar-fill ${color}"
-              style="width:${percentage}%">
-
+              class="bar-fill bar-${(index % 10) + 1}"
+              style="width:${width}%">
             </div>
-
-
           </div>
-
 
         </div>
-
       `;
 
-    }
-  );
-
-
-  container.innerHTML =
-    html;
-
+    }).join("");
 }
 
 
@@ -1237,203 +636,70 @@ function buildDashboard() {
 
 function performSearch() {
 
-
   const input =
-    document.getElementById(
-      "searchInput"
-    );
-
+    document.getElementById("searchInput");
 
   const results =
-    document.getElementById(
-      "results"
-    );
+    document.getElementById("results");
 
-
-  if (
-    !input ||
-    !results
-  ) {
-
-    return;
-
-  }
+  if (!input || !results) return;
 
 
   const query =
-    normalize(
-      input.value
-    );
-
-
-  /*
-    Immediate clear
-    on backspace
-  */
-
-  results.innerHTML = "";
+    normalize(input.value);
 
 
   if (!query) {
 
-    setStatus(
-
-      ALL_RECORDS.length
-
-        ? ALL_RECORDS.length
-            .toLocaleString() +
-          " transformer records loaded • Search ready"
-
-        : "Loading transformer records...",
-
-      ALL_RECORDS.length
-        ? "ready"
-        : "loading"
-
-    );
+    results.innerHTML = "";
 
     return;
-
   }
 
 
   if (!ALL_RECORDS.length) {
 
-    setStatus(
-      "Records are still loading...",
-      "loading"
-    );
-
-    return;
-
-  }
-
-
-  const matches = [];
-
-
-  /*
-    Fast local search
-  */
-
-  for (
-    let i = 0;
-    i < ALL_RECORDS.length;
-    i++
-  ) {
-
-
-    if (
-      ALL_RECORDS[i]
-        .__search
-        .includes(query)
-    ) {
-
-      matches.push(
-        ALL_RECORDS[i]
-      );
-
-    }
-
-  }
-
-
-  setStatus(
-
-    matches.length +
-
-    (
-      matches.length === 1
-        ? " record found"
-        : " records found"
-    ),
-
-    "ready"
-
-  );
-
-
-  renderResults(
-    matches
-  );
-
-}
-
-
-/* =========================
-   RENDER RESULTS
-========================= */
-
-function renderResults(
-  records
-) {
-
-
-  const results =
-    document.getElementById(
-      "results"
-    );
-
-
-  if (!records.length) {
-
-    results.innerHTML =
-
-      `
-      <div class="no-result">
-
-        No matching transformer found.
-
+    results.innerHTML = `
+      <div class="no-results">
+        Transformer records are still loading.
+        Please wait a moment.
       </div>
-      `;
+    `;
 
     return;
-
   }
 
 
-  const fragment =
-    document.createDocumentFragment();
+  const found =
+    ALL_RECORDS.filter(function(record) {
+
+      return record.__search.includes(query);
+
+    });
 
 
-  records.forEach(
+  if (!found.length) {
 
-    function(
-      record,
-      index
-    ) {
+    results.innerHTML = `
+      <div class="no-results">
+        No record found
+      </div>
+    `;
 
-
-      const card =
-        document.createElement(
-          "div"
-        );
+    return;
+  }
 
 
-      card.className =
-        "result-card";
+  results.innerHTML =
+    `<div class="result-count">
+      ${found.length.toLocaleString("en-IN")}
+      record(s) found
+    </div>` +
+    found.map(function(record, index) {
 
+      return buildCard(record, index + 1);
 
-      card.innerHTML =
-        buildCard(
-          record,
-          index + 1
-        );
-
-
-      fragment.appendChild(
-        card
-      );
-
-    }
-
-  );
-
-
-  results.appendChild(
-    fragment
-  );
-
+    }).join("");
 }
 
 
@@ -1441,308 +707,350 @@ function renderResults(
    BUILD CARD
 ========================= */
 
-function buildCard(
-  record,
-  number
-) {
-
+function buildCard(record, number) {
 
   const replacementDate =
-    clean(
-      record[
-        COL.REPLACEMENT_DATE
-      ]
-    );
-
+    clean(record[COL.REPLACEMENT_DATE]);
 
   const issueDate =
-    clean(
-      record[
-        COL.ISSUE_DATE
-      ]
-    );
-
-
-  const driverName =
-    clean(
-      record[
-        COL.DRIVER_NAME
-      ]
-    );
-
-
-  const driverMobile =
-    clean(
-      record[
-        COL.DRIVER_MOBILE
-      ]
-    );
-
+    clean(record[COL.ISSUE_DATE]);
 
   let statusHTML = "";
 
 
-  /*
-    INSTALLED
-  */
-
-  if (
-    replacementDate
-  ) {
-
+  if (replacementDate) {
 
     statusHTML = `
+      <div class="status-box installed">
+        <strong>
+          Congratulations Your Transformer Installed
+        </strong>
 
-      <div
-        class="status-box installed">
-
-
-        <div
-          class="status-title">
-
-          ✓ Congratulations Your Transformer Installed
-
-        </div>
-
-
-        <div
-          class="status-detail">
-
+        <div>
           Replacement Date:
-          ${escapeHTML(
-            replacementDate
-          )}
-
+          ${escapeHtml(replacementDate)}
         </div>
-
-
       </div>
-
     `;
 
-  }
+  } else if (issueDate) {
 
+    const driver =
+      clean(record[COL.DRIVER_NAME]);
 
-  /*
-    ISSUED
-  */
-
-  else if (
-    issueDate
-  ) {
+    const mobile =
+      clean(record[COL.DRIVER_MOBILE]);
 
 
     let callButton = "";
 
-
-    if (
-      driverMobile
-    ) {
-
+    if (mobile) {
 
       const phone =
-        driverMobile.replace(
-          /[^\d+]/g,
-          ""
-        );
-
+        mobile.replace(/[^\d+]/g, "");
 
       callButton = `
-
         <a
-          class="call-btn"
-          href="tel:${escapeHTML(
-            phone
-          )}">
-
-          ☎ CALL DRIVER
-
+          class="call-driver"
+          href="tel:${phone}">
+          📞 CALL DRIVER
         </a>
-
       `;
-
     }
 
 
     statusHTML = `
+      <div class="status-box issued">
 
-      <div
-        class="status-box issued">
+        <strong>
+          Your Transformer Issued by Workshop
+        </strong>
 
-
-        <div
-          class="status-title">
-
-          ⚡ Your Transformer Issued by Workshop
-
-        </div>
-
-
-        <div
-          class="status-detail">
-
+        <div>
           Please Contact Driver for Installation
-
         </div>
 
-
-        <div
-          class="driver-info">
-
-
-          <div>
-
-            <b>Issue Date</b>
-
-            <br>
-
-            ${escapeHTML(
-              issueDate
-            )}
-
-          </div>
-
-
-          <div>
-
-            <b>Driver</b>
-
-            <br>
-
-            ${escapeHTML(
-              driverName || "-"
-            )}
-
-          </div>
-
-
-          <div>
-
-            <b>Mobile</b>
-
-            <br>
-
-            ${escapeHTML(
-              driverMobile || "-"
-            )}
-
-          </div>
-
-
+        <div class="status-detail">
+          Issue Date:
+          ${escapeHtml(issueDate)}
         </div>
 
+        ${
+          driver
+            ? `<div class="status-detail">
+                 Driver:
+                 ${escapeHtml(driver)}
+               </div>`
+            : ""
+        }
+
+        ${
+          mobile
+            ? `<div class="status-detail">
+                 Mobile:
+                 ${escapeHtml(mobile)}
+               </div>`
+            : ""
+        }
 
         ${callButton}
 
-
       </div>
-
     `;
 
-  }
-
-
-  /*
-    PENDING
-  */
-
-  else {
-
+  } else {
 
     statusHTML = `
-
-      <div
-        class="status-box pending">
-
-
-        <div
-          class="status-title">
-
-          ⏳ Transformer Replacement Pending
-
-        </div>
-
-
+      <div class="status-box pending">
+        <strong>
+          Transformer Pending to Issue
+        </strong>
       </div>
-
     `;
-
   }
 
 
-  /*
-    REPEATED DAMAGE
+  /* =========================
+     REPEATED DAMAGE
+  ========================= */
 
-    LOCATION ONLY
-
-    Numbers ignored.
-  */
-
-  const location =
+  const locationKey =
     normalizeLocation(
-      record[
-        COL.PLACE_DAMAGE
-      ]
+      record[COL.PLACE_DAMAGE]
     );
 
-
   const history =
-    location
-      ? (
-          DAMAGE_HISTORY[
-            location
-          ] || []
-        )
-      : [];
+    DAMAGE_HISTORY[locationKey] || [];
 
 
   let repeatedHTML = "";
 
 
-  /*
-    NOT REPEATED
-  */
-
-  if (
-    history.length <= 1
-  ) {
-
+  if (history.length > 1) {
 
     repeatedHTML = `
+      <div class="repeated-box">
 
-      <div
-        class="repeat-box normal">
+        <div class="repeated-title">
+          🔁 It Damaged ${history.length} times
+        </div>
 
-        <b>
-          Not a repeated damage
-        </b>
+        <div class="repeated-warning">
+          Please Ensure Increasing Capacity if Overloaded
+        </div>
+
+        <div class="history-list">
+
+          ${history.map(function(item) {
+
+            const pr =
+              clean(item[COL.PR_NO]) || "-";
+
+            const date =
+              clean(item[COL.PR_DATE]) ||
+              clean(item[COL.DATE_DAMAGE]) ||
+              "-";
+
+            const capacity =
+              clean(item[COL.CAPACITY]) || "-";
+
+
+            return `
+              <div class="history-item">
+
+                <span>
+                  PR: <strong>
+                    ${escapeHtml(pr)}
+                  </strong>
+                </span>
+
+                <span>
+                  Date:
+                  ${escapeHtml(date)}
+                </span>
+
+                <span>
+                  Capacity:
+                  <strong>
+                    ${escapeHtml(capacity)} kVA
+                  </strong>
+                </span>
+
+              </div>
+            `;
+
+          }).join("")}
+
+        </div>
 
       </div>
-
     `;
-
   }
 
 
-  /*
-    REPEATED
-  */
+  /* =========================
+     DATA FIELDS
+  ========================= */
 
-  else {
+  const fields = [
+
+    ["Workshop", record[COL.WORKSHOP]],
+    ["Division", record[COL.DIVISION]],
+    ["Subdivision", record[COL.SUBDIVISION]],
+    ["Substation", record[COL.SUBSTATION]],
+    ["Feeder", record[COL.FEEDER]],
+    ["Date of Damage", record[COL.DATE_DAMAGE]],
+    ["Place of Damage", record[COL.PLACE_DAMAGE]],
+    ["DID No", record[COL.DID_NO]],
+    ["Capacity", record[COL.CAPACITY]],
+    ["Complaint Number", record[COL.COMPLAINT_NO]],
+    ["Complaint Date", record[COL.COMPLAINT_DATE]],
+    ["PR No", record[COL.PR_NO]],
+    ["PR Date", record[COL.PR_DATE]],
+    ["JE Name", record[COL.JE_NAME]],
+    ["JE Mobile", record[COL.JE_MOBILE]],
+    ["Issued to Firm", record[COL.ISSUED_TO_FIRM]],
+    ["Issue Date", record[COL.ISSUE_DATE]],
+    ["Driver Name", record[COL.DRIVER_NAME]],
+    ["Driver Mobile", record[COL.DRIVER_MOBILE]],
+    ["Replacement Date", record[COL.REPLACEMENT_DATE]],
+    ["Time", record[COL.TIME]],
+    ["TX Return Date", record[COL.TX_RETURN_DATE]],
+    ["Observation DTC", record[COL.OBSERVATION]]
+
+  ];
 
 
-    let rows = "";
+  const dataHTML =
+    fields.map(function(field) {
+
+      if (!clean(field[1])) return "";
+
+      return `
+        <div class="data-row">
+
+          <div class="data-label">
+            ${escapeHtml(field[0])}
+          </div>
+
+          <div class="data-value">
+            ${escapeHtml(field[1])}
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
 
 
-    history.forEach(
+  return `
+    <div class="result-card">
 
-      function(
-        item,
-        index
-      ) {
+      <div class="card-number">
+        #${number}
+      </div>
+
+      ${statusHTML}
+
+      ${repeatedHTML}
+
+      <div class="data-section">
+        ${dataHTML}
+      </div>
+
+    </div>
+  `;
+}
 
 
-        const pr =
-          clean(
-            item[
- 
+/* =========================
+   STATUS
+========================= */
+
+function setStatus(message, error) {
+
+  const el =
+    document.getElementById("searchStatus");
+
+  if (!el) return;
+
+  el.textContent = message;
+
+  el.classList.remove(
+    "loading",
+    "error",
+    "ready"
+  );
+
+  if (error) {
+    el.classList.add("error");
+  } else {
+    el.classList.add("ready");
+  }
+}
+
+
+/* =========================
+   HTML SAFETY
+========================= */
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =========================
+   START
+========================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    const input =
+      document.getElementById("searchInput");
+
+    const button =
+      document.getElementById("searchBtn");
+
+
+    if (input) {
+
+      input.addEventListener(
+        "input",
+        function() {
+
+          clearTimeout(searchTimer);
+
+          searchTimer =
+            setTimeout(
+              performSearch,
+              60
+            );
+
+        }
+      );
+
+    }
+
+
+    if (button) {
+
+      button.addEventListener(
+        "click",
+        performSearch
+      );
+
+    }
+
+
+    loadSheet();
+
+  }
+);

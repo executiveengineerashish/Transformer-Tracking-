@@ -1,7 +1,13 @@
 // ==========================================
 // PR SEARCH
-// Searches EVERYTHING in the PR Search tab
+// Google Sheet tab: PR Search
+//
+// Sheet loads immediately in BACKGROUND.
+// Full data is NOT displayed.
+//
+// Search works on EVERY ROW + EVERY COLUMN.
 // ==========================================
+
 
 const SHEET_ID =
   "1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
@@ -10,7 +16,6 @@ const SHEET_GID =
   "1464518527";
 
 
-// Google Sheet CSV
 const CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
@@ -19,24 +24,45 @@ const CSV_URL =
 // ELEMENTS
 // ==========================================
 
-const el = (id) => document.getElementById(id);
+const el = (id) =>
+  document.getElementById(id);
 
-const subtitle = el("subtitle");
-const refreshBtn = el("refreshBtn");
-const qInput = el("q");
-const searchBtn = el("searchBtn");
 
-const errorBox = el("error");
-const resultsSummary = el("resultsSummary");
+const subtitle =
+  el("subtitle");
 
-const prevBtn = el("prevBtn");
-const nextBtn = el("nextBtn");
+const refreshBtn =
+  el("refreshBtn");
 
-const tableWrap = el("tableWrap");
-const thead = el("thead");
-const tbody = el("tbody");
+const qInput =
+  el("q");
 
-const mobileResults = el("mobileResults");
+const searchBtn =
+  el("searchBtn");
+
+const errorBox =
+  el("error");
+
+const resultsSummary =
+  el("resultsSummary");
+
+const prevBtn =
+  el("prevBtn");
+
+const nextBtn =
+  el("nextBtn");
+
+const tableWrap =
+  el("tableWrap");
+
+const thead =
+  el("thead");
+
+const tbody =
+  el("tbody");
+
+const mobileResults =
+  el("mobileResults");
 
 
 // ==========================================
@@ -44,12 +70,20 @@ const mobileResults = el("mobileResults");
 // ==========================================
 
 let headers = [];
+
 let rows = [];
+
 let filtered = [];
 
 let offset = 0;
 
 const limit = 50;
+
+let sheetLoaded = false;
+
+let loading = false;
+
+let searchTimer = null;
 
 
 // ==========================================
@@ -71,7 +105,8 @@ function normalize(value) {
 
 function setSubtitle(text) {
 
-  subtitle.textContent = text;
+  subtitle.textContent =
+    text;
 
 }
 
@@ -83,7 +118,9 @@ function setSubtitle(text) {
 function showError(message) {
 
   errorBox.style.display =
-    message ? "block" : "none";
+    message
+      ? "block"
+      : "none";
 
   errorBox.textContent =
     message || "";
@@ -100,22 +137,27 @@ function parseCSV(text) {
   const output = [];
 
   let row = [];
+
   let current = "";
 
   let i = 0;
+
   let inQuotes = false;
 
 
   while (i < text.length) {
 
-    const ch = text[i];
+    const ch =
+      text[i];
 
 
     if (inQuotes) {
 
       if (ch === '"') {
 
-        const next = text[i + 1];
+        const next =
+          text[i + 1];
+
 
         if (next === '"') {
 
@@ -125,6 +167,7 @@ function parseCSV(text) {
 
           continue;
         }
+
 
         inQuotes = false;
 
@@ -216,9 +259,14 @@ function parseCSV(text) {
 function detectHeaderRow(records) {
 
   const count =
-    Math.min(records.length, 15);
+    Math.min(
+      records.length,
+      15
+    );
+
 
   let bestIndex = 0;
+
   let bestScore = -1;
 
 
@@ -239,7 +287,9 @@ function detectHeaderRow(records) {
       ).length;
 
 
-    if (score > bestScore) {
+    if (
+      score > bestScore
+    ) {
 
       bestScore = score;
 
@@ -266,40 +316,49 @@ function cleanData(records) {
 
   const headerRow =
     (records[headerIndex] || [])
-      .map((header, index) => {
+      .map(
+        (header, index) => {
 
-        const value =
-          String(header ?? "").trim();
+          const value =
+            String(
+              header ?? ""
+            ).trim();
 
 
-        return value
-          ? value
-          : `Column ${index + 1}`;
-      });
+          return value
+            ? value
+            : `Column ${index + 1}`;
+        }
+      );
 
 
   const data =
     records
       .slice(headerIndex + 1)
 
-      .map((record) =>
-        record.map(
-          (cell) =>
-            String(cell ?? "")
-        )
+      .map(
+        (record) =>
+          record.map(
+            (cell) =>
+              String(cell ?? "")
+          )
       )
 
-      .filter((record) =>
-        record.some(
-          (cell) =>
-            normalize(cell)
-        )
+      .filter(
+        (record) =>
+          record.some(
+            (cell) =>
+              normalize(cell)
+          )
       );
 
 
   return {
+
     headerRow,
+
     data
+
   };
 }
 
@@ -307,8 +366,7 @@ function cleanData(records) {
 // ==========================================
 // FETCH GOOGLE SHEET
 //
-// IMPORTANT:
-// NO localStorage
+// NO LOCAL STORAGE
 // NO CACHE
 // ==========================================
 
@@ -324,7 +382,8 @@ async function fetchSheetCSV() {
     await fetch(
       url,
       {
-        cache: "no-store"
+        cache:
+          "no-store"
       }
     );
 
@@ -353,42 +412,171 @@ async function fetchSheetCSV() {
 
 
   return {
-    csvText: csvText,
-    fetchedAt: Date.now()
+
+    csvText,
+
+    fetchedAt:
+      Date.now()
+
   };
 }
 
 
 // ==========================================
-// FIND DATE COLUMN
+// PRELOAD SHEET
+//
+// Loads immediately in background.
+//
+// DOES NOT DISPLAY ALL DATA.
 // ==========================================
 
-function findDateColumn(type) {
+async function preloadSheet() {
+
+  if (
+    sheetLoaded ||
+    loading
+  ) {
+
+    return;
+  }
+
+
+  loading = true;
+
+  showError("");
+
+  setSubtitle(
+    "Loading PR Search data…"
+  );
+
+
+  try {
+
+    const {
+      csvText,
+      fetchedAt
+    } =
+      await fetchSheetCSV();
+
+
+    const records =
+      parseCSV(
+        csvText
+      );
+
+
+    if (
+      !records.length
+    ) {
+
+      throw new Error(
+        "No records received from Google Sheet."
+      );
+    }
+
+
+    const cleaned =
+      cleanData(
+        records
+      );
+
+
+    headers =
+      cleaned.headerRow;
+
+
+    rows =
+      cleaned.data;
+
+
+    sheetLoaded = true;
+
+
+    // IMPORTANT:
+    // Do NOT display complete data.
+
+    filtered = [];
+
+    offset = 0;
+
+
+    mobileResults.innerHTML =
+      "";
+
+    tbody.innerHTML =
+      "";
+
+    thead.innerHTML =
+      "";
+
+    tableWrap.style.display =
+      "none";
+
+
+    resultsSummary.textContent =
+      "Enter PR / Complaint Number to search.";
+
+
+    setSubtitle(
+      `${
+        rows.length.toLocaleString()
+      } records loaded • Ready to search`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "PR Search loading error:",
+      error
+    );
+
+
+    showError(
+      error instanceof Error
+        ? error.message
+        : String(error)
+    );
+
+
+    setSubtitle(
+      "Failed to load PR Search."
+    );
+
+
+  } finally {
+
+    loading = false;
+  }
+}
+
+
+// ==========================================
+// FIND COLUMN
+// ==========================================
+
+function findColumnByNames(
+  names
+) {
 
   const wanted =
-    type === "replacement"
-
-      ? [
-          "replacement date",
-          "replacementdate",
-          "tx replacement date",
-          "transformer replacement date",
-          "date of replacement",
-          "replacement"
-        ]
-
-      : [
-          "issue date",
-          "issued date",
-          "issuedate",
-          "tx issue date",
-          "transformer issue date",
-          "date of issue",
-          "issue"
-        ];
+    names.map(
+      (name) =>
+        normalize(name)
+          .replace(
+            /[_-]/g,
+            " "
+          )
+          .replace(
+            /\s+/g,
+            " "
+          )
+          .trim()
+    );
 
 
-  // Exact header match
+  // Exact match
+
   for (
     let i = 0;
     i < headers.length;
@@ -396,14 +584,24 @@ function findDateColumn(type) {
   ) {
 
     const header =
-      normalize(headers[i])
-        .replace(/[_-]/g, " ")
-        .replace(/\s+/g, " ")
+      normalize(
+        headers[i]
+      )
+        .replace(
+          /[_-]/g,
+          " "
+        )
+        .replace(
+          /\s+/g,
+          " "
+        )
         .trim();
 
 
     if (
-      wanted.includes(header)
+      wanted.includes(
+        header
+      )
     ) {
 
       return i;
@@ -411,7 +609,8 @@ function findDateColumn(type) {
   }
 
 
-  // Flexible header match
+  // Partial match
+
   for (
     let i = 0;
     i < headers.length;
@@ -419,25 +618,26 @@ function findDateColumn(type) {
   ) {
 
     const header =
-      normalize(headers[i])
-        .replace(/[_-]/g, " ")
-        .replace(/\s+/g, " ");
+      normalize(
+        headers[i]
+      )
+        .replace(
+          /[_-]/g,
+          " "
+        )
+        .replace(
+          /\s+/g,
+          " "
+        );
 
 
     if (
-      type === "replacement" &&
-      header.includes("replacement") &&
-      header.includes("date")
-    ) {
-
-      return i;
-    }
-
-
-    if (
-      type === "issue" &&
-      header.includes("issue") &&
-      header.includes("date")
+      wanted.some(
+        (name) =>
+          header.includes(
+            name
+          )
+      )
     ) {
 
       return i;
@@ -450,58 +650,189 @@ function findDateColumn(type) {
 
 
 // ==========================================
+// PLACE OF DAMAGE COLUMN
+// ==========================================
+
+function findPlaceColumn() {
+
+  const names = [
+
+    "place of damage",
+
+    "placeofdamage",
+
+    "damage place",
+
+    "damaged place",
+
+    "place damaged"
+
+  ];
+
+
+  const found =
+    findColumnByNames(
+      names
+    );
+
+
+  if (
+    found >= 0
+  ) {
+
+    return found;
+  }
+
+
+  // Flexible search
+
+  for (
+    let i = 0;
+    i < headers.length;
+    i++
+  ) {
+
+    const header =
+      normalize(
+        headers[i]
+      )
+        .replace(
+          /[_-]/g,
+          " "
+        );
+
+
+    if (
+      header.includes("place") &&
+      header.includes("damage")
+    ) {
+
+      return i;
+    }
+  }
+
+
+  return -1;
+}
+
+
+// ==========================================
+// ISSUE DATE COLUMN
+// ==========================================
+
+function findIssueDateColumn() {
+
+  return findColumnByNames([
+
+    "issue date",
+
+    "issued date",
+
+    "issuedate",
+
+    "tx issue date",
+
+    "transformer issue date",
+
+    "date of issue"
+
+  ]);
+}
+
+
+// ==========================================
+// REPLACEMENT DATE COLUMN
+// ==========================================
+
+function findReplacementDateColumn() {
+
+  return findColumnByNames([
+
+    "replacement date",
+
+    "replacementdate",
+
+    "tx replacement date",
+
+    "transformer replacement date",
+
+    "date of replacement"
+
+  ]);
+}
+
+
+// ==========================================
 // TRANSFORMER STATUS
 // ==========================================
 
-function getTransformerStatus(row) {
+function getTransformerStatus(
+  row
+) {
 
   const replacementColumn =
-    findDateColumn("replacement");
+    findReplacementDateColumn();
 
 
   const issueColumn =
-    findDateColumn("issue");
+    findIssueDateColumn();
 
 
   const replacementDate =
     replacementColumn >= 0
+
       ? String(
-          row[replacementColumn] ?? ""
+          row[
+            replacementColumn
+          ] ?? ""
         ).trim()
+
       : "";
 
 
   const issueDate =
     issueColumn >= 0
+
       ? String(
-          row[issueColumn] ?? ""
+          row[
+            issueColumn
+          ] ?? ""
         ).trim()
+
       : "";
 
 
-  // Replacement has priority
+  // Replacement date has priority
 
-  if (replacementDate) {
+  if (
+    replacementDate
+  ) {
 
     return {
 
-      type: "installed",
+      type:
+        "installed",
 
-      date: replacementDate
+      date:
+        replacementDate
 
     };
   }
 
 
-  // Issue date but no replacement date
+  // Issue date
 
-  if (issueDate) {
+  if (
+    issueDate
+  ) {
 
     return {
 
-      type: "issued",
+      type:
+        "issued",
 
-      date: issueDate
+      date:
+        issueDate
 
     };
   }
@@ -509,51 +840,407 @@ function getTransformerStatus(row) {
 
   return {
 
-    type: "none",
+    type:
+      "none",
 
-    date: ""
+    date:
+      ""
 
   };
 }
 
 
 // ==========================================
-// SEARCH ENTIRE PR SEARCH SHEET
+// REPEATED DAMAGE CHECK
 //
-// EVERY ROW
-// EVERY COLUMN
+// SAME PLACE OF DAMAGE
+// ACROSS COMPLETE PR SEARCH SHEET
+// ==========================================
+
+function getRepeatedDamageStatus(
+  row
+) {
+
+  const placeColumn =
+    findPlaceColumn();
+
+
+  if (
+    placeColumn < 0
+  ) {
+
+    return {
+
+      type:
+        "unknown",
+
+      count:
+        0,
+
+      place:
+        ""
+
+    };
+  }
+
+
+  const place =
+    normalize(
+      row[
+        placeColumn
+      ] ?? ""
+    );
+
+
+  if (!place) {
+
+    return {
+
+      type:
+        "unknown",
+
+      count:
+        0,
+
+      place:
+        ""
+
+    };
+  }
+
+
+  let count = 0;
+
+
+  rows.forEach(
+    (otherRow) => {
+
+      const otherPlace =
+        normalize(
+          otherRow[
+            placeColumn
+          ] ?? ""
+        );
+
+
+      if (
+        otherPlace ===
+        place
+      ) {
+
+        count++;
+      }
+
+    }
+  );
+
+
+  if (
+    count >= 2
+  ) {
+
+    return {
+
+      type:
+        "repeated",
+
+      count,
+
+      place
+
+    };
+  }
+
+
+  return {
+
+    type:
+      "notRepeated",
+
+    count:
+      1,
+
+    place
+
+  };
+}
+
+
+// ==========================================
+// CREATE STATUS MESSAGES
+// ==========================================
+
+function createStatusMessage(
+  row
+) {
+
+  const container =
+    document.createElement(
+      "div"
+    );
+
+
+  // ========================================
+  // TRANSFORMER STATUS
+  // ========================================
+
+  const transformerStatus =
+    getTransformerStatus(
+      row
+    );
+
+
+  if (
+    transformerStatus.type ===
+    "installed"
+  ) {
+
+    const message =
+      document.createElement(
+        "div"
+      );
+
+
+    message.className =
+      "statusMessage statusInstalled";
+
+
+    message.innerHTML =
+      `🎉 Congratulations!<br>
+       Your Transformer is installed.`;
+
+
+    if (
+      transformerStatus.date
+    ) {
+
+      const date =
+        document.createElement(
+          "div"
+        );
+
+
+      date.style.fontSize =
+        "12px";
+
+      date.style.fontWeight =
+        "500";
+
+      date.style.marginTop =
+        "5px";
+
+
+      date.textContent =
+        `Replacement Date: ${
+          transformerStatus.date
+        }`;
+
+
+      message.appendChild(
+        date
+      );
+    }
+
+
+    container.appendChild(
+      message
+    );
+  }
+
+
+  else if (
+    transformerStatus.type ===
+    "issued"
+  ) {
+
+    const message =
+      document.createElement(
+        "div"
+      );
+
+
+    message.className =
+      "statusMessage statusIssued";
+
+
+    message.innerHTML =
+      `⚡ Your Transformer has been issued by Workshop.<br>
+       Please contact the driver for installation.`;
+
+
+    if (
+      transformerStatus.date
+    ) {
+
+      const date =
+        document.createElement(
+          "div"
+        );
+
+
+      date.style.fontSize =
+        "12px";
+
+      date.style.fontWeight =
+        "500";
+
+      date.style.marginTop =
+        "5px";
+
+
+      date.textContent =
+        `Issue Date: ${
+          transformerStatus.date
+        }`;
+
+
+      message.appendChild(
+        date
+      );
+    }
+
+
+    container.appendChild(
+      message
+    );
+  }
+
+
+  // ========================================
+  // REPEATED DAMAGE
+  // ========================================
+
+  const repeatedStatus =
+    getRepeatedDamageStatus(
+      row
+    );
+
+
+  if (
+    repeatedStatus.type ===
+    "notRepeated"
+  ) {
+
+    const message =
+      document.createElement(
+        "div"
+      );
+
+
+    message.className =
+      "statusMessage statusNotRepeated";
+
+
+    message.innerHTML =
+      `✅ Not a repeated damage`;
+
+
+    container.appendChild(
+      message
+    );
+  }
+
+
+  else if (
+    repeatedStatus.type ===
+    "repeated"
+  ) {
+
+    const message =
+      document.createElement(
+        "div"
+      );
+
+
+    message.className =
+      "statusMessage statusRepeated";
+
+
+    const times =
+      repeatedStatus.count === 2
+
+        ? "2 times"
+
+        : `${repeatedStatus.count} times`;
+
+
+    message.innerHTML =
+      `⚠️ It Damaged ${times}.<br>
+       Please Ensure Increasing Capacity if Overloaded.`;
+
+
+    container.appendChild(
+      message
+    );
+  }
+
+
+  return container;
+}
+
+
+// ==========================================
+// SEARCH
+//
+// Searches EVERY ROW + EVERY COLUMN
 // ==========================================
 
 function applySearch() {
 
   const query =
-    normalize(qInput.value);
+    normalize(
+      qInput.value
+    );
 
 
-  // Empty search = show all data
+  // Empty search
 
   if (!query) {
 
-    filtered =
-      [...rows];
+    filtered = [];
 
     offset = 0;
 
-    renderPage();
+
+    mobileResults.innerHTML =
+      "";
+
+    tbody.innerHTML =
+      "";
+
+    thead.innerHTML =
+      "";
+
+    tableWrap.style.display =
+      "none";
+
+
+    resultsSummary.textContent =
+      "Enter PR / Complaint Number to search.";
+
 
     return;
   }
 
 
-  /*
-   * IMPORTANT:
-   *
-   * Search ALL columns.
-   *
-   * Not only PR Number.
-   * Not only Complaint Number.
-   * Not only one column.
-   */
+  // If background loading
+  // is not finished yet
+
+  if (!sheetLoaded) {
+
+    resultsSummary.textContent =
+      loading
+        ? "Data is still loading…"
+        : "Please wait for data to load…";
+
+
+    return;
+  }
+
+
+  // ========================================
+  // SEARCH COMPLETE SHEET
+  // ========================================
 
   filtered =
     rows.filter(
@@ -564,7 +1251,9 @@ function applySearch() {
 
             return normalize(
               cell
-            ).includes(query);
+            ).includes(
+              query
+            );
 
           }
         );
@@ -575,113 +1264,8 @@ function applySearch() {
 
   offset = 0;
 
+
   renderPage();
-}
-
-
-// ==========================================
-// STATUS MESSAGE
-// ==========================================
-
-function createStatusMessage(status) {
-
-  if (
-    status.type ===
-    "installed"
-  ) {
-
-    const div =
-      document.createElement("div");
-
-
-    div.className =
-      "statusMessage statusInstalled";
-
-
-    div.innerHTML =
-      `🎉 Congratulations!<br>
-       Your Transformer is installed.`;
-
-
-    if (status.date) {
-
-      const small =
-        document.createElement("div");
-
-
-      small.style.fontSize =
-        "12px";
-
-      small.style.fontWeight =
-        "500";
-
-      small.style.marginTop =
-        "5px";
-
-
-      small.textContent =
-        `Replacement Date: ${status.date}`;
-
-
-      div.appendChild(
-        small
-      );
-    }
-
-
-    return div;
-  }
-
-
-  if (
-    status.type ===
-    "issued"
-  ) {
-
-    const div =
-      document.createElement("div");
-
-
-    div.className =
-      "statusMessage statusIssued";
-
-
-    div.innerHTML =
-      `⚡ Your Transformer has been issued by Workshop.<br>
-       Please contact the driver for installation.`;
-
-
-    if (status.date) {
-
-      const small =
-        document.createElement("div");
-
-
-      small.style.fontSize =
-        "12px";
-
-      small.style.fontWeight =
-        "500";
-
-      small.style.marginTop =
-        "5px";
-
-
-      small.textContent =
-        `Issue Date: ${status.date}`;
-
-
-      div.appendChild(
-        small
-      );
-    }
-
-
-    return div;
-  }
-
-
-  return null;
 }
 
 
@@ -689,52 +1273,54 @@ function createStatusMessage(status) {
 // MOBILE CARDS
 // ==========================================
 
-function renderMobileCards(page) {
+function renderMobileCards(
+  page
+) {
 
-  mobileResults.innerHTML = "";
+  mobileResults.innerHTML =
+    "";
 
 
   page.forEach(
-    (row, rowIndex) => {
+    (
+      row,
+      rowIndex
+    ) => {
 
       const card =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
 
       card.className =
         "dataCard";
 
 
-      // Status message
+      // Status
 
-      const status =
-        getTransformerStatus(row);
+      const statusBox =
+        createStatusMessage(
+          row
+        );
 
 
       if (
-        qInput.value.trim() &&
-        status.type !== "none"
+        statusBox.children.length
       ) {
 
-        const message =
-          createStatusMessage(
-            status
-          );
-
-
-        if (message) {
-
-          card.appendChild(
-            message
-          );
-        }
+        card.appendChild(
+          statusBox
+        );
       }
 
 
-      // Card title
+      // Title
 
       const title =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
 
       title.className =
@@ -743,23 +1329,30 @@ function renderMobileCards(page) {
 
       title.textContent =
         `Transformer Record ${
-          offset + rowIndex + 1
+          offset +
+          rowIndex +
+          1
         }`;
 
 
-      card.appendChild(title);
+      card.appendChild(
+        title
+      );
 
 
-      // Data fields
+      // All non-empty fields
 
       headers.forEach(
-        (header, columnIndex) => {
+        (
+          header,
+          columnIndex
+        ) => {
 
           const value =
-            row[columnIndex] ?? "";
+            row[
+              columnIndex
+            ] ?? "";
 
-
-          // Don't display empty cells
 
           if (
             !String(value).trim()
@@ -770,7 +1363,9 @@ function renderMobileCards(page) {
 
 
           const item =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
 
           item.className =
@@ -778,7 +1373,9 @@ function renderMobileCards(page) {
 
 
           const label =
-            document.createElement("span");
+            document.createElement(
+              "span"
+            );
 
 
           label.className =
@@ -790,7 +1387,9 @@ function renderMobileCards(page) {
 
 
           const dataValue =
-            document.createElement("span");
+            document.createElement(
+              "span"
+            );
 
 
           dataValue.className =
@@ -801,17 +1400,27 @@ function renderMobileCards(page) {
             value;
 
 
-          item.appendChild(label);
+          item.appendChild(
+            label
+          );
 
-          item.appendChild(dataValue);
 
-          card.appendChild(item);
+          item.appendChild(
+            dataValue
+          );
+
+
+          card.appendChild(
+            item
+          );
 
         }
       );
 
 
-      mobileResults.appendChild(card);
+      mobileResults.appendChild(
+        card
+      );
 
     }
   );
@@ -822,30 +1431,50 @@ function renderMobileCards(page) {
 // DESKTOP TABLE
 // ==========================================
 
-function renderTable(page) {
+function renderTable(
+  page
+) {
 
-  thead.innerHTML = "";
+  thead.innerHTML =
+    "";
 
-  tbody.innerHTML = "";
+  tbody.innerHTML =
+    "";
+
+
+  if (
+    !page.length
+  ) {
+
+    tableWrap.style.display =
+      "none";
+
+    return;
+  }
 
 
   const headerRow =
-    document.createElement("tr");
+    document.createElement(
+      "tr"
+    );
 
 
   headers.forEach(
     (header) => {
 
       const th =
-        document.createElement("th");
+        document.createElement(
+          "th"
+        );
 
 
       th.textContent =
         header;
 
 
-      headerRow.appendChild(th);
-
+      headerRow.appendChild(
+        th
+      );
     }
   );
 
@@ -859,36 +1488,43 @@ function renderTable(page) {
     (row) => {
 
       const tr =
-        document.createElement("tr");
+        document.createElement(
+          "tr"
+        );
 
 
       headers.forEach(
-        (_header, index) => {
+        (
+          _header,
+          index
+        ) => {
 
           const td =
-            document.createElement("td");
+            document.createElement(
+              "td"
+            );
 
 
           td.textContent =
             row[index] ?? "";
 
 
-          tr.appendChild(td);
-
+          tr.appendChild(
+            td
+          );
         }
       );
 
 
-      tbody.appendChild(tr);
-
+      tbody.appendChild(
+        tr
+      );
     }
   );
 
 
   tableWrap.style.display =
-    page.length
-      ? "block"
-      : "none";
+    "block";
 }
 
 
@@ -937,102 +1573,74 @@ function renderPage() {
     filtered.length;
 
 
-  renderMobileCards(page);
+  renderMobileCards(
+    page
+  );
 
-  renderTable(page);
+
+  renderTable(
+    page
+  );
 }
 
 
 // ==========================================
-// INITIAL LOAD
+// REFRESH
+//
+// Refresh downloads sheet again,
+// but still does NOT display all data.
 // ==========================================
 
-async function init() {
+async function refreshApp() {
+
+  headers = [];
+
+  rows = [];
+
+  filtered = [];
+
+  offset = 0;
+
+  sheetLoaded = false;
+
+
+  mobileResults.innerHTML =
+    "";
+
+  tbody.innerHTML =
+    "";
+
+  thead.innerHTML =
+    "";
+
+  tableWrap.style.display =
+    "none";
+
 
   showError("");
 
+
   setSubtitle(
-    "Loading PR Search…"
+    "Refreshing PR Search…"
   );
 
 
-  try {
-
-    const {
-      csvText,
-      fetchedAt
-    } =
-      await fetchSheetCSV();
+  resultsSummary.textContent =
+    "Preparing search…";
 
 
-    const records =
-      parseCSV(csvText);
+  await preloadSheet();
 
 
-    if (
-      !records.length
-    ) {
+  // If user already entered
+  // a search value, show result
+  // after refresh.
 
-      throw new Error(
-        "No records received from Google Sheet."
-      );
-    }
+  if (
+    qInput.value.trim()
+  ) {
 
-
-    const cleaned =
-      cleanData(records);
-
-
-    headers =
-      cleaned.headerRow;
-
-
-    rows =
-      cleaned.data;
-
-
-    // Show all records automatically
-
-    filtered =
-      [...rows];
-
-
-    offset = 0;
-
-
-    renderPage();
-
-
-    setSubtitle(
-      `${
-        rows.length.toLocaleString()
-      } records • Updated ${
-        new Date(
-          fetchedAt
-        ).toLocaleString()
-      }`
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "PR Search Error:",
-      error
-    );
-
-
-    showError(
-      error instanceof Error
-        ? error.message
-        : String(error)
-    );
-
-
-    setSubtitle(
-      "Failed to load PR Search."
-    );
-
+    applySearch();
   }
 }
 
@@ -1043,12 +1651,19 @@ async function init() {
 
 searchBtn.addEventListener(
   "click",
-  applySearch
+  () => {
+
+    applySearch();
+
+  }
 );
 
 
 // ==========================================
-// AUTOMATIC SEARCH WHILE TYPING
+// AUTOMATIC SEARCH
+//
+// Search after user stops typing
+// for 250 milliseconds.
 // ==========================================
 
 qInput.addEventListener(
@@ -1056,13 +1671,17 @@ qInput.addEventListener(
   () => {
 
     clearTimeout(
-      qInput._searchTimer
+      searchTimer
     );
 
 
-    qInput._searchTimer =
+    searchTimer =
       setTimeout(
-        applySearch,
+        () => {
+
+          applySearch();
+
+        },
         250
       );
 
@@ -1079,11 +1698,16 @@ qInput.addEventListener(
   (event) => {
 
     if (
-      event.key === "Enter"
+      event.key ===
+      "Enter"
     ) {
 
-      applySearch();
+      clearTimeout(
+        searchTimer
+      );
 
+
+      applySearch();
     }
 
   }
@@ -1140,14 +1764,32 @@ refreshBtn.addEventListener(
   "click",
   () => {
 
-    init();
+    refreshApp();
 
   }
 );
 
 
 // ==========================================
-// START APPLICATION
+// INITIAL SCREEN
+//
+// START BACKGROUND LOADING
+// BUT SHOW NO RECORDS.
 // ==========================================
 
-init();
+setSubtitle(
+  "Loading PR Search data…"
+);
+
+
+resultsSummary.textContent =
+  "Preparing search…";
+
+
+// IMPORTANT:
+// This loads the sheet immediately
+// in the background.
+//
+// It does NOT display all records.
+
+preloadSheet();

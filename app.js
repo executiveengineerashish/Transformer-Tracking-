@@ -10,46 +10,15 @@ const SHEET_URL =
   "/export?format=csv&gid=" +
   SHEET_GID;
 
-
-/*
-  PR SEARCH columns
-
-  A = 0
-  B = 1
-  C = 2
-  D = 3
-  E = 4
-  F = 5
-
-  G = 6  DATE OF DAMAGE
-  H = 7  PLACE OF DAMAGE
-  I = 8  DID NO
-  J = 9  CAPACITY
-  K = 10 COMPLAIN NUMBER
-  L = 11 COMPLAIN DATE
-  M = 12 PR NO
-  N = 13 PR DATE
-  O = 14 JE NAME
-  P = 15 JE MOBILE
-  Q = 16 ISSUED TO FIRM
-  R = 17 ISSUE DATE
-  S = 18 DRIVER NAME
-  T = 19 DRIVER MOBILE
-  U = 20 REPLACEMENT DATE
-  V = 21 TIME
-  W = 22 TX RETURN DATE
-  X = 23 OBSERVATION DTC
-*/
+let DATA = [];
+let HEADERS = [];
+let LOADED = false;
+let LOADING = null;
 
 
-let sheetRows = [];
-let loaded = false;
-let loading = null;
-
-
-/* ---------------------------------------------------------
+/* =========================================================
    START
---------------------------------------------------------- */
+========================================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -61,9 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
   button.addEventListener("click", function () {
-
-    searchNow(input.value);
-
+    searchData(input.value);
   });
 
 
@@ -86,104 +53,142 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /*
-      Automatic search after typing stops
-    */
-
     window.searchTimer =
       setTimeout(function () {
-
-        searchNow(value);
-
-      }, 600);
+        searchData(value);
+      }, 500);
 
   });
 
 });
 
 
-/* ---------------------------------------------------------
-   LOAD SHEET
---------------------------------------------------------- */
+/* =========================================================
+   LOAD GOOGLE SHEET
+========================================================= */
 
-function loadSheet() {
+function loadData() {
 
-  if (loaded) {
-    return Promise.resolve(sheetRows);
+  if (LOADED) {
+    return Promise.resolve(DATA);
   }
 
-  if (loading) {
-    return loading;
+  if (LOADING) {
+    return LOADING;
   }
 
 
-  loading =
-    fetch(SHEET_URL + "&t=" + Date.now())
+  LOADING =
+    fetch(SHEET_URL + "&_=" + Date.now())
 
-      .then(function (response) {
+    .then(function (response) {
 
-        if (!response.ok) {
-          throw new Error(
-            "Unable to load Google Sheet"
-          );
+      if (!response.ok) {
+        throw new Error(
+          "Google Sheet connection failed."
+        );
+      }
+
+      return response.text();
+
+    })
+
+    .then(function (csv) {
+
+      const rows =
+        parseCSV(csv);
+
+
+      if (!rows.length) {
+        throw new Error(
+          "No data found in PR SEARCH."
+        );
+      }
+
+
+      /*
+        FIRST ROW = ACTUAL HEADERS
+      */
+
+      HEADERS =
+        rows[0].map(function (h, i) {
+
+          let name =
+            String(h || "")
+              .replace(/^\uFEFF/, "")
+              .trim();
+
+          if (!name) {
+            name = "Column " + (i + 1);
+          }
+
+          return name;
+
+        });
+
+
+      DATA = [];
+
+
+      for (let i = 1; i < rows.length; i++) {
+
+        const row =
+          rows[i];
+
+
+        if (!row || !row.length) {
+          continue;
         }
 
-        return response.text();
 
-      })
-
-      .then(function (csv) {
-
-        const rows =
-          parseCSV(csv);
+        let record = {};
 
 
-        if (!rows.length) {
-          throw new Error("No data found");
+        for (
+          let c = 0;
+          c < HEADERS.length;
+          c++
+        ) {
+
+          record[HEADERS[c]] =
+            String(row[c] || "").trim();
+
         }
 
 
-        /*
-          First row = headers
-          Remaining rows = data
-        */
-
-        sheetRows =
-          rows.slice(1).filter(function (row) {
-
-            return row.some(function (cell) {
-
-              return String(cell || "").trim() !== "";
-
-            });
-
-          });
+        record.__rowNumber =
+          i + 1;
 
 
-        loaded = true;
+        DATA.push(record);
 
-        return sheetRows;
-
-      })
-
-      .catch(function (error) {
-
-        loading = null;
-
-        throw error;
-
-      });
+      }
 
 
-  return loading;
+      LOADED = true;
+
+      return DATA;
+
+    })
+
+    .catch(function (error) {
+
+      LOADING = null;
+
+      throw error;
+
+    });
+
+
+  return LOADING;
 }
 
 
-/* ---------------------------------------------------------
-   SEARCH
---------------------------------------------------------- */
+/* =========================================================
+   SEARCH ALL COLUMNS
+========================================================= */
 
-function searchNow(value) {
+function searchData(searchText) {
 
   const status =
     document.getElementById("searchStatus");
@@ -193,7 +198,7 @@ function searchNow(value) {
 
 
   const query =
-    clean(value);
+    normalize(searchText);
 
 
   if (!query) {
@@ -206,196 +211,333 @@ function searchNow(value) {
 
 
   results.innerHTML =
-    '<div class="loading">Loading records...</div>';
+    '<div class="loading">Loading data...</div>';
 
 
-  loadSheet()
+  loadData()
 
-    .then(function (rows) {
+  .then(function (records) {
 
-      /*
-        Search ALL A:X columns
-      */
 
-      const matches =
-        rows.filter(function (row) {
+    /*
+      SEARCH EVERY COLUMN
+    */
 
-          return row.some(function (cell) {
+    const found =
+      records.filter(function (record) {
 
-            return clean(cell).includes(query);
+        return Object.keys(record).some(function (key) {
 
-          });
+          if (key === "__rowNumber") {
+            return false;
+          }
+
+          return normalize(record[key])
+            .includes(query);
 
         });
-
-
-      status.textContent =
-        matches.length +
-        " record(s) found";
-
-
-      if (!matches.length) {
-
-        results.innerHTML =
-          '<div class="no-result">' +
-          'No matching record found.' +
-          '</div>';
-
-        return;
-
-      }
-
-
-      /*
-        Build repeated damage history
-      */
-
-      const history =
-        buildHistory(rows);
-
-
-      let html = "";
-
-
-      matches.forEach(function (row, index) {
-
-        html +=
-          createCard(
-            row,
-            index + 1,
-            history
-          );
 
       });
 
 
-      results.innerHTML = html;
+    status.textContent =
+      found.length +
+      " record(s) found";
 
-    })
 
-    .catch(function (error) {
-
-      console.error(error);
-
-      status.textContent =
-        "Error loading PR SEARCH";
+    if (!found.length) {
 
       results.innerHTML =
         '<div class="no-result">' +
-        '<b>Unable to load data.</b><br><br>' +
-        error.message +
+        'No matching record found.' +
         '</div>';
 
-    });
-
-}
-
-
-/* ---------------------------------------------------------
-   CREATE RESULT CARD
---------------------------------------------------------- */
-
-function createCard(row, number, history) {
-
-  const damageDate =
-    val(row, 6);
-
-  const place =
-    val(row, 7);
-
-  const didNo =
-    val(row, 8);
-
-  const capacity =
-    val(row, 9);
-
-  const complaintNo =
-    val(row, 10);
-
-  const complaintDate =
-    val(row, 11);
-
-  const prNo =
-    val(row, 12);
-
-  const prDate =
-    val(row, 13);
-
-  const jeName =
-    val(row, 14);
-
-  const jeMobile =
-    val(row, 15);
-
-  const firm =
-    val(row, 16);
-
-  const issueDate =
-    val(row, 17);
-
-  const driver =
-    val(row, 18);
-
-  const driverMobile =
-    val(row, 19);
-
-  const replacementDate =
-    val(row, 20);
-
-  const time =
-    val(row, 21);
-
-  const returnDate =
-    val(row, 22);
-
-  const observation =
-    val(row, 23);
-
-
-  /* STATUS */
-
-  let statusHTML = "";
-
-
-  if (replacementDate) {
-
-    statusHTML =
-      '<div class="status status-installed">' +
-      '🎉 Congratulations! Your Transformer installed' +
-      '<br><span style="font-weight:normal">' +
-      'Replacement Date: ' +
-      esc(replacementDate) +
-      '</span>' +
-      '</div>';
-
-  }
-
-  else if (issueDate) {
-
-    statusHTML =
-      '<div class="status status-issued">' +
-      '🔧 Your Transformer Issued by Workshop' +
-      '<br>' +
-      '<span style="font-weight:normal">' +
-      'Please Contact Driver for Installation' +
-      '<br>Issue Date: ' +
-      esc(issueDate);
-
-
-    if (driver) {
-
-      statusHTML +=
-        '<br>Driver: ' +
-        esc(driver);
+      return;
 
     }
 
 
-    if (driverMobile) {
+    /*
+      CREATE REPEATED DAMAGE HISTORY
+    */
+
+    const history =
+      createHistory(records);
+
+
+    let html = "";
+
+
+    found.forEach(function (record, index) {
+
+      html +=
+        createRecordCard(
+          record,
+          index + 1,
+          history
+        );
+
+    });
+
+
+    results.innerHTML = html;
+
+  })
+
+  .catch(function (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Unable to load PR SEARCH.";
+
+    results.innerHTML =
+      '<div class="no-result">' +
+      '<b>Unable to load data</b><br><br>' +
+      escapeHTML(error.message) +
+      '</div>';
+
+  });
+
+}
+
+
+/* =========================================================
+   FIND FIELD BY HEADER
+========================================================= */
+
+function getField(record, aliases) {
+
+  const keys =
+    Object.keys(record);
+
+
+  for (let a = 0; a < aliases.length; a++) {
+
+    const wanted =
+      normalizeHeader(aliases[a]);
+
+
+    for (let k = 0; k < keys.length; k++) {
+
+      if (
+        keys[k] === "__rowNumber"
+      ) {
+        continue;
+      }
+
+
+      if (
+        normalizeHeader(keys[k]) === wanted
+      ) {
+
+        return String(
+          record[keys[k]] || ""
+        ).trim();
+
+      }
+
+    }
+
+  }
+
+
+  return "";
+}
+
+
+/* =========================================================
+   IMPORTANT FIELDS
+========================================================= */
+
+function fields(record) {
+
+  return {
+
+    damageDate: getField(record, [
+      "DATE OF DAMAGE",
+      "DATE OF DAMAGE "
+    ]),
+
+    place: getField(record, [
+      "PLACE OF DAMAGE",
+      "PLACE OF DAMAGE ",
+      "PLACE",
+      "LOCATION"
+    ]),
+
+    didNo: getField(record, [
+      "DID NO",
+      "DID NO.",
+      "DTC ID",
+      "DTC NO"
+    ]),
+
+    capacity: getField(record, [
+      "CAPACITY",
+      "CAPACITY IN KVA",
+      "KVA"
+    ]),
+
+    complaintNo: getField(record, [
+      "COMPLAIN NUMBER",
+      "COMPLAINT NUMBER",
+      "COMPLAINT NO",
+      "COMPLAINT NO."
+    ]),
+
+    complaintDate: getField(record, [
+      "COMPLAIN DATE",
+      "COMPLAINT DATE"
+    ]),
+
+    prNo: getField(record, [
+      "PR NO",
+      "PR NO.",
+      "PR NUMBER",
+      "PR NUMBER "
+    ]),
+
+    prDate: getField(record, [
+      "PR DATE",
+      "PR DATE "
+    ]),
+
+    jeName: getField(record, [
+      "JE NAME",
+      "JE Name",
+      "JE"
+    ]),
+
+    jeMobile: getField(record, [
+      "JE MOBILE",
+      "JE Mobile",
+      "JE MOBILE NO"
+    ]),
+
+    firm: getField(record, [
+      "ISSUED TO FIRM",
+      "ISSUE TO FIRM",
+      "FIRM",
+      "FIRM NAME"
+    ]),
+
+    issueDate: getField(record, [
+      "ISSUE DATE",
+      "ISSUED DATE"
+    ]),
+
+    driver: getField(record, [
+      "DRIVER NAME",
+      "DRIVER"
+    ]),
+
+    driverMobile: getField(record, [
+      "DRIVER MOBILE",
+      "DRIVER MOBILE NO",
+      "DRIVER PHONE"
+    ]),
+
+    replacementDate: getField(record, [
+      "REPLACEMENT DATE",
+      "TX REPLACEMENT DATE"
+    ]),
+
+    time: getField(record, [
+      "TIME"
+    ]),
+
+    returnDate: getField(record, [
+      "TX RETURN DATE",
+      "RETURN DATE",
+      "TX Return Date",
+      "W RETURN DATE"
+    ]),
+
+    observation: getField(record, [
+      "OBSERVATION DTC",
+      "OBSERVATION"
+    ])
+
+  };
+
+}
+
+
+/* =========================================================
+   CREATE CARD
+========================================================= */
+
+function createRecordCard(
+  record,
+  number,
+  history
+) {
+
+  const f =
+    fields(record);
+
+
+  /* ---------------------------------------------
+     STATUS
+  --------------------------------------------- */
+
+  let statusHTML = "";
+
+
+  if (f.replacementDate) {
+
+    statusHTML =
+      '<div class="status status-installed">' +
+
+      '🎉 Congratulations! Your Transformer installed' +
+
+      '<br>' +
+
+      '<span style="font-weight:normal">' +
+
+      'Replacement Date: ' +
+
+      escapeHTML(f.replacementDate) +
+
+      '</span>' +
+
+      '</div>';
+
+  }
+
+  else if (f.issueDate) {
+
+    statusHTML =
+      '<div class="status status-issued">' +
+
+      '🔧 Your Transformer Issued by Workshop' +
+
+      '<br>' +
+
+      '<span style="font-weight:normal">' +
+
+      'Please Contact Driver for Installation' +
+
+      '<br>Issue Date: ' +
+
+      escapeHTML(f.issueDate);
+
+
+    if (f.driver) {
+
+      statusHTML +=
+        '<br>Driver: ' +
+        escapeHTML(f.driver);
+
+    }
+
+
+    if (f.driverMobile) {
 
       statusHTML +=
         '<br>Mobile: ' +
-        esc(driverMobile);
+        escapeHTML(f.driverMobile);
 
     }
 
@@ -409,44 +551,58 @@ function createCard(row, number, history) {
 
     statusHTML =
       '<div class="status status-pending">' +
+
       '⏳ Transformer Replacement Pending' +
+
       '</div>';
 
   }
 
 
-  /* REPEATED DAMAGE */
+  /* ---------------------------------------------
+     REPEATED DAMAGE
+  --------------------------------------------- */
 
   let repeatHTML = "";
 
 
-  const key =
-    clean(place);
+  const placeKey =
+    normalize(f.place);
 
 
-  const list =
-    history[key] || [];
+  const repeated =
+    history[placeKey] || [];
 
 
-  if (key && list.length > 1) {
+  if (
+    placeKey &&
+    repeated.length > 1
+  ) {
 
-    let historyRows = "";
+    let historyHTML = "";
 
 
-    list.forEach(function (item, index) {
+    repeated.forEach(function (item, index) {
 
-      historyRows +=
+      historyHTML +=
+
         '<div class="history-row">' +
 
         '<b>' +
         ordinal(index + 1) +
         ' Time</b> – ' +
 
-        esc(item.prNo || "PR Not Available") +
+        escapeHTML(
+          item.prNo ||
+          "PR Not Available"
+        ) +
 
         ' – ' +
 
-        esc(item.prDate || "Date Not Available") +
+        escapeHTML(
+          item.prDate ||
+          "Date Not Available"
+        ) +
 
         '</div>';
 
@@ -454,6 +610,7 @@ function createCard(row, number, history) {
 
 
     repeatHTML =
+
       '<div class="repeat-box">' +
 
       '<div class="repeat-title">' +
@@ -461,13 +618,17 @@ function createCard(row, number, history) {
       '</div>' +
 
       '<div class="repeat-message">' +
+
       'It Damaged ' +
-      list.length +
+      repeated.length +
       ' times. Please Ensure Increasing Capacity if Overloaded.' +
+
       '</div>' +
 
       '<div class="history">' +
-      historyRows +
+
+      historyHTML +
+
       '</div>' +
 
       '</div>';
@@ -477,10 +638,13 @@ function createCard(row, number, history) {
   else {
 
     repeatHTML =
+
       '<div class="repeat-box">' +
 
       '<div class="repeat-title">' +
+
       '✓ Not a repeated damage' +
+
       '</div>' +
 
       '</div>';
@@ -488,15 +652,67 @@ function createCard(row, number, history) {
   }
 
 
-  /* CARD */
+  /* ---------------------------------------------
+     DATA
+  --------------------------------------------- */
 
-  return (
+  let dataHTML = "";
+
+
+  /*
+    IMPORTANT:
+    Show all populated columns from the sheet.
+    Therefore no information is lost even if
+    a column heading is slightly different.
+  */
+
+  Object.keys(record).forEach(function (key) {
+
+    if (key === "__rowNumber") {
+      return;
+    }
+
+
+    const value =
+      String(record[key] || "").trim();
+
+
+    if (!value) {
+      return;
+    }
+
+
+    dataHTML +=
+
+      '<div class="data-row">' +
+
+      '<div class="data-label">' +
+
+      escapeHTML(key) +
+
+      '</div>' +
+
+      '<div class="data-value">' +
+
+      escapeHTML(value) +
+
+      '</div>' +
+
+      '</div>';
+
+  });
+
+
+  return
 
     '<div class="result-card">' +
 
       '<div class="card-title">' +
+
       'Transformer Record #' +
+
       number +
+
       '</div>' +
 
       statusHTML +
@@ -505,94 +721,38 @@ function createCard(row, number, history) {
 
       '<div class="data">' +
 
-        rowHTML("PR Number", prNo) +
-        rowHTML("PR Date", prDate) +
-
-        rowHTML("Complaint Number", complaintNo) +
-        rowHTML("Complaint Date", complaintDate) +
-
-        rowHTML("Date of Damage", damageDate) +
-        rowHTML("Place of Damage", place) +
-
-        rowHTML("DID No", didNo) +
-        rowHTML("Capacity", capacity) +
-
-        rowHTML("JE Name", jeName) +
-        rowHTML("JE Mobile", jeMobile) +
-
-        rowHTML("Issued To Firm", firm) +
-        rowHTML("Issue Date", issueDate) +
-
-        rowHTML("Driver Name", driver) +
-        rowHTML("Driver Mobile", driverMobile) +
-
-        rowHTML("Replacement Date", replacementDate) +
-        rowHTML("Time", time) +
-
-        rowHTML("TX Return Date", returnDate) +
-        rowHTML("Observation DTC", observation) +
+      dataHTML +
 
       '</div>' +
 
-    '</div>'
-
-  );
+    '</div>';
 
 }
 
 
-/* ---------------------------------------------------------
-   DATA ROW
---------------------------------------------------------- */
+/* =========================================================
+   REPEATED DAMAGE HISTORY
+   SAME PLACE OF DAMAGE
+========================================================= */
 
-function rowHTML(label, value) {
-
-  if (!value) {
-    return "";
-  }
-
-
-  return (
-
-    '<div class="data-row">' +
-
-      '<div class="data-label">' +
-      esc(label) +
-      '</div>' +
-
-      '<div class="data-value">' +
-      esc(value) +
-      '</div>' +
-
-    '</div>'
-
-  );
-
-}
-
-
-/* ---------------------------------------------------------
-   REPEATED DAMAGE
---------------------------------------------------------- */
-
-function buildHistory(rows) {
+function createHistory(records) {
 
   const map = {};
 
 
-  rows.forEach(function (row) {
+  records.forEach(function (record) {
 
-    const place =
-      val(row, 7);
+    const f =
+      fields(record);
 
 
-    if (!place) {
+    if (!f.place) {
       return;
     }
 
 
     const key =
-      clean(place);
+      normalize(f.place);
 
 
     if (!map[key]) {
@@ -603,13 +763,13 @@ function buildHistory(rows) {
     map[key].push({
 
       prNo:
-        val(row, 12),
+        f.prNo,
 
       prDate:
-        val(row, 13),
+        f.prDate,
 
       damageDate:
-        val(row, 6)
+        f.damageDate
 
     });
 
@@ -617,7 +777,7 @@ function buildHistory(rows) {
 
 
   /*
-    Sort by damage date
+    Sort oldest → newest
   */
 
   Object.keys(map).forEach(function (key) {
@@ -637,37 +797,35 @@ function buildHistory(rows) {
 }
 
 
-/* ---------------------------------------------------------
-   GET VALUE
---------------------------------------------------------- */
+/* =========================================================
+   NORMALIZE SEARCH
+========================================================= */
 
-function val(row, index) {
-
-  if (!row || index >= row.length) {
-    return "";
-  }
-
-  return String(row[index] || "").trim();
-
-}
-
-
-/* ---------------------------------------------------------
-   SEARCH CLEANING
---------------------------------------------------------- */
-
-function clean(value) {
+function normalize(value) {
 
   return String(value || "")
     .toLowerCase()
-    .replace(/[\s\-\/\\().]/g, "");
+    .replace(/[\s\-\/\\().,]/g, "");
 
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
+   NORMALIZE HEADER
+========================================================= */
+
+function normalizeHeader(value) {
+
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+}
+
+
+/* =========================================================
    DATE
---------------------------------------------------------- */
+========================================================= */
 
 function dateValue(value) {
 
@@ -676,8 +834,12 @@ function dateValue(value) {
   }
 
 
+  const text =
+    String(value).trim();
+
+
   let d =
-    new Date(value);
+    new Date(text);
 
 
   if (!isNaN(d.getTime())) {
@@ -686,7 +848,7 @@ function dateValue(value) {
 
 
   const m =
-    String(value).match(
+    text.match(
       /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
     );
 
@@ -707,9 +869,9 @@ function dateValue(value) {
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    ORDINAL
---------------------------------------------------------- */
+========================================================= */
 
 function ordinal(n) {
 
@@ -724,9 +886,9 @@ function ordinal(n) {
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    CSV PARSER
---------------------------------------------------------- */
+========================================================= */
 
 function parseCSV(text) {
 
@@ -736,12 +898,17 @@ function parseCSV(text) {
 
   let cell = "";
 
-  let quotes = false;
+  let inQuotes = false;
 
 
-  for (let i = 0; i < text.length; i++) {
+  for (
+    let i = 0;
+    i < text.length;
+    i++
+  ) {
 
-    const c = text[i];
+    const c =
+      text[i];
 
     const next =
       text[i + 1];
@@ -749,15 +916,21 @@ function parseCSV(text) {
 
     if (c === '"') {
 
-      if (quotes && next === '"') {
+      if (
+        inQuotes &&
+        next === '"'
+      ) {
 
         cell += '"';
 
         i++;
 
-      } else {
+      }
 
-        quotes = !quotes;
+      else {
+
+        inQuotes =
+          !inQuotes;
 
       }
 
@@ -765,7 +938,7 @@ function parseCSV(text) {
 
     else if (
       c === "," &&
-      !quotes
+      !inQuotes
     ) {
 
       row.push(cell);
@@ -776,14 +949,16 @@ function parseCSV(text) {
 
     else if (
       (c === "\n" || c === "\r") &&
-      !quotes
+      !inQuotes
     ) {
 
       if (
         c === "\r" &&
         next === "\n"
       ) {
+
         i++;
+
       }
 
 
@@ -808,7 +983,7 @@ function parseCSV(text) {
 
   if (
     cell !== "" ||
-    row.length
+    row.length > 0
   ) {
 
     row.push(cell);
@@ -823,11 +998,11 @@ function parseCSV(text) {
 }
 
 
-/* ---------------------------------------------------------
-   ESCAPE
---------------------------------------------------------- */
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
 
-function esc(value) {
+function escapeHTML(value) {
 
   return String(value || "")
     .replace(/&/g, "&amp;")

@@ -16,7 +16,6 @@ let currentFilters = {};
 ===================================================== */
 
 const COL = {
-
   SN: 0,
   WORKSHOP: 1,
   DIVISION: 2,
@@ -53,7 +52,7 @@ const COL = {
 
 
 /* =====================================================
-   SHORTCUT
+   HELPER
 ===================================================== */
 
 function $(id) {
@@ -61,24 +60,16 @@ function $(id) {
 }
 
 
-/* =====================================================
-   CLEAN / NORMALIZE
-===================================================== */
-
 function clean(value) {
-
   return String(value ?? "").trim();
-
 }
 
 
 function normalize(value) {
-
   return String(value ?? "")
     .toLowerCase()
     .replace(/[\s\-\/\).,\[{}:;_]+/g, "")
     .trim();
-
 }
 
 
@@ -92,7 +83,7 @@ function normalize(value) {
    (1) SISREDI
    SISREDI [25]
 
-   ALL = SISREDI
+   ALL BECOME SAME LOCATION
 ===================================================== */
 
 function normalizeLocation(value) {
@@ -130,10 +121,10 @@ function normalizeLocation(value) {
    CAPACITY NORMALIZATION
 
    25
-   25 kVA
    25 KVA
+   25 kVA
 
-   ALL = 25
+   ALL BECOME 25
 ===================================================== */
 
 function normalizeCapacity(value) {
@@ -166,7 +157,7 @@ function parseDate(value) {
     String(value).trim();
 
 
-  /* Google Date */
+  /* Google Date(...) */
 
   let match =
     text.match(
@@ -204,7 +195,7 @@ function parseDate(value) {
   }
 
 
-  /* DD.MM.YYYY */
+  /* DD.MM.YYYY / DD-MM-YYYY / DD/MM/YYYY */
 
   match =
     text.match(
@@ -238,9 +229,8 @@ function parseDate(value) {
 
 /* =====================================================
    CURRENT MONTH
-
    IMPORTANT:
-   DASHBOARD USES PR DATE — COLUMN N
+   DASHBOARD IS BASED ON PR DATE — COLUMN N
 ===================================================== */
 
 function isCurrentMonth(value) {
@@ -264,14 +254,61 @@ function isCurrentMonth(value) {
     date.getMonth() ===
       now.getMonth()
   );
+}
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* =====================================================
+   STATUS MESSAGE
+===================================================== */
+
+function setStatus(
+  message,
+  error = false
+) {
+
+  const element =
+    $("searchStatus");
+
+
+  if (!element) {
+    return;
+  }
+
+
+  element.textContent =
+    message;
+
+
+  element.className =
+    "search-status " +
+    (
+      error
+        ? "error"
+        : "ready"
+    );
 
 }
 
 
 /* =====================================================
    LOAD GOOGLE SHEET
-
-   ONE TIME LOAD
+   ONE TIME ONLY
 ===================================================== */
 
 function loadSheet() {
@@ -283,7 +320,7 @@ function loadSheet() {
 
 
   const callbackName =
-    "transformerCallback901";
+    "transformerCallback902";
 
 
   try {
@@ -309,7 +346,9 @@ function loadSheet() {
         }
 
 
-        processSheetData(response);
+        processSheetData(
+          response
+        );
 
 
       } catch (error) {
@@ -354,10 +393,374 @@ function loadSheet() {
     Date.now();
 
 
-  console.log(
-    "Loading PR SEARCH..."
+  const script =
+    document.createElement("script");
+
+
+  script.id =
+    "googleSheetScript902";
+
+  script.src =
+    url;
+
+  script.async = true;
+
+
+  script.onerror =
+    function() {
+
+      setStatus(
+        "Google Sheet connection failed. Refresh page.",
+        true
+      );
+
+    };
+
+
+  document.head.appendChild(
+    script
   );
 
 
-  const script =
-    document.create
+  setTimeout(
+    function() {
+
+      if (
+        ALL_RECORDS.length === 0
+      ) {
+
+        setStatus(
+          "Google Sheet loading timeout. Refresh page.",
+          true
+        );
+
+      }
+
+    },
+    25000
+  );
+
+}
+
+
+/* =====================================================
+   PROCESS GOOGLE SHEET DATA
+===================================================== */
+
+function processSheetData(
+  response
+) {
+
+  ALL_RECORDS = [];
+
+
+  const rows =
+    response.table.rows || [];
+
+
+  rows.forEach(
+    function(row, index) {
+
+      /*
+        Row 3 = Header
+        Row 4 onward = Data
+      */
+
+      if (index === 0) {
+        return;
+      }
+
+
+      const record = [];
+      const raw = [];
+
+
+      for (
+        let i = 0;
+        i < 24;
+        i++
+      ) {
+
+        const cell =
+          row.c &&
+          row.c[i];
+
+
+        if (!cell) {
+
+          record.push("");
+          raw.push("");
+
+          continue;
+
+        }
+
+
+        /* Display value */
+
+        if (
+          cell.f !== undefined &&
+          cell.f !== null
+        ) {
+
+          record.push(
+            String(cell.f)
+          );
+
+        } else if (
+          cell.v !== undefined &&
+          cell.v !== null
+        ) {
+
+          record.push(
+            String(cell.v)
+          );
+
+        } else {
+
+          record.push("");
+
+        }
+
+
+        /* Raw value */
+
+        if (
+          cell.v !== undefined &&
+          cell.v !== null
+        ) {
+
+          raw.push(
+            String(cell.v)
+          );
+
+        } else {
+
+          raw.push("");
+
+        }
+
+      }
+
+
+      if (
+        record.every(
+          function(value) {
+
+            return clean(value) === "";
+
+          }
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      record.__raw =
+        raw;
+
+
+      record.__sheetRow =
+        index + 4;
+
+
+      record.__search =
+        normalize(
+          record.join(" ")
+        );
+
+
+      ALL_RECORDS.push(
+        record
+      );
+
+    }
+  );
+
+
+  /*
+    Build everything from the
+    same in-memory dataset.
+  */
+
+  buildDamageHistory();
+
+  buildDashboard();
+
+  populateFilters();
+
+
+  setStatus(
+    ALL_RECORDS.length.toLocaleString("en-IN") +
+      " transformer records loaded • Search ready",
+    false
+  );
+
+}
+
+
+/* =====================================================
+   REPEATED DAMAGE
+
+   STRICTLY:
+   SAME NORMALIZED LOCATION
+   +
+   SAME CAPACITY
+
+   Different capacity = NOT repeated
+===================================================== */
+
+function buildDamageHistory() {
+
+  DAMAGE_HISTORY = {};
+
+
+  ALL_RECORDS.forEach(
+    function(record) {
+
+      const location =
+        normalizeLocation(
+          record[
+            COL.PLACE_DAMAGE
+          ]
+        );
+
+
+      const capacity =
+        normalizeCapacity(
+          record[
+            COL.CAPACITY
+          ]
+        );
+
+
+      if (
+        !location ||
+        !capacity
+      ) {
+
+        return;
+
+      }
+
+
+      const key =
+        location +
+        "||" +
+        capacity;
+
+
+      if (
+        !DAMAGE_HISTORY[key]
+      ) {
+
+        DAMAGE_HISTORY[key] =
+          [];
+
+      }
+
+
+      DAMAGE_HISTORY[key].push(
+        record
+      );
+
+    }
+  );
+
+
+  Object.keys(
+    DAMAGE_HISTORY
+  ).forEach(
+    function(key) {
+
+      DAMAGE_HISTORY[key].sort(
+        function(a, b) {
+
+          const dateA =
+            parseDate(
+              a[
+                COL.PR_DATE
+              ]
+            ) ||
+            parseDate(
+              a[
+                COL.DATE_DAMAGE
+              ]
+            ) ||
+            new Date(0);
+
+
+          const dateB =
+            parseDate(
+              b[
+                COL.PR_DATE
+              ]
+            ) ||
+            parseDate(
+              b[
+                COL.DATE_DAMAGE
+              ]
+            ) ||
+            new Date(0);
+
+
+          return dateA - dateB;
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   STATUS LOGIC
+
+   Issue blank
+      = Pending to Issue
+
+   Issue filled +
+   Replacement blank
+      = Replacement Pending
+
+   Replacement filled +
+   Return blank
+      = TX Return Pending
+
+   All filled
+      = Completed
+===================================================== */
+
+function getStatus(
+  record
+) {
+
+  const issueDate =
+    clean(
+      record[
+        COL.ISSUE_DATE
+      ]
+    );
+
+
+  const replacementDate =
+    clean(
+      record[
+        COL.REPLACEMENT_DATE
+      ]
+    );
+
+
+  const returnDate =
+    clean(
+      record[
+        COL.TX_RETURN_DATE
+      ]
+    );
+
+
+  if (!issueDate) {

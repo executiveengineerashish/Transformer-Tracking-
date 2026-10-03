@@ -19,6 +19,10 @@
 <body>
 
 
+<!-- =========================
+     HEADER
+     ========================= -->
+
 <header class="app-header">
 
   <div class="header-icon">
@@ -38,6 +42,44 @@
   </div>
 
 </header>
+
+
+
+<!-- =========================
+     SEARCH AT TOP
+     ========================= -->
+
+<section class="search-card">
+
+  <div class="search-title">
+    PR / Complaint Number
+  </div>
+
+
+  <div class="search-row">
+
+    <input
+      id="searchInput"
+      type="text"
+      autocomplete="off"
+      placeholder="Enter PR / Complaint Number">
+
+
+    <button id="searchBtn">
+      SEARCH
+    </button>
+
+  </div>
+
+
+  <div id="searchStatus"
+       class="search-status">
+
+    Loading transformer records...
+
+  </div>
+
+</section>
 
 
 
@@ -71,7 +113,9 @@
 
 
 
-  <!-- SUMMARY -->
+  <!-- =========================
+       SUMMARY
+       ========================= -->
 
   <div class="summary-grid">
 
@@ -149,11 +193,14 @@
 
 
 
-  <!-- PENDING TO ISSUE -->
+  <!-- =========================
+       WORKSHOP PENDING TO ISSUE
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise Pending to Issue
   </div>
+
 
   <div id="workshopDashboard">
     Loading...
@@ -161,11 +208,14 @@
 
 
 
-  <!-- REPLACEMENT -->
+  <!-- =========================
+       WORKSHOP REPLACEMENT
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise Replacement Pending
   </div>
+
 
   <div id="workshopReplacementDashboard">
     Loading...
@@ -173,11 +223,14 @@
 
 
 
-  <!-- TX RETURN -->
+  <!-- =========================
+       WORKSHOP TX RETURN
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise TX Return Pending
   </div>
+
 
   <div id="workshopReturnDashboard">
     Loading...
@@ -185,11 +238,14 @@
 
 
 
-  <!-- AGEING -->
+  <!-- =========================
+       WORKSHOP AGEING
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise Ageing
   </div>
+
 
   <div id="ageingDashboard">
     Loading...
@@ -197,11 +253,14 @@
 
 
 
-  <!-- CAPACITY -->
+  <!-- =========================
+       WORKSHOP CAPACITY
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise Capacity Pendency
   </div>
+
 
   <div id="workshopCapacityDashboard">
     Loading...
@@ -213,59 +272,19 @@
 
 
 <!-- =========================
-     SEARCH
+     SEARCH RESULTS
      ========================= -->
 
-<section class="search-card">
-
-
-  <div class="search-title">
-    PR / Complaint Number
-  </div>
-
-
-
-  <div class="search-row">
-
-
-    <input
-      id="searchInput"
-      type="text"
-      autocomplete="off"
-      placeholder="Enter PR / Complaint Number">
-
-
-
-    <button id="searchBtn">
-      SEARCH
-    </button>
-
-
-  </div>
-
-
-
-  <div id="searchStatus"
-       class="search-status">
-
-    Loading transformer records...
-
-  </div>
-
-
-</section>
-
-
-
-<!-- RESULTS -->
-
 <section id="results"></section>
-
 
 
 </main>
 
 
+
+<!-- =========================
+     FOOTER
+     ========================= -->
 
 <footer>
   Transformer Tracking

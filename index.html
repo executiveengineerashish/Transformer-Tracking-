@@ -1,63 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1">
+
 <title>Transformer Tracking</title>
-<link rel="stylesheet" href="style.css?v=20261005">
+
+<link rel="stylesheet"
+      href="style.css?v=20261008">
+
 </head>
+
 
 <body>
 
+
 <header class="app-header">
-  <div class="header-icon">⚡</div>
-  <div>
-    <div class="app-title">Transformer Tracking</div>
-    <div class="app-subtitle">PR / Complaint Search</div>
+
+  <div class="header-icon">
+    ⚡
   </div>
+
+  <div>
+
+    <div class="app-title">
+      Transformer Tracking
+    </div>
+
+    <div class="app-subtitle">
+      PR / Complaint Search
+    </div>
+
+  </div>
+
 </header>
+
+
 
 <main>
 
+
+<!-- =========================
+     DASHBOARD
+     ========================= -->
+
 <section class="dashboard">
 
+
   <div class="dashboard-heading">
+
     <span>📊</span>
+
     <div>
-      <h1>Transformer Pendency Dashboard</h1>
-      <div id="dashboardMonth">Current Month</div>
+
+      <h1>
+        Transformer Pendency Dashboard
+      </h1>
+
+      <div id="dashboardMonth">
+        Current Month
+      </div>
+
     </div>
+
   </div>
+
+
+
+  <!-- SUMMARY -->
 
   <div class="summary-grid">
 
+
     <div class="summary-card total">
-      <span>Total PR</span>
-      <strong id="dashTotal">0</strong>
+
+      <span>
+        Total PR
+      </span>
+
+      <strong id="dashTotal">
+        0
+      </strong>
+
     </div>
+
+
 
     <div class="summary-card issued">
-      <span>Issued</span>
-      <strong id="dashIssued">0</strong>
+
+      <span>
+        Issued
+      </span>
+
+      <strong id="dashIssued">
+        0
+      </strong>
+
     </div>
+
+
 
     <div class="summary-card pending">
-      <span>Pending to Issue</span>
-      <strong id="dashPending">0</strong>
+
+      <span>
+        Pending to Issue
+      </span>
+
+      <strong id="dashPending">
+        0
+      </strong>
+
     </div>
+
+
 
     <div class="summary-card replacement">
-      <span>Replacement Pending</span>
-      <strong id="dashReplacement">0</strong>
+
+      <span>
+        Replacement Pending
+      </span>
+
+      <strong id="dashReplacement">
+        0
+      </strong>
+
     </div>
 
+
+
     <div class="summary-card returned">
-      <span>TX Return Pending</span>
-      <strong id="dashReturn">0</strong>
+
+      <span>
+        TX Return Pending
+      </span>
+
+      <strong id="dashReturn">
+        0
+      </strong>
+
     </div>
+
 
   </div>
 
+
+
+  <!-- =========================
+       WORKSHOP PENDING TO ISSUE
+       ========================= -->
 
   <div class="section-title">
     Workshop-wise Pending to Issue
@@ -68,6 +162,39 @@
   </div>
 
 
+
+  <!-- =========================
+       WORKSHOP REPLACEMENT
+       ========================= -->
+
+  <div class="section-title">
+    Workshop-wise Replacement Pending
+  </div>
+
+  <div id="workshopReplacementDashboard">
+    Loading...
+  </div>
+
+
+
+  <!-- =========================
+       WORKSHOP TX RETURN
+       ========================= -->
+
+  <div class="section-title">
+    Workshop-wise TX Return Pending
+  </div>
+
+  <div id="workshopReturnDashboard">
+    Loading...
+  </div>
+
+
+
+  <!-- =========================
+       WORKSHOP AGEING
+       ========================= -->
+
   <div class="section-title">
     Workshop-wise Ageing
   </div>
@@ -77,6 +204,11 @@
   </div>
 
 
+
+  <!-- =========================
+       WORKSHOP CAPACITY
+       ========================= -->
+
   <div class="section-title">
     Workshop-wise Capacity Pendency
   </div>
@@ -85,16 +217,26 @@
     Loading...
   </div>
 
+
 </section>
 
 
+
+<!-- =========================
+     SEARCH
+     ========================= -->
+
 <section class="search-card">
+
 
   <div class="search-title">
     PR / Complaint Number
   </div>
 
+
+
   <div class="search-row">
+
 
     <input
       id="searchInput"
@@ -102,26 +244,50 @@
       autocomplete="off"
       placeholder="Enter PR / Complaint Number">
 
+
+
     <button id="searchBtn">
       SEARCH
     </button>
 
+
   </div>
 
-  <div id="searchStatus" class="search-status">
+
+
+  <div id="searchStatus"
+       class="search-status">
+
     Loading transformer records...
+
   </div>
+
 
 </section>
 
 
+
+<!-- =========================
+     RESULTS
+     ========================= -->
+
 <section id="results"></section>
+
+
 
 </main>
 
-<footer>Transformer Tracking</footer>
 
-<script src="app.js?v=20261005"></script>
+
+<footer>
+  Transformer Tracking
+</footer>
+
+
+
+<script src="app.js?v=20261008"></script>
+
 
 </body>
+
 </html>

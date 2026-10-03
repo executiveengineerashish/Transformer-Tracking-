@@ -1,181 +1,298 @@
-const SHEET_ID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
-const SHEET_GID="1464518527";
+const SHEET_ID =
+"1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 
-let ALL=[];
-let DAMAGE={};
-let timer=null;
+const SHEET_GID =
+"1464518527";
 
-const $=id=>document.getElementById(id);
-const clean=x=>String(x??"").trim();
+
+let ALL = [];
+
+let DAMAGE = {};
+
+let timer = null;
+
+
+const $ = id =>
+ document.getElementById(id);
+
+
+const clean = x =>
+ String(x ?? "").trim();
+
+
+
+/* =========================
+   NORMALIZE SEARCH
+   ========================= */
 
 function norm(x){
- return String(x??"").toLowerCase()
- .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
+
+ return String(x ?? "")
+  .toLowerCase()
+  .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
+
 }
+
+
+
+/* =========================
+   ESCAPE HTML
+   ========================= */
 
 function esc(x){
- return String(x??"")
- .replace(/&/g,"&amp;")
- .replace(/</g,"&lt;")
- .replace(/>/g,"&gt;")
- .replace(/"/g,"&quot;")
- .replace(/'/g,"&#039;");
+
+ return String(x ?? "")
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#039;");
+
 }
+
+
+
+/* =========================
+   PLACE NORMALIZATION
+   ========================= */
 
 function locKey(x){
+
  return norm(
-  String(x??"")
-  .replace(/[0-9]+/g," ")
-  .replace(/[\(\)\[\]\{\}]/g," ")
-  .replace(/[-_/\\.,:;]+/g," ")
+
+  String(x ?? "")
+   .replace(/[0-9]+/g," ")
+   .replace(/[\(\)\[\]\{\}]/g," ")
+   .replace(/[-_/\\.,:;]+/g," ")
+
  );
+
 }
 
+
+
+/* =========================
+   CAPACITY NORMALIZATION
+   ========================= */
+
 function capKey(x){
- return String(x??"")
- .toLowerCase()
- .replace(/kva/g,"")
- .replace(/[^0-9.]/g,"")
- .trim();
+
+ return String(x ?? "")
+  .toLowerCase()
+  .replace(/kva/g,"")
+  .replace(/[^0-9.]/g,"")
+  .trim();
+
 }
+
+
+
+/* =========================
+   DATE
+   ========================= */
 
 function dateVal(x){
 
  if(!x)return null;
 
- let s=String(x).trim();
+ let s = String(x).trim();
+
  let m;
 
- m=s.match(
+
+ /* Google Date(...) */
+
+ m = s.match(
   /Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/
  );
 
- if(m)
+ if(m){
+
   return new Date(
-   +m[1],+m[2],+m[3]
+   +m[1],
+   +m[2],
+   +m[3]
   );
 
- m=s.match(
+ }
+
+
+ /* DD/MM/YYYY */
+
+ m = s.match(
   /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/
  );
 
- if(m)
+ if(m){
+
   return new Date(
    +m[3],
    +m[2]-1,
    +m[1]
   );
 
- let d=new Date(s);
+ }
 
- return isNaN(d.getTime())?null:d;
+
+ let d = new Date(s);
+
+
+ return isNaN(d.getTime())
+  ? null
+  : d;
+
 }
+
+
+
+/* =========================
+   CURRENT MONTH
+   BASED ON PR DATE
+   ========================= */
 
 function currentMonth(x){
 
- let d=dateVal(x);
- let n=new Date();
+ let d = dateVal(x);
 
- return !!d &&
-  d.getFullYear()===n.getFullYear() &&
-  d.getMonth()===n.getMonth();
+ let n = new Date();
+
+
+ return d &&
+  d.getFullYear() === n.getFullYear() &&
+  d.getMonth() === n.getMonth();
+
 }
+
+
+
+/* =========================
+   AGE FROM PR DATE
+   ========================= */
 
 function age(x){
 
- let d=dateVal(x);
+ let d = dateVal(x);
 
  if(!d)return 0;
 
- let n=new Date();
 
- n.setHours(0,0,0,0);
- d.setHours(0,0,0,0);
+ let n = new Date();
+
+ n.setHours(
+  0,0,0,0
+ );
+
+
+ d.setHours(
+  0,0,0,0
+ );
+
 
  return Math.max(
   0,
-  Math.floor((n-d)/86400000)
+  Math.floor(
+   (n-d)/86400000
+  )
  );
+
 }
+
 
 
 /* =========================
    LOAD GOOGLE SHEET
-========================= */
+   ========================= */
 
 function loadSheet(){
 
- let status=$("searchStatus");
-
- if(status)
-  status.textContent="Loading transformer records...";
+ let status =
+  $("searchStatus");
 
 
- let callback="TT_"+Date.now();
+ if(status){
+
+  status.textContent =
+   "Loading transformer records...";
+
+  status.classList.remove("error");
+
+ }
 
 
- window[callback]=function(response){
+ let cb =
+  "TT_" + Date.now();
+
+
+ window[cb] =
+ function(r){
 
   try{
 
-   if(
-    !response ||
-    !response.table ||
-    !response.table.rows
-   ){
-    throw new Error("Invalid Google response");
-   }
+   ALL = [];
 
 
-   ALL=[];
+   let rows =
+    r &&
+    r.table &&
+    r.table.rows
+     ? r.table.rows
+     : [];
 
 
-   response.table.rows.forEach(
-    function(row,index){
+   rows.forEach(
+    function(row,i){
 
-     let a=[];
+     let a = [];
 
 
-     for(let c=0;c<24;c++){
+     for(
+      let c=0;
+      c<24;
+      c++
+     ){
 
-      let cell=row.c?.[c];
+      let z =
+       row.c?.[c];
 
-      if(!cell){
 
-       a.push("");
+      a.push(
 
-      }else if(
-       cell.f!==undefined &&
-       cell.f!==null
-      ){
+       z?.f !== undefined
+        ? String(z.f)
 
-       a.push(String(cell.f));
+        :
 
-      }else if(
-       cell.v!==undefined &&
-       cell.v!==null
-      ){
+       z?.v !== undefined
+        ? String(z.v)
 
-       a.push(String(cell.v));
+        :
 
-      }else{
+       ""
 
-       a.push("");
-
-      }
+      );
 
      }
 
 
-     if(!a.some(clean))
-      return;
+     if(
+      !a.some(clean)
+     )return;
 
 
-     a.__row=index+4;
+     /*
+      A3:X
+      Header is row 3
+      First data row = row 4
+     */
 
-     a.__search=norm(
-      a.join(" ")
-     );
+     a.__row =
+      i + 4;
+
+
+     a.__search =
+      norm(
+       a.join(" ")
+      );
 
 
      ALL.push(a);
@@ -184,14 +301,16 @@ function loadSheet(){
    );
 
 
+   /* BUILD REPEATED DAMAGE */
+
    buildDamage();
 
 
-   /* SEARCH READY FIRST */
+   /* SEARCH READY */
 
    if(status){
 
-    status.textContent=
+    status.textContent =
      ALL.length.toLocaleString("en-IN")+
      " transformer records loaded • Search ready";
 
@@ -200,26 +319,26 @@ function loadSheet(){
    }
 
 
-   /* Dashboard separately */
+   /*
+    Dashboard starts after
+    records are ready.
+   */
 
-   setTimeout(function(){
-
-    try{
-     buildDashboard();
-    }catch(e){
-     console.error("Dashboard error:",e);
-    }
-
-   },10);
+   setTimeout(
+    buildDashboard,
+    30
+   );
 
 
-  }catch(e){
+  }
+  catch(e){
 
-   console.error("Sheet error:",e);
+   console.error(e);
+
 
    if(status){
 
-    status.textContent=
+    status.textContent =
      "Error reading PR SEARCH data";
 
     status.classList.add("error");
@@ -230,47 +349,52 @@ function loadSheet(){
 
 
   try{
-   delete window[callback];
-  }catch(e){}
+
+   delete window[cb];
+
+  }
+  catch(e){}
 
  };
 
 
- let old=$("googleSheetScript");
+
+ let old =
+  $("googleSheetScript");
+
 
  if(old)
   old.remove();
 
 
- let script=
+
+ let s =
   document.createElement("script");
 
 
- script.id=
+ s.id =
   "googleSheetScript";
 
 
- /*
-  No problematic encoding of callback.
- */
-
- script.src=
+ s.src =
   "https://docs.google.com/spreadsheets/d/"+
   SHEET_ID+
   "/gviz/tq"+
   "?gid="+SHEET_GID+
   "&range=A3%3AX"+
   "&headers=1"+
-  "&tqx=out:json;responseHandler:"+
-  callback+
+  "&tqx=out%3Ajson%3BresponseHandler%3A"+
+  cb+
   "&_="+Date.now();
 
 
- script.onerror=function(){
+
+ s.onerror =
+ function(){
 
   if(status){
 
-   status.textContent=
+   status.textContent =
     "Google Sheet connection failed. Refresh page.";
 
    status.classList.add("error");
@@ -280,76 +404,85 @@ function loadSheet(){
  };
 
 
- document.head.appendChild(script);
+ document.head.appendChild(s);
 
 }
 
 
+
 /* =========================
-   DAMAGE INDEX
-========================= */
+   REPEATED DAMAGE INDEX
+   SAME PLACE + SAME CAPACITY
+   ========================= */
 
 function buildDamage(){
 
- DAMAGE={};
+ DAMAGE = {};
 
 
- ALL.forEach(function(x){
+ ALL.forEach(
+  function(x){
 
-  let location=
-   locKey(x[7]);
-
-  let capacity=
-   capKey(x[9]);
+   let l =
+    locKey(x[7]);
 
 
-  if(!location || !capacity)
-   return;
+   let c =
+    capKey(x[9]);
 
 
-  let key=
-   location+"||"+capacity;
+   if(!l || !c)
+    return;
 
 
-  if(!DAMAGE[key])
-   DAMAGE[key]=[];
+   let k =
+    l + "||" + c;
 
 
-  DAMAGE[key].push(x);
+   if(!DAMAGE[k])
+    DAMAGE[k] = [];
 
- });
 
-
- Object.keys(DAMAGE).forEach(
-  function(key){
-
-   DAMAGE[key].sort(
-    function(a,b){
-
-     let da=
-      dateVal(a[13])||
-      dateVal(a[6])||
-      new Date(0);
-
-     let db=
-      dateVal(b[13])||
-      dateVal(b[6])||
-      new Date(0);
-
-     return da-db;
-
-    }
-   );
+   DAMAGE[k].push(x);
 
   }
  );
 
+
+ Object.keys(DAMAGE)
+  .forEach(
+   function(k){
+
+    DAMAGE[k].sort(
+     function(a,b){
+
+      let da =
+       dateVal(a[13]) ||
+       dateVal(a[6]) ||
+       new Date(0);
+
+
+      let db =
+       dateVal(b[13]) ||
+       dateVal(b[6]) ||
+       new Date(0);
+
+
+      return da - db;
+
+     }
+    );
+
+   }
+  );
+
 }
 
 
-/* =========================
+
+/* =====================================================
    DASHBOARD
-========================= */
+   ===================================================== */
 
 function buildDashboard(){
 
@@ -357,78 +490,111 @@ function buildDashboard(){
   return;
 
 
- let month=
-  ALL.filter(function(x){
+ /* =========================
+    CURRENT MONTH
+    PR DATE
+    ========================= */
 
-   return currentMonth(x[13]);
-
-  });
-
-
- let total=month.length;
- let issued=0;
- let pending=0;
- let replacement=0;
- let txReturn=0;
+ let m =
+  ALL.filter(
+   x => currentMonth(x[13])
+  );
 
 
- month.forEach(function(x){
+ let total = 0;
 
-  let issue=
-   clean(x[17]);
+ let issued = 0;
 
-  let rep=
-   clean(x[20]);
+ let pending = 0;
 
-  let ret=
-   clean(x[22]);
+ let replacement = 0;
 
-
-  if(!issue){
-
-   pending++;
-
-  }else{
-
-   issued++;
+ let returned = 0;
 
 
-   if(!rep){
+ m.forEach(
+  function(x){
 
-    replacement++;
+   let issue =
+    clean(x[17]);
 
-   }else if(!ret){
 
-    txReturn++;
+   let rep =
+    clean(x[20]);
+
+
+   let ret =
+    clean(x[22]);
+
+
+   total++;
+
+
+   if(!issue){
+
+    pending++;
+
+   }
+   else{
+
+    issued++;
+
+
+    if(!rep){
+
+     replacement++;
+
+    }
+    else if(!ret){
+
+     returned++;
+
+    }
 
    }
 
   }
+ );
 
- });
 
+
+ /* =========================
+    TOP SUMMARY
+    ========================= */
 
  if($("dashTotal"))
-  $("dashTotal").textContent=total;
+  $("dashTotal").textContent =
+   total;
+
 
  if($("dashIssued"))
-  $("dashIssued").textContent=issued;
+  $("dashIssued").textContent =
+   issued;
+
 
  if($("dashPending"))
-  $("dashPending").textContent=pending;
+  $("dashPending").textContent =
+   pending;
+
 
  if($("dashReplacement"))
-  $("dashReplacement").textContent=replacement;
+  $("dashReplacement").textContent =
+   replacement;
+
 
  if($("dashReturn"))
-  $("dashReturn").textContent=txReturn;
+  $("dashReturn").textContent =
+   returned;
+
 
 
  if($("dashboardMonth")){
 
-  let n=new Date();
+  let n =
+   new Date();
 
-  $("dashboardMonth").textContent=
+
+  $("dashboardMonth").textContent =
    n.toLocaleString(
     "en-IN",
     {
@@ -440,362 +606,754 @@ function buildDashboard(){
  }
 
 
- /* =========================
-    WORKSHOP PENDING TO ISSUE
- ========================= */
 
- let workshop={};
+ /* =================================================
+    WORKSHOP-WISE PENDING TO ISSUE
+    ================================================= */
 
-
- month.forEach(function(x){
-
-  if(clean(x[17]))
-   return;
+ let W = {};
 
 
-  let w=
-   clean(x[1])||"OTHER";
+ m.forEach(
+  function(x){
+
+   if(clean(x[17]))
+    return;
 
 
-  workshop[w]=
-   (workshop[w]||0)+1;
-
- });
-
-
- let wl=
-  Object.entries(workshop)
-  .sort(function(a,b){
-
-   return b[1]-a[1];
-
-  });
+   let w =
+    clean(x[1]) ||
+    "OTHER";
 
 
- let max=
-  wl.length?
-  wl[0][1]:
-  1;
+   W[w] =
+    (W[w] || 0) + 1;
+
+  }
+ );
+
+
+ let wl =
+  Object.entries(W)
+   .sort(
+    (a,b)=>b[1]-a[1]
+   );
+
+
+ let max =
+  wl[0]?.[1] || 1;
 
 
  if($("workshopDashboard")){
 
-  $("workshopDashboard").innerHTML=
-   wl.length?
+  $("workshopDashboard").innerHTML =
 
-   wl.map(function(x){
+   wl.length
 
-    return `
-    <div class="dashboard-row">
+    ?
 
-     <div class="dashboard-row-title">
-      <span>${esc(x[0])}</span>
-      <span>${x[1]}</span>
-     </div>
+   wl.map(
+    function(x){
 
-     <div class="dashboard-bar-bg">
+     return `
 
-      <div class="dashboard-bar"
-       style="width:${(x[1]/max)*100}%">
+      <div class="dashboard-row">
+
+       <div class="dashboard-row-title">
+
+        <span>
+         ${esc(x[0])}
+        </span>
+
+        <span>
+         ${x[1]}
+        </span>
+
+       </div>
+
+
+       <div class="dashboard-bar-bg">
+
+        <div
+         class="dashboard-bar"
+         style="width:${x[1]/max*100}%">
+        </div>
+
+       </div>
+
       </div>
 
-     </div>
+     `;
 
-    </div>`;
-
-   }).join("")
+    }
+   ).join("")
 
    :
 
-   '<div class="no-dashboard-data">'+
-   'No Pending to Issue</div>';
+   '<div class="no-dashboard-data">No Pending to Issue</div>';
 
  }
 
 
- /* =========================
-    WORKSHOP AGEING
- ========================= */
 
- let ageing={};
+ /* =================================================
+    WORKSHOP-WISE REPLACEMENT PENDING
+    ================================================= */
 
-
- month.forEach(function(x){
-
-  if(clean(x[17]))
-   return;
+ let R = {};
 
 
-  let w=
-   clean(x[1])||"OTHER";
+ m.forEach(
+  function(x){
+
+   let issue =
+    clean(x[17]);
 
 
-  if(!ageing[w]){
-
-   ageing[w]={
-    zero:0,
-    one:0,
-    more1:0,
-    more3:0,
-    more7:0
-   };
-
-  }
+   let rep =
+    clean(x[20]);
 
 
-  let d=
-   age(x[13]);
+   /*
+    Issue exists
+    Replacement does NOT exist
+   */
+
+   if(!issue || rep)
+    return;
 
 
-  if(d===0){
+   let w =
+    clean(x[1]) ||
+    "OTHER";
 
-   ageing[w].zero++;
 
-  }else if(d===1){
-
-   ageing[w].one++;
-
-  }else if(d<=3){
-
-   ageing[w].more1++;
-
-  }else if(d<=7){
-
-   ageing[w].more3++;
-
-  }else{
-
-   ageing[w].more7++;
+   R[w] =
+    (R[w] || 0) + 1;
 
   }
+ );
 
- });
+
+ let rl =
+  Object.entries(R)
+   .sort(
+    (a,b)=>b[1]-a[1]
+   );
+
+
+ let rmax =
+  rl[0]?.[1] || 1;
+
+
+ if($("workshopReplacementDashboard")){
+
+  $("workshopReplacementDashboard").innerHTML =
+
+   rl.length
+
+    ?
+
+   rl.map(
+    function(x){
+
+     return `
+
+      <div class="dashboard-row">
+
+       <div class="dashboard-row-title">
+
+        <span>
+         ${esc(x[0])}
+        </span>
+
+        <span>
+         ${x[1]}
+        </span>
+
+       </div>
+
+
+       <div class="dashboard-bar-bg">
+
+        <div
+         class="dashboard-bar"
+         style="width:${x[1]/rmax*100}%">
+        </div>
+
+       </div>
+
+      </div>
+
+     `;
+
+    }
+   ).join("")
+
+   :
+
+   '<div class="no-dashboard-data">No Replacement Pending</div>';
+
+ }
+
+
+
+ /* =================================================
+    WORKSHOP-WISE TX RETURN PENDING
+    ================================================= */
+
+ let T = {};
+
+
+ m.forEach(
+  function(x){
+
+   let rep =
+    clean(x[20]);
+
+
+   let ret =
+    clean(x[22]);
+
+
+   /*
+    Replacement exists
+    TX Return does NOT exist
+   */
+
+   if(!rep || ret)
+    return;
+
+
+   let w =
+    clean(x[1]) ||
+    "OTHER";
+
+
+   T[w] =
+    (T[w] || 0) + 1;
+
+  }
+ );
+
+
+ let tl =
+  Object.entries(T)
+   .sort(
+    (a,b)=>b[1]-a[1]
+   );
+
+
+ let tmax =
+  tl[0]?.[1] || 1;
+
+
+ if($("workshopReturnDashboard")){
+
+  $("workshopReturnDashboard").innerHTML =
+
+   tl.length
+
+    ?
+
+   tl.map(
+    function(x){
+
+     return `
+
+      <div class="dashboard-row">
+
+       <div class="dashboard-row-title">
+
+        <span>
+         ${esc(x[0])}
+        </span>
+
+        <span>
+         ${x[1]}
+        </span>
+
+       </div>
+
+
+       <div class="dashboard-bar-bg">
+
+        <div
+         class="dashboard-bar"
+         style="width:${x[1]/tmax*100}%">
+        </div>
+
+       </div>
+
+      </div>
+
+     `;
+
+    }
+   ).join("")
+
+   :
+
+   '<div class="no-dashboard-data">No TX Return Pending</div>';
+
+ }
+
+
+
+ /* =================================================
+    WORKSHOP-WISE AGEING
+    ONLY PENDING TO ISSUE
+    BASED ON PR DATE
+    ================================================= */
+
+ let A = {};
+
+
+ m.forEach(
+  function(x){
+
+   /*
+    Only pending to issue
+   */
+
+   if(clean(x[17]))
+    return;
+
+
+   let w =
+    clean(x[1]) ||
+    "OTHER";
+
+
+   if(!A[w]){
+
+    A[w] = {
+
+     zero:0,
+
+     zeroOne:0,
+
+     oneTwo:0,
+
+     twoThree:0,
+
+     threeFive:0,
+
+     moreFive:0
+
+    };
+
+   }
+
+
+   let d =
+    age(x[13]);
+
+
+   /*
+    Age buckets
+
+    0 Day
+    = PR Date itself
+
+    0–1 Day
+    = next day
+
+    1–2 Days
+    = 2 days old
+
+    2–3 Days
+    = 3 days old
+
+    3–5 Days
+    = 4 to 5 days old
+
+    More than 5 Days
+    = 6+ days
+   */
+
+   if(d === 0){
+
+    A[w].zero++;
+
+   }
+   else if(d === 1){
+
+    A[w].zeroOne++;
+
+   }
+   else if(d === 2){
+
+    A[w].oneTwo++;
+
+   }
+   else if(d === 3){
+
+    A[w].twoThree++;
+
+   }
+   else if(
+    d >= 4 &&
+    d <= 5
+   ){
+
+    A[w].threeFive++;
+
+   }
+   else if(d > 5){
+
+    A[w].moreFive++;
+
+   }
+
+  }
+ );
+
 
 
  if($("ageingDashboard")){
 
-  $("ageingDashboard").innerHTML=
-   Object.entries(ageing).map(
+  $("ageingDashboard").innerHTML =
+
+   Object.entries(A)
+
+   .sort(
+    function(a,b){
+
+     let aa =
+      Object.values(a[1])
+       .reduce(
+        (s,v)=>s+v,
+        0
+       );
+
+
+     let bb =
+      Object.values(b[1])
+       .reduce(
+        (s,v)=>s+v,
+        0
+       );
+
+
+     return bb-aa;
+
+    }
+   )
+
+   .map(
     function(x){
 
      return `
-     <div class="ageing-row">
 
-      <div class="ageing-name">
-       ${esc(x[0])}
+      <div class="ageing-row">
+
+       <div class="ageing-name">
+        ${esc(x[0])}
+       </div>
+
+
+       <div class="ageing-grid">
+
+
+        <div class="age-box">
+
+         <span>
+          0 Day
+         </span>
+
+         <strong>
+          ${x[1].zero}
+         </strong>
+
+        </div>
+
+
+
+        <div class="age-box">
+
+         <span>
+          0–1 Day
+         </span>
+
+         <strong>
+          ${x[1].zeroOne}
+         </strong>
+
+        </div>
+
+
+
+        <div class="age-box">
+
+         <span>
+          1–2 Days
+         </span>
+
+         <strong>
+          ${x[1].oneTwo}
+         </strong>
+
+        </div>
+
+
+
+        <div class="age-box">
+
+         <span>
+          2–3 Days
+         </span>
+
+         <strong>
+          ${x[1].twoThree}
+         </strong>
+
+        </div>
+
+
+
+        <div class="age-box">
+
+         <span>
+          3–5 Days
+         </span>
+
+         <strong>
+          ${x[1].threeFive}
+         </strong>
+
+        </div>
+
+
+
+        <div class="age-box">
+
+         <span>
+          More than 5 Days
+         </span>
+
+         <strong>
+          ${x[1].moreFive}
+         </strong>
+
+        </div>
+
+
+       </div>
+
       </div>
 
-      <div class="ageing-grid">
-
-       <div class="age-box">
-        <span>0 Day</span>
-        <strong>${x[1].zero}</strong>
-       </div>
-
-       <div class="age-box">
-        <span>1 Day</span>
-        <strong>${x[1].one}</strong>
-       </div>
-
-       <div class="age-box">
-        <span>&gt;1 Day</span>
-        <strong>${x[1].more1}</strong>
-       </div>
-
-       <div class="age-box">
-        <span>&gt;3 Days</span>
-        <strong>${x[1].more3}</strong>
-       </div>
-
-       <div class="age-box">
-        <span>&gt;7 Days</span>
-        <strong>${x[1].more7}</strong>
-       </div>
-
-      </div>
-
-     </div>`;
+     `;
 
     }
    ).join("")
 
    ||
 
-   '<div class="no-dashboard-data">'+
-   'No ageing pending</div>';
+   '<div class="no-dashboard-data">No ageing pending</div>';
 
  }
 
 
- /* =========================
-    WORKSHOP CAPACITY
- ========================= */
 
- let capacity={};
+ /* =================================================
+    WORKSHOP-WISE CAPACITY PENDENCY
+    ================================================= */
 
-
- month.forEach(function(x){
-
-  if(clean(x[17]))
-   return;
+ let C = {};
 
 
-  let w=
-   clean(x[1])||"OTHER";
+ m.forEach(
+  function(x){
 
-  let c=
-   clean(x[9])||"Unknown";
+   /*
+    Only Pending to Issue
+   */
 
-
-  if(!capacity[w])
-   capacity[w]={};
-
-
-  capacity[w][c]=
-   (capacity[w][c]||0)+1;
-
- });
+   if(clean(x[17]))
+    return;
 
 
- /*
-  VERY IMPORTANT:
-  Your HTML ID is:
-  workshopCapacityDashboard
- */
-
- let capacityBox=
-  $("workshopCapacityDashboard");
+   let w =
+    clean(x[1]) ||
+    "OTHER";
 
 
- if(capacityBox){
-
-  capacityBox.innerHTML=
-   Object.entries(capacity)
-   .sort(function(a,b){
-
-    let aa=
-     Object.values(a[1])
-     .reduce(function(s,v){
-      return s+v;
-     },0);
+   let c =
+    clean(x[9]) ||
+    "Unknown";
 
 
-    let bb=
-     Object.values(b[1])
-     .reduce(function(s,v){
-      return s+v;
-     },0);
+   if(!C[w])
+    C[w] = {};
 
 
-    return bb-aa;
+   C[w][c] =
+    (C[w][c] || 0) + 1;
 
-   })
-   .map(function(w){
-
-    let chips=
-     Object.entries(w[1])
-     .sort(function(a,b){
-
-      return
-       (parseFloat(a[0])||0)-
-       (parseFloat(b[0])||0);
-
-     })
-     .map(function(c){
-
-      return `
-      <span class="wc-chip">
-       ${esc(c[0])} kVA
-       <strong>${c[1]}</strong>
-      </span>`;
-
-     })
-     .join("");
+  }
+ );
 
 
-    return `
-    <div class="wc-row">
+ if($("workshopCapacityDashboard")){
 
-     <div class="wc-name">
-      ${esc(w[0])}
-     </div>
+  let capacityHTML =
 
-     <div class="wc-capacity">
-      ${chips}
-     </div>
+   Object.entries(C)
 
-    </div>`;
+   .sort(
+    function(a,b){
 
-   })
-   .join("")
+     let aa =
+      Object.values(a[1])
+       .reduce(
+        (s,v)=>s+v,
+        0
+       );
 
-   ||
 
-   '<div class="no-dashboard-data">'+
-   'No capacity pending</div>';
+     let bb =
+      Object.values(b[1])
+       .reduce(
+        (s,v)=>s+v,
+        0
+       );
+
+
+     return bb-aa;
+
+    }
+   )
+
+   .map(
+    function(w){
+
+     return `
+
+      <div class="wc-row">
+
+       <div class="wc-name">
+        ${esc(w[0])}
+       </div>
+
+
+       <div class="wc-capacity">
+
+
+        ${
+         Object.entries(w[1])
+
+          .sort(
+           function(a,b){
+
+            return (
+             parseFloat(a[0]) || 0
+            )
+            -
+            (
+             parseFloat(b[0]) || 0
+            );
+
+           }
+          )
+
+          .map(
+           function(c){
+
+            return `
+
+             <span class="wc-chip">
+
+              ${esc(c[0])} kVA
+
+              <strong>
+               ${c[1]}
+              </strong>
+
+             </span>
+
+            `;
+
+           }
+          )
+
+          .join("")
+        }
+
+
+       </div>
+
+      </div>
+
+     `;
+
+    }
+   )
+
+   .join("");
+
+
+  $("workshopCapacityDashboard").innerHTML =
+
+   capacityHTML ||
+
+   '<div class="no-dashboard-data">No capacity pending</div>';
 
  }
 
 }
 
 
-/* =========================
+
+/* =====================================================
    SEARCH
-========================= */
+   ===================================================== */
 
 function searchRecords(){
 
- let input=
+ let input =
   $("searchInput");
 
- let results=
-  $("results");
 
-
- if(!input || !results)
+ if(!input)
   return;
 
 
- let q=
+ let q =
   norm(input.value);
 
 
  if(!q){
 
-  results.innerHTML="";
+  $("results").innerHTML =
+   "";
+
   return;
 
  }
+
+
+ let found = [];
 
 
  /*
-  IMPORTANT:
-  If data has not loaded yet,
-  do NOT freeze the input.
+  LOCAL SEARCH ONLY
+  NO GOOGLE REQUEST
  */
 
- if(!ALL.length){
-
-  results.innerHTML=
-   '<div class="no-results">'+
-   'Loading records... Please wait.'+
-   '</div>';
-
-  return;
-
- }
-
-
- let found=[];
-
-
- for(let i=0;i<ALL.length;i++){
+ for(
+  let i=0;
+  i<ALL.length;
+  i++
+ ){
 
   if(
    ALL[i].__search.includes(q)
   ){
 
-   found.push(ALL[i]);
+   found.push(
+    ALL[i]
+   );
 
   }
 
@@ -804,24 +1362,25 @@ function searchRecords(){
 
  if(!found.length){
 
-  results.innerHTML=
-   '<div class="no-results">'+
-   'No record found'+
-   '</div>';
+  $("results").innerHTML =
+
+   '<div class="no-results">No record found</div>';
 
   return;
 
  }
 
 
+
  /*
-  Don't render thousands of cards
-  for 1 or 2 digit searches.
+  Do not render thousands
+  of cards for short searches.
  */
 
- if(q.length<3){
+ if(q.length < 3){
 
-  results.innerHTML=
+  $("results").innerHTML =
+
    `<div class="result-count">
 
     ${found.length.toLocaleString("en-IN")}
@@ -840,418 +1399,462 @@ function searchRecords(){
  }
 
 
- let show=
+
+ let show =
   found.slice(0,50);
 
 
- results.innerHTML=
+ $("results").innerHTML =
+
   `<div class="result-count">
 
    ${found.length.toLocaleString("en-IN")}
    record(s) found
 
    ${
-    found.length>50?
-    "<br><small>Showing first 50</small>":
+    found.length > 50
+
+     ?
+
+    "<br><small>Showing first 50 results</small>"
+
+     :
+
     ""
    }
 
-  </div>`+
+   </div>`
+
+  +
 
   show.map(
-   function(x,i){
-
-    return buildCard(x,i+1);
-
-   }
+   (x,i)=>
+    buildCard(
+     x,
+     i+1
+    )
   ).join("");
 
 }
 
 
-/* =========================
+
+/* =====================================================
    RESULT CARD
-========================= */
+   ===================================================== */
 
 function buildCard(x,no){
 
- let issue=
+ let issue =
   clean(x[17]);
 
- let replacement=
+
+ let replacement =
   clean(x[20]);
 
 
- let status="";
+ let status = "";
 
 
- /*
-  CONGRATULATIONS ONLY IF
-  REPLACEMENT DATE EXISTS
- */
+
+ /* =========================
+    INSTALLED
+    ========================= */
 
  if(replacement){
 
-  status=`
-  <div class="status-box status-installed">
+  status = `
 
-   <strong>
-    ✓ Congratulations Your Transformer Installed
-   </strong>
+   <div class="status-box status-installed">
 
-   <div>
+    <strong>
+     ✓ Congratulations Your Transformer Installed
+    </strong>
+
     Replacement Date:
     ${esc(replacement)}
+
    </div>
 
-  </div>`;
-
- }else if(issue){
-
-  status=`
-  <div class="status-box status-issued">
-
-   <strong>
-    ✓ Your Transformer Issued by Workshop
-   </strong>
-
-   <div>
-    Please Contact Driver for Installation
-   </div>
-
-   <div>
-    Issue Date:
-    ${esc(issue)}
-   </div>
-
-   ${
-    clean(x[18])?
-    `<div>
-      Driver: ${esc(x[18])}
-     </div>`:
-    ""
-   }
-
-   ${
-    clean(x[19])?
-    `<div>
-      Mobile: ${esc(x[19])}
-     </div>
-     ${driverButtons(x)}`:
-    ""
-   }
-
-  </div>`;
-
- }else{
-
-  status=`
-  <div class="status-box status-pending">
-
-   <strong>
-    ⚠ Transformer Pending to Issue
-   </strong>
-
-  </div>`;
+  `;
 
  }
+
+
+ /* =========================
+    ISSUED
+    ========================= */
+
+ else if(issue){
+
+  status = `
+
+   <div class="status-box status-issued">
+
+    <strong>
+     ✓ Your Transformer Issued by Workshop
+    </strong>
+
+
+    Please Contact Driver for Installation
+
+
+    <div>
+     Issue Date:
+     ${esc(issue)}
+    </div>
+
+
+    ${
+     clean(x[18])
+
+      ?
+
+     `<div>
+       Driver:
+       ${esc(x[18])}
+      </div>`
+
+      :
+
+     ""
+    }
+
+
+    ${
+     clean(x[19])
+
+      ?
+
+     `<div>
+       Mobile:
+       ${esc(x[19])}
+      </div>
+
+      ${driverButtons(x)}`
+
+      :
+
+     ""
+    }
+
+
+   </div>
+
+  `;
+
+ }
+
+
+ /* =========================
+    PENDING
+    ========================= */
+
+ else{
+
+  status = `
+
+   <div class="status-box status-pending">
+
+    <strong>
+     ⚠ Transformer Pending to Issue
+    </strong>
+
+   </div>
+
+  `;
+
+ }
+
 
 
  /* =========================
     REPEATED DAMAGE
- ========================= */
+    ========================= */
 
- let key=
-  locKey(x[7])+
-  "||"+
+ let key =
+  locKey(x[7]) +
+  "||" +
   capKey(x[9]);
 
 
- let history=
-  DAMAGE[key]||[];
+ let history =
+  DAMAGE[key] || [];
 
 
- let repeat="";
+ let frequency = "";
 
 
- if(history.length===1){
 
-  repeat=`
-  <div class="damage-frequency">
+ if(history.length === 1){
 
-   <div class="damage-title">
-    ✓ No Repeat Damage
+  frequency = `
+
+   <div class="damage-frequency">
+
+    <div class="damage-title">
+     ✓ No Repeat Damage
+    </div>
+
+    <div class="damage-subtitle">
+
+     Only 1 damage at same place
+     and same capacity
+
+    </div>
+
    </div>
 
-   <div class="damage-subtitle">
-    Only 1 damage at same place
-    and same capacity
+  `;
+
+ }
+ else{
+
+  frequency = `
+
+   <div class="damage-frequency">
+
+    <div class="damage-title">
+
+     🔄 ${history.length}
+     Times Damage
+
+    </div>
+
+
+    <div class="damage-subtitle">
+
+     Same Place + Same Capacity
+
+    </div>
+
+
+    ${
+     history.map(
+      function(y,i){
+
+       let suffix =
+
+        i === 0
+         ? "st"
+
+         :
+
+        i === 1
+         ? "nd"
+
+         :
+
+        i === 2
+         ? "rd"
+
+         :
+
+        "th";
+
+
+       return `
+
+        <div class="history-item">
+
+         <div class="history-number">
+
+          ${i+1}${suffix}
+          Time
+
+         </div>
+
+
+         <div>
+          PR No:
+          ${esc(y[12] || "-")}
+         </div>
+
+
+         <div>
+          PR Date:
+          ${esc(y[13] || "-")}
+         </div>
+
+
+         <div>
+          Capacity:
+          ${esc(y[9] || "-")}
+          kVA
+         </div>
+
+
+        </div>
+
+       `;
+
+      }
+     ).join("")
+    }
+
+
    </div>
 
-  </div>`;
-
- }else{
-
-  repeat=`
-  <div class="damage-frequency">
-
-   <div class="damage-title">
-    🔄 ${history.length} Times Damage
-   </div>
-
-   <div class="damage-subtitle">
-    Same Place + Same Capacity
-   </div>
-
-   ${
-    history.map(function(y,i){
-
-     let suffix=
-      i===0?"st":
-      i===1?"nd":
-      i===2?"rd":
-      "th";
-
-
-     return `
-     <div class="history-item">
-
-      <div class="history-number">
-       ${i+1}${suffix} Time
-      </div>
-
-      <div>
-       PR No:
-       <strong>
-        ${esc(y[12]||"-")}
-       </strong>
-      </div>
-
-      <div>
-       PR Date:
-       ${esc(y[13]||"-")}
-      </div>
-
-      <div>
-       Capacity:
-       <strong>
-        ${esc(y[9]||"-")} kVA
-       </strong>
-      </div>
-
-     </div>`;
-
-    }).join("")
-   }
-
-  </div>`;
+  `;
 
  }
 
 
+
  /* =========================
     DATA
- ========================= */
+    ========================= */
 
- let names=[
+ let names = [
+
   "SN",
+
   "Workshop",
+
   "Division",
+
   "Subdivision",
+
   "Substation",
+
   "Feeder",
+
   "Date of Damage",
+
   "Place of Damage",
+
   "DID No",
+
   "Capacity",
+
   "Complaint Number",
+
   "Complaint Date",
+
   "PR No",
+
   "PR Date",
+
   "JE Name",
+
   "JE Mobile",
+
   "Issued to Firm",
+
   "Issue Date",
+
   "Driver Name",
+
   "Driver Mobile",
+
   "Replacement Date",
+
   "Time",
+
   "TX Return Date",
+
   "Observation DTC"
+
  ];
 
 
- let data="";
+ let data = "";
 
 
- names.forEach(function(name,i){
+ names.forEach(
+  function(name,i){
 
-  if(!clean(x[i]))
-   return;
+   if(!clean(x[i]))
+    return;
 
 
-  data+=`
-  <div class="data-row">
+   data += `
 
-   <div class="data-label">
-    ${name}
-   </div>
+    <div class="data-row">
 
-   <div class="data-value">
-    ${esc(x[i])}
-   </div>
+     <div class="data-label">
+      ${name}
+     </div>
 
-  </div>`;
 
- });
+     <div class="data-value">
+      ${esc(x[i])}
+     </div>
+
+    </div>
+
+   `;
+
+  }
+ );
+
 
 
  return `
- <div class="result-card">
 
-  <div class="card-top">
-   <span>#${no}</span>
-   <span>Row ${x.__row}</span>
+  <div class="result-card">
+
+
+   <div class="card-top">
+
+    <span>
+     #${no}
+    </span>
+
+    <span>
+     Row ${x.__row}
+    </span>
+
+   </div>
+
+
+   ${status}
+
+
+   ${frequency}
+
+
+   <div class="data-section">
+
+    ${data}
+
+   </div>
+
+
   </div>
 
-  ${status}
-
-  ${repeat}
-
-  <div class="data-section">
-   ${data}
-  </div>
-
- </div>`;
+ `;
 
 }
 
 
-/* =========================
-   DRIVER
-========================= */
+
+/* =====================================================
+   DRIVER BUTTONS
+   ===================================================== */
 
 function driverButtons(x){
 
- let phone=
-  clean(x[19]).replace(/\D/g,"");
+ let phone =
+  clean(x[19])
+   .replace(/\D/g,"");
 
 
- if(phone.length===10)
-  phone="91"+phone;
+ if(phone.length === 10)
+  phone = "91" + phone;
 
 
- let message=
-`Namaste ${clean(x[18])||"Driver"} ji,
 
-Transformer PR No.: ${clean(x[12])||"-"}
-Capacity: ${clean(x[9])||"-"} kVA
-Place: ${clean(x[7])||"-"}
-Workshop: ${clean(x[1])||"-"}
+ let message =
+
+`Namaste ${clean(x[18]) || "Driver"} ji,
+
+Transformer PR No.: ${clean(x[12]) || "-"}
+Capacity: ${clean(x[9]) || "-"} kVA
+Place: ${clean(x[7]) || "-"}
+Workshop: ${clean(x[1]) || "-"}
 
 The transformer has been issued from Workshop. Please arrange installation and confirm installation status.
 
 Thank you.`;
 
-
- return `
- <div class="driver-buttons">
-
-  <a class="call-driver"
-   href="tel:${clean(x[19])}">
-   📞 CALL DRIVER
-  </a>
-
-  <a class="whatsapp-driver"
-   target="_blank"
-   rel="noopener"
-   href="https://wa.me/${phone}?text=${encodeURIComponent(message)}">
-   💬 WHATSAPP
-  </a>
-
- </div>`;
-
-}
-
-
-/* =========================
-   START
-========================= */
-
-document.addEventListener(
- "DOMContentLoaded",
- function(){
-
-  let input=
-   $("searchInput");
-
-
-  if(input){
-
-   input.disabled=false;
-
-
-   input.addEventListener(
-    "input",
-    function(){
-
-     clearTimeout(timer);
-
-     /*
-      Very short debounce.
-      Input is NEVER recreated.
-     */
-
-     timer=setTimeout(
-      searchRecords,
-      10
-     );
-
-    }
-   );
-
-
-   input.addEventListener(
-    "keydown",
-    function(e){
-
-     if(e.key==="Enter"){
-
-      e.preventDefault();
-
-      clearTimeout(timer);
-
-      searchRecords();
-
-     }
-
-    }
-   );
-
-  }
-
-
-  let button=
-   $("searchBtn");
-
-
-  if(button){
-
-   button.addEventListener(
-    "click",
-    function(){
-
-     searchRecords();
-
-     input?.focus();
-
-    }
-   );
-
-  }
-
-
-  loadSheet();
-
- }
-);

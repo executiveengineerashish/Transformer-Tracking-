@@ -2,7 +2,9 @@
  box-sizing:border-box;
 }
 
-html,body{
+
+html,
+body{
  margin:0;
  padding:0;
  width:100%;
@@ -12,12 +14,16 @@ html,body{
  color:#222;
 }
 
+
 body{
  overflow-x:hidden;
 }
 
 
-/* HEADER */
+
+/* =========================
+   HEADER
+   ========================= */
 
 .app-header{
  background:linear-gradient(135deg,#ff0808,#ff3c00);
@@ -28,6 +34,7 @@ body{
  gap:15px;
  box-shadow:0 3px 12px rgba(0,0,0,.18);
 }
+
 
 .header-icon{
  width:68px;
@@ -41,10 +48,12 @@ body{
  border:1px solid rgba(255,255,255,.45);
 }
 
+
 .app-title{
  font-size:28px;
  font-weight:800;
 }
+
 
 .app-subtitle{
  font-size:18px;
@@ -52,7 +61,10 @@ body{
 }
 
 
-/* MAIN */
+
+/* =========================
+   MAIN
+   ========================= */
 
 main{
  max-width:720px;
@@ -61,7 +73,10 @@ main{
 }
 
 
-/* DASHBOARD */
+
+/* =========================
+   DASHBOARD
+   ========================= */
 
 .dashboard{
  background:#fff;
@@ -71,6 +86,7 @@ main{
  box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
+
 .dashboard-heading{
  display:flex;
  align-items:center;
@@ -78,14 +94,17 @@ main{
  margin-bottom:15px;
 }
 
+
 .dashboard-heading>span{
  font-size:27px;
 }
+
 
 .dashboard-heading h1{
  margin:0;
  font-size:21px;
 }
+
 
 .dashboard-heading div div{
  margin-top:3px;
@@ -94,13 +113,17 @@ main{
 }
 
 
-/* SUMMARY */
+
+/* =========================
+   SUMMARY
+   ========================= */
 
 .summary-grid{
  display:grid;
  grid-template-columns:repeat(3,1fr);
  gap:8px;
 }
+
 
 .summary-card{
  min-height:82px;
@@ -111,35 +134,42 @@ main{
  justify-content:center;
 }
 
+
 .summary-card span{
  font-size:12px;
  font-weight:600;
 }
+
 
 .summary-card strong{
  font-size:27px;
  margin-top:4px;
 }
 
+
 .total{
  background:#e7f0ff;
  color:#12639b;
 }
+
 
 .issued{
  background:#e1f8eb;
  color:#078246;
 }
 
+
 .pending{
  background:#fff0df;
  color:#c76800;
 }
 
+
 .replacement{
  background:#fff7d9;
  color:#9a7300;
 }
+
 
 .returned{
  background:#eee7ff;
@@ -147,7 +177,10 @@ main{
 }
 
 
-/* SECTION */
+
+/* =========================
+   SECTION TITLE
+   ========================= */
 
 .section-title{
  font-size:18px;
@@ -156,11 +189,15 @@ main{
 }
 
 
-/* WORKSHOP */
+
+/* =========================
+   WORKSHOP BAR
+   ========================= */
 
 .dashboard-row{
  margin:10px 0 13px;
 }
+
 
 .dashboard-row-title{
  display:flex;
@@ -171,6 +208,7 @@ main{
  margin-bottom:5px;
 }
 
+
 .dashboard-bar-bg{
  height:11px;
  width:100%;
@@ -179,6 +217,7 @@ main{
  overflow:hidden;
 }
 
+
 .dashboard-bar{
  height:100%;
  border-radius:20px;
@@ -186,7 +225,10 @@ main{
 }
 
 
-/* AGEING */
+
+/* =========================
+   AGEING
+   ========================= */
 
 .ageing-row{
  background:#fafafa;
@@ -196,17 +238,20 @@ main{
  border:1px solid #eee;
 }
 
+
 .ageing-name{
  font-weight:800;
  font-size:14px;
  margin-bottom:7px;
 }
 
+
 .ageing-grid{
  display:grid;
  grid-template-columns:repeat(3,1fr);
  gap:6px;
 }
+
 
 .age-box{
  text-align:center;
@@ -215,11 +260,13 @@ main{
  padding:7px 3px;
 }
 
+
 .age-box span{
  display:block;
  font-size:10px;
  color:#777;
 }
+
 
 .age-box strong{
  display:block;
@@ -228,7 +275,10 @@ main{
 }
 
 
-/* WORKSHOP CAPACITY */
+
+/* =========================
+   CAPACITY
+   ========================= */
 
 .wc-row{
  background:#fafafa;
@@ -238,17 +288,20 @@ main{
  border:1px solid #eee;
 }
 
+
 .wc-name{
  font-weight:800;
  font-size:14px;
  margin-bottom:7px;
 }
 
+
 .wc-capacity{
  display:flex;
  flex-wrap:wrap;
  gap:6px;
 }
+
 
 .wc-chip{
  background:#fff1e5;
@@ -257,12 +310,16 @@ main{
  font-size:12px;
 }
 
+
 .wc-chip strong{
  margin-left:3px;
 }
 
 
-/* SEARCH */
+
+/* =========================
+   SEARCH
+   ========================= */
 
 .search-card{
  background:#fff;
@@ -272,17 +329,20 @@ main{
  box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
+
 .search-title{
  font-size:21px;
  font-weight:800;
  margin-bottom:12px;
 }
 
+
 .search-row{
  display:grid;
  grid-template-columns:minmax(0,1fr) 125px;
  gap:8px;
 }
+
 
 #searchInput{
  width:100%;
@@ -295,6 +355,13 @@ main{
  min-width:0;
 }
 
+
+#searchInput:focus{
+ border-color:#ff2600;
+ box-shadow:0 0 0 3px rgba(255,87,0,.12);
+}
+
+
 #searchBtn{
  height:64px;
  border:0;
@@ -306,7 +373,10 @@ main{
 }
 
 
-/* STATUS */
+
+/* =========================
+   SEARCH STATUS
+   ========================= */
 
 .search-status{
  margin-top:12px;
@@ -320,13 +390,17 @@ main{
  overflow-wrap:anywhere;
 }
 
+
 .search-status.error{
  background:#ffe5e5;
  color:#b00000;
 }
 
 
-/* RESULT */
+
+/* =========================
+   RESULT COUNT
+   ========================= */
 
 .result-count{
  background:#e3f8ec;
@@ -338,12 +412,19 @@ main{
  margin-bottom:12px;
 }
 
+
 .no-results{
  background:#fff;
  border-radius:20px;
  padding:25px;
  text-align:center;
 }
+
+
+
+/* =========================
+   RESULT CARD
+   ========================= */
 
 .result-card{
  background:#fff;
@@ -354,6 +435,7 @@ main{
  overflow:hidden;
 }
 
+
 .card-top{
  display:flex;
  justify-content:space-between;
@@ -363,7 +445,10 @@ main{
 }
 
 
-/* STATUS BOX */
+
+/* =========================
+   STATUS BOX
+   ========================= */
 
 .status-box{
  width:100%;
@@ -374,11 +459,13 @@ main{
  overflow-wrap:anywhere;
 }
 
+
 .status-box strong{
  display:block;
  font-size:18px;
  margin-bottom:4px;
 }
+
 
 .status-installed{
  background:#dff8e9;
@@ -386,11 +473,13 @@ main{
  color:#087842;
 }
 
+
 .status-issued{
  background:#e7f4ff;
  border-left:6px solid #1386d8;
  color:#075c8c;
 }
+
 
 .status-pending{
  background:#fff0e2;
@@ -399,7 +488,10 @@ main{
 }
 
 
-/* DAMAGE FREQUENCY */
+
+/* =========================
+   DAMAGE FREQUENCY
+   ========================= */
 
 .damage-frequency{
  border-radius:18px;
@@ -409,6 +501,7 @@ main{
  border-left:6px solid #ff8500;
 }
 
+
 .damage-title{
  font-size:19px;
  font-weight:800;
@@ -416,12 +509,14 @@ main{
  margin-bottom:4px;
 }
 
+
 .damage-subtitle{
  font-size:13px;
  color:#8d520d;
  font-weight:700;
  margin-bottom:10px;
 }
+
 
 .history-item{
  background:#fff;
@@ -432,6 +527,7 @@ main{
  overflow-wrap:anywhere;
 }
 
+
 .history-number{
  font-weight:800;
  color:#984b00;
@@ -439,13 +535,17 @@ main{
 }
 
 
-/* DRIVER */
+
+/* =========================
+   DRIVER BUTTONS
+   ========================= */
 
 .driver-buttons{
  display:flex;
  gap:8px;
  margin-top:10px;
 }
+
 
 .driver-buttons a{
  flex:1;
@@ -458,21 +558,27 @@ main{
  font-size:13px;
 }
 
+
 .call-driver{
  background:#078f46;
 }
+
 
 .whatsapp-driver{
  background:#20b957;
 }
 
 
-/* DATA */
+
+/* =========================
+   DATA
+   ========================= */
 
 .data-section{
  width:100%;
  overflow:hidden;
 }
+
 
 .data-row{
  display:grid;
@@ -481,6 +587,7 @@ main{
  padding:11px 3px;
 }
 
+
 .data-label{
  color:#555;
  font-size:13px;
@@ -488,16 +595,37 @@ main{
  padding-right:7px;
 }
 
+
 .data-value{
  color:#222;
  font-size:15px;
+ font-weight:400;
  min-width:0;
  overflow-wrap:anywhere;
  word-break:break-word;
 }
 
 
-/* FOOTER */
+
+/* =========================
+   NO DASHBOARD DATA
+   ========================= */
+
+.no-dashboard-data{
+ background:#fafafa;
+ border:1px solid #eee;
+ border-radius:13px;
+ padding:13px;
+ color:#777;
+ text-align:center;
+ font-size:13px;
+}
+
+
+
+/* =========================
+   FOOTER
+   ========================= */
 
 footer{
  text-align:center;
@@ -507,7 +635,10 @@ footer{
 }
 
 
-/* MOBILE */
+
+/* =========================
+   MOBILE
+   ========================= */
 
 @media(max-width:600px){
 
@@ -535,7 +666,22 @@ footer{
   grid-template-columns:repeat(3,1fr);
  }
 
+ .age-box span{
+  font-size:10px;
+ }
+
+ .age-box strong{
+  font-size:17px;
+ }
+
 }
+
+
+
+/* =========================
+   EXTRA STATUS STYLES
+   ========================= */
+
 .wc-status{
  background:#fafafa;
  border:1px solid #eee;
@@ -544,11 +690,13 @@ footer{
  margin-bottom:12px;
 }
 
+
 .wc-status-name{
  font-size:16px;
  font-weight:800;
  margin-bottom:8px;
 }
+
 
 .wc-status-item{
  display:flex;
@@ -557,9 +705,11 @@ footer{
  margin-top:6px;
 }
 
+
 .wc-status-item b{
  font-size:14px;
 }
+
 
 .mini-bar{
  height:7px;
@@ -569,6 +719,7 @@ footer{
  margin-top:4px;
 }
 
+
 .mini-bar i{
  display:block;
  height:100%;
@@ -576,20 +727,39 @@ footer{
  border-radius:10px;
 }
 
+
 .replacement-bar i{
  background:#e5a900;
 }
+
 
 .return-bar i{
  background:#8054d6;
 }
 
-.ageing-grid{
- grid-template-columns:repeat(5,1fr)!important;
-}
+
+
+/* =========================
+   MOBILE CAPACITY
+   ========================= */
 
 @media(max-width:600px){
- .ageing-grid{
-  grid-template-columns:repeat(3,1fr)!important;
+
+ .wc-chip{
+  font-size:12px;
+  padding:6px 7px;
  }
+
+ .section-title{
+  font-size:18px;
+ }
+
+ #searchInput{
+  font-size:17px;
+ }
+
+ #searchBtn{
+  font-size:15px;
+ }
+
 }

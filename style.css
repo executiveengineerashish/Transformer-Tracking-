@@ -2,7 +2,6 @@
  box-sizing:border-box;
 }
 
-
 html,
 body{
  margin:0;
@@ -14,11 +13,9 @@ body{
  color:#222;
 }
 
-
 body{
  overflow-x:hidden;
 }
-
 
 
 /* =========================
@@ -35,7 +32,6 @@ body{
  box-shadow:0 3px 12px rgba(0,0,0,.18);
 }
 
-
 .header-icon{
  width:68px;
  height:68px;
@@ -48,18 +44,15 @@ body{
  border:1px solid rgba(255,255,255,.45);
 }
 
-
 .app-title{
  font-size:28px;
  font-weight:800;
 }
 
-
 .app-subtitle{
  font-size:18px;
  margin-top:4px;
 }
-
 
 
 /* =========================
@@ -71,7 +64,6 @@ main{
  margin:auto;
  padding:13px 9px 45px;
 }
-
 
 
 /* =========================
@@ -86,7 +78,6 @@ main{
  box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
-
 .dashboard-heading{
  display:flex;
  align-items:center;
@@ -94,24 +85,20 @@ main{
  margin-bottom:15px;
 }
 
-
 .dashboard-heading>span{
  font-size:27px;
 }
-
 
 .dashboard-heading h1{
  margin:0;
  font-size:21px;
 }
 
-
 .dashboard-heading div div{
  margin-top:3px;
  color:#777;
  font-size:14px;
 }
-
 
 
 /* =========================
@@ -124,7 +111,6 @@ main{
  gap:8px;
 }
 
-
 .summary-card{
  min-height:82px;
  border-radius:17px;
@@ -134,42 +120,35 @@ main{
  justify-content:center;
 }
 
-
 .summary-card span{
  font-size:12px;
  font-weight:600;
 }
-
 
 .summary-card strong{
  font-size:27px;
  margin-top:4px;
 }
 
-
 .total{
  background:#e7f0ff;
  color:#12639b;
 }
-
 
 .issued{
  background:#e1f8eb;
  color:#078246;
 }
 
-
 .pending{
  background:#fff0df;
  color:#c76800;
 }
 
-
 .replacement{
  background:#fff7d9;
  color:#9a7300;
 }
-
 
 .returned{
  background:#eee7ff;
@@ -177,9 +156,8 @@ main{
 }
 
 
-
 /* =========================
-   SECTION TITLE
+   SECTION
    ========================= */
 
 .section-title{
@@ -189,15 +167,13 @@ main{
 }
 
 
-
 /* =========================
-   WORKSHOP BAR
+   WORKSHOP BARS
    ========================= */
 
 .dashboard-row{
  margin:10px 0 13px;
 }
-
 
 .dashboard-row-title{
  display:flex;
@@ -208,7 +184,6 @@ main{
  margin-bottom:5px;
 }
 
-
 .dashboard-bar-bg{
  height:11px;
  width:100%;
@@ -217,13 +192,11 @@ main{
  overflow:hidden;
 }
 
-
 .dashboard-bar{
  height:100%;
  border-radius:20px;
  background:linear-gradient(90deg,#ff1800,#ff9700);
 }
-
 
 
 /* =========================
@@ -238,20 +211,17 @@ main{
  border:1px solid #eee;
 }
 
-
 .ageing-name{
  font-weight:800;
  font-size:14px;
  margin-bottom:7px;
 }
 
-
 .ageing-grid{
  display:grid;
  grid-template-columns:repeat(3,1fr);
  gap:6px;
 }
-
 
 .age-box{
  text-align:center;
@@ -260,20 +230,17 @@ main{
  padding:7px 3px;
 }
 
-
 .age-box span{
  display:block;
  font-size:10px;
  color:#777;
 }
 
-
 .age-box strong{
  display:block;
  font-size:17px;
  margin-top:2px;
 }
-
 
 
 /* =========================
@@ -288,20 +255,17 @@ main{
  border:1px solid #eee;
 }
 
-
 .wc-name{
  font-weight:800;
  font-size:14px;
  margin-bottom:7px;
 }
 
-
 .wc-capacity{
  display:flex;
  flex-wrap:wrap;
  gap:6px;
 }
-
 
 .wc-chip{
  background:#fff1e5;
@@ -310,11 +274,9 @@ main{
  font-size:12px;
 }
 
-
 .wc-chip strong{
  margin-left:3px;
 }
-
 
 
 /* =========================
@@ -329,20 +291,17 @@ main{
  box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
-
 .search-title{
  font-size:21px;
  font-weight:800;
  margin-bottom:12px;
 }
 
-
 .search-row{
  display:grid;
  grid-template-columns:minmax(0,1fr) 125px;
  gap:8px;
 }
-
 
 #searchInput{
  width:100%;
@@ -355,12 +314,10 @@ main{
  min-width:0;
 }
 
-
 #searchInput:focus{
  border-color:#ff2600;
  box-shadow:0 0 0 3px rgba(255,87,0,.12);
 }
-
 
 #searchBtn{
  height:64px;
@@ -371,7 +328,6 @@ main{
  font-size:16px;
  font-weight:800;
 }
-
 
 
 /* =========================
@@ -390,16 +346,14 @@ main{
  overflow-wrap:anywhere;
 }
 
-
 .search-status.error{
  background:#ffe5e5;
  color:#b00000;
 }
 
 
-
 /* =========================
-   RESULT COUNT
+   RESULT
    ========================= */
 
 .result-count{
@@ -412,19 +366,12 @@ main{
  margin-bottom:12px;
 }
 
-
 .no-results{
  background:#fff;
  border-radius:20px;
  padding:25px;
  text-align:center;
 }
-
-
-
-/* =========================
-   RESULT CARD
-   ========================= */
 
 .result-card{
  background:#fff;
@@ -435,7 +382,6 @@ main{
  overflow:hidden;
 }
 
-
 .card-top{
  display:flex;
  justify-content:space-between;
@@ -443,7 +389,6 @@ main{
  font-size:13px;
  margin-bottom:11px;
 }
-
 
 
 /* =========================
@@ -459,13 +404,11 @@ main{
  overflow-wrap:anywhere;
 }
 
-
 .status-box strong{
  display:block;
  font-size:18px;
  margin-bottom:4px;
 }
-
 
 .status-installed{
  background:#dff8e9;
@@ -473,20 +416,17 @@ main{
  color:#087842;
 }
 
-
 .status-issued{
  background:#e7f4ff;
  border-left:6px solid #1386d8;
  color:#075c8c;
 }
 
-
 .status-pending{
  background:#fff0e2;
  border-left:6px solid #ff7900;
  color:#a74d00;
 }
-
 
 
 /* =========================
@@ -501,7 +441,6 @@ main{
  border-left:6px solid #ff8500;
 }
 
-
 .damage-title{
  font-size:19px;
  font-weight:800;
@@ -509,14 +448,12 @@ main{
  margin-bottom:4px;
 }
 
-
 .damage-subtitle{
  font-size:13px;
  color:#8d520d;
  font-weight:700;
  margin-bottom:10px;
 }
-
 
 .history-item{
  background:#fff;
@@ -527,7 +464,6 @@ main{
  overflow-wrap:anywhere;
 }
 
-
 .history-number{
  font-weight:800;
  color:#984b00;
@@ -535,9 +471,8 @@ main{
 }
 
 
-
 /* =========================
-   DRIVER BUTTONS
+   DRIVER
    ========================= */
 
 .driver-buttons{
@@ -545,7 +480,6 @@ main{
  gap:8px;
  margin-top:10px;
 }
-
 
 .driver-buttons a{
  flex:1;
@@ -558,16 +492,13 @@ main{
  font-size:13px;
 }
 
-
 .call-driver{
  background:#078f46;
 }
 
-
 .whatsapp-driver{
  background:#20b957;
 }
-
 
 
 /* =========================
@@ -579,7 +510,6 @@ main{
  overflow:hidden;
 }
 
-
 .data-row{
  display:grid;
  grid-template-columns:40% 60%;
@@ -587,14 +517,12 @@ main{
  padding:11px 3px;
 }
 
-
 .data-label{
  color:#555;
  font-size:13px;
  font-weight:700;
  padding-right:7px;
 }
-
 
 .data-value{
  color:#222;
@@ -606,9 +534,8 @@ main{
 }
 
 
-
 /* =========================
-   NO DASHBOARD DATA
+   EMPTY DASHBOARD
    ========================= */
 
 .no-dashboard-data{
@@ -622,7 +549,6 @@ main{
 }
 
 
-
 /* =========================
    FOOTER
    ========================= */
@@ -633,7 +559,6 @@ footer{
  padding:25px;
  font-size:13px;
 }
-
 
 
 /* =========================
@@ -673,77 +598,6 @@ footer{
  .age-box strong{
   font-size:17px;
  }
-
-}
-
-
-
-/* =========================
-   EXTRA STATUS STYLES
-   ========================= */
-
-.wc-status{
- background:#fafafa;
- border:1px solid #eee;
- border-radius:15px;
- padding:12px;
- margin-bottom:12px;
-}
-
-
-.wc-status-name{
- font-size:16px;
- font-weight:800;
- margin-bottom:8px;
-}
-
-
-.wc-status-item{
- display:flex;
- justify-content:space-between;
- font-size:12px;
- margin-top:6px;
-}
-
-
-.wc-status-item b{
- font-size:14px;
-}
-
-
-.mini-bar{
- height:7px;
- background:#eee;
- border-radius:10px;
- overflow:hidden;
- margin-top:4px;
-}
-
-
-.mini-bar i{
- display:block;
- height:100%;
- background:linear-gradient(90deg,#ff2500,#ff9b00);
- border-radius:10px;
-}
-
-
-.replacement-bar i{
- background:#e5a900;
-}
-
-
-.return-bar i{
- background:#8054d6;
-}
-
-
-
-/* =========================
-   MOBILE CAPACITY
-   ========================= */
-
-@media(max-width:600px){
 
  .wc-chip{
   font-size:12px;

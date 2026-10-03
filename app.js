@@ -2,17 +2,16 @@ const SHEET_ID="1qjOJ879V4FGGQtf2RvqjtSH1eHzGXh4fARJZE0LtdnM";
 const SHEET_GID="1464518527";
 
 let ALL=[];
-let timer=null;
+let searchTimer=null;
 
 const $=id=>document.getElementById(id);
 const clean=x=>String(x??"").trim();
 
-const norm=x=>
- String(x??"")
- .toLowerCase()
- .replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
+const norm=x=>String(x??"")
+.toLowerCase()
+.replace(/[\s\-\/\\().,\[\]{}:;_]+/g,"");
 
-function escapeHTML(x){
+function esc(x){
  return String(x??"")
  .replace(/&/g,"&amp;")
  .replace(/</g,"&lt;")
@@ -22,35 +21,22 @@ function escapeHTML(x){
 }
 
 
-/* PLACE NORMALIZATION
-   SISREDI
-   SISREDI 1
-   1 SISREDI
-   SISREDI (1)
-   = SAME PLACE
-*/
+/* PLACE + CAPACITY */
 
 function locationKey(x){
-
  return norm(
   String(x??"")
   .replace(/[0-9]+/g," ")
   .replace(/[\(\)\[\]\{\}]/g," ")
  );
-
 }
 
-
-/* CAPACITY */
-
 function capacityKey(x){
-
  return String(x??"")
  .toLowerCase()
  .replace(/kva/g,"")
  .replace(/[^0-9.]/g,"")
  .trim();
-
 }
 
 
@@ -82,6 +68,8 @@ function parseDate(x){
 }
 
 
+/* CURRENT MONTH = PR DATE */
+
 function currentMonth(x){
 
  let d=parseDate(x);
@@ -90,11 +78,31 @@ function currentMonth(x){
  return d &&
  d.getFullYear()===n.getFullYear() &&
  d.getMonth()===n.getMonth();
-
 }
 
 
-/* LOAD */
+/* AGE FROM PR DATE */
+
+function ageDays(prDate){
+
+ let d=parseDate(prDate);
+
+ if(!d)return 0;
+
+ let today=new Date();
+
+ today.setHours(0,0,0,0);
+ d.setHours(0,0,0,0);
+
+ let days=Math.floor(
+  (today-d)/86400000
+ );
+
+ return Math.max(0,days);
+}
+
+
+/* LOAD SHEET */
 
 function loadSheet(){
 
@@ -154,7 +162,6 @@ function loadSheet(){
 
  };
 
-
  let old=$("googleSheetScript");
 
  if(old)old.remove();
@@ -191,42 +198,43 @@ function buildDashboard(){
 
  if(!ALL.length)return;
 
- let month=ALL.filter(x=>currentMonth(x[13]));
+ let month=
+  ALL.filter(x=>currentMonth(x[13]));
 
+ let total=month.length;
+ let issuePending=0;
+ let replacementPending=0;
+ let returnPending=0;
  let issued=0;
- let pending=0;
- let replacement=0;
- let returned=0;
 
  month.forEach(function(x){
 
   let issue=clean(x[17]);
-  let rep=clean(x[20]);
-  let ret=clean(x[22]);
+  let replacement=clean(x[20]);
+  let returned=clean(x[22]);
 
   if(!issue){
 
-   pending++;
+   issuePending++;
 
   }else{
 
    issued++;
 
-   if(!rep)
-    replacement++;
+   if(!replacement)
+    replacementPending++;
 
-   else if(!ret)
-    returned++;
+   else if(!returned)
+    returnPending++;
   }
 
  });
 
-
- $("dashTotal").textContent=month.length;
+ $("dashTotal").textContent=total;
  $("dashIssued").textContent=issued;
- $("dashPending").textContent=pending;
- $("dashReplacement").textContent=replacement;
- $("dashReturn").textContent=returned;
+ $("dashPending").textContent=issuePending;
+ $("dashReplacement").textContent=replacementPending;
+ $("dashReturn").textContent=returnPending;
 
 
  let now=new Date();
@@ -238,45 +246,95 @@ function buildDashboard(){
   });
 
 
- /* ================= WORKSHOP PENDING ================= */
+ /* ================= WORKSHOP STATUS ================= */
 
- let W={};
+ let WS={};
 
  month.forEach(function(x){
 
-  if(!clean(x[17])){
+  let w=clean(x[1])||"OTHER";
 
-   let w=clean(x[1])||"OTHER";
-
-   W[w]=(W[w]||0)+1;
+  if(!WS[w]){
+   WS[w]={
+    issue:0,
+    replacement:0,
+    returned:0
+   };
   }
+
+  let issue=clean(x[17]);
+  let replacement=clean(x[20]);
+  let returned=clean(x[22]);
+
+  if(!issue)
+   WS[w].issue++;
+
+  else if(!replacement)
+   WS[w].replacement++;
+
+  else if(!returned)
+   WS[w].returned++;
 
  });
 
- let wl=
-  Object.entries(W)
-  .sort((a,b)=>b[1]-a[1]);
 
- let max=wl[0]?.[1]||1;
+ let list=Object.entries(WS);
+
+ let maxStatus=1;
+
+ list.forEach(function(x){
+
+  maxStatus=Math.max(
+   maxStatus,
+   x[1].issue,
+   x[1].replacement,
+   x[1].returned
+  );
+
+ });
+
 
  $("workshopDashboard").innerHTML=
 
- wl.length?
+ list.length?
 
- wl.map(function(x){
+ list.sort((a,b)=>
+  (b[1].issue+b[1].replacement+b[1].returned)-
+  (a[1].issue+a[1].replacement+a[1].returned)
+ ).map(function(x){
 
   return `
-  <div class="dashboard-row">
+  <div class="wc-status">
 
-   <div class="dashboard-row-title">
-    <span>${escapeHTML(x[0])}</span>
-    <span>${x[1]}</span>
+   <div class="wc-status-name">
+    ${esc(x[0])}
    </div>
 
-   <div class="dashboard-bar-bg">
-    <div class="dashboard-bar"
-         style="width:${x[1]/max*100}%">
-    </div>
+   <div class="wc-status-item">
+    <span>Pending to Issue</span>
+    <b>${x[1].issue}</b>
+   </div>
+
+   <div class="mini-bar">
+    <i style="width:${x[1].issue/maxStatus*100}%"></i>
+   </div>
+
+   <div class="wc-status-item">
+    <span>Replacement Pending</span>
+    <b>${x[1].replacement}</b>
+   </div>
+
+   <div class="mini-bar replacement-bar">
+    <i style="width:${x[1].replacement/maxStatus*100}%"></i>
+   </div>
+
+   <div class="wc-status-item">
+    <span>TX Return Pending</span>
+    <b>${x[1].returned}</b>
+   </div>
+
+   <div class="mini-bar return-bar">
+    <i style="width:${x[1].returned/maxStatus*100}%"></i>
    </div>
 
   </div>`;
@@ -285,97 +343,92 @@ function buildDashboard(){
 
  :
 
- "No pending transformer";
+ "No pending data";
 
 
- /* ================= WORKSHOP AGEING ================= */
+ /* ================= AGEING WORKSHOP ================= */
 
  let AGE={};
 
  month.forEach(function(x){
 
-  if(!clean(x[17])){
+  let w=clean(x[1])||"OTHER";
 
-   let w=clean(x[1])||"OTHER";
-
-   if(!AGE[w])
-    AGE[w]={
-     d1:0,
-     d3:0,
-     d7:0
-    };
-
-   let d=parseDate(x[13]);
-
-   if(!d)return;
-
-   let days=
-    (Date.now()-d.getTime())/
-    86400000;
-
-   if(days>1)
-    AGE[w].d1++;
-
-   if(days>3)
-    AGE[w].d3++;
-
-   if(days>7)
-    AGE[w].d7++;
+  if(!AGE[w]){
+   AGE[w]={
+    d0:0,
+    d1:0,
+    d3:0,
+    d7:0
+   };
   }
+
+  let days=ageDays(x[13]);
+
+  if(days===0)
+   AGE[w].d0++;
+
+  else if(days===1)
+   AGE[w].d1++;
+
+  else if(days>1 && days<=3)
+   AGE[w].d3++;
+
+  else if(days>3 && days<=7)
+   AGE[w].d7++;
 
  });
 
 
- let ageList=
-  Object.entries(AGE)
-  .sort((a,b)=>
-   (b[1].d7+b[1].d3+b[1].d1)-
-   (a[1].d7+a[1].d3+a[1].d1)
-  );
-
-
  $("ageingDashboard").innerHTML=
 
- ageList.length?
-
- ageList.map(function(x){
+ Object.entries(AGE).map(function(x){
 
   return `
   <div class="ageing-row">
 
    <div class="ageing-name">
-    ${escapeHTML(x[0])}
+    ${esc(x[0])}
    </div>
 
    <div class="ageing-grid">
 
     <div class="age-box">
-     <span>&gt; 1 Day</span>
+     <span>0 Day</span>
+     <strong>${x[1].d0}</strong>
+    </div>
+
+    <div class="age-box">
+     <span>1 Day</span>
      <strong>${x[1].d1}</strong>
     </div>
 
     <div class="age-box">
-     <span>&gt; 3 Days</span>
+     <span>&gt;1 Day</span>
      <strong>${x[1].d3}</strong>
     </div>
 
     <div class="age-box">
-     <span>&gt; 7 Days</span>
+     <span>&gt;3 Days</span>
      <strong>${x[1].d7}</strong>
+    </div>
+
+    <div class="age-box">
+     <span>&gt;7 Days</span>
+     <strong>${month.filter(y=>
+      (clean(y[1])||"OTHER")===x[0] &&
+      ageDays(y[13])>7
+     ).length}</strong>
     </div>
 
    </div>
 
   </div>`;
 
- }).join("")
-
- :
-
- "No ageing pending";
+ }).join("");
 
 
- /* ================= WORKSHOP + CAPACITY ================= */
+ /* ================= WORKSHOP CAPACITY ================= */
 
  let WC={};
 
@@ -386,8 +439,7 @@ function buildDashboard(){
    let w=clean(x[1])||"OTHER";
    let c=clean(x[9])||"Unknown";
 
-   if(!WC[w])
-    WC[w]={};
+   if(!WC[w])WC[w]={};
 
    WC[w][c]=(WC[w][c]||0)+1;
   }
@@ -395,71 +447,55 @@ function buildDashboard(){
  });
 
 
- let wcList=
-  Object.entries(WC)
-  .sort((a,b)=>{
-
-   let aa=Object.values(a[1])
-    .reduce((s,v)=>s+v,0);
-
-   let bb=Object.values(b[1])
-    .reduce((s,v)=>s+v,0);
-
-   return bb-aa;
-  });
-
-
  $("workshopCapacityDashboard").innerHTML=
 
- wcList.length?
-
- wcList.map(function(x){
-
-  let caps=
-   Object.entries(x[1])
-   .sort((a,b)=>
-    (parseFloat(a[0])||0)-
-    (parseFloat(b[0])||0)
-   );
+ Object.entries(WC)
+ .sort((a,b)=>
+  Object.values(b[1]).reduce((s,v)=>s+v,0)-
+  Object.values(a[1]).reduce((s,v)=>s+v,0)
+ )
+ .map(function(x){
 
   return `
   <div class="wc-row">
 
    <div class="wc-name">
-    ${escapeHTML(x[0])}
+    ${esc(x[0])}
    </div>
 
    <div class="wc-capacity">
 
-    ${caps.map(function(c){
+    ${Object.entries(x[1])
+     .sort((a,b)=>
+      (parseFloat(a[0])||0)-
+      (parseFloat(b[0])||0)
+     )
+     .map(function(c){
 
-     return `
-     <div class="wc-chip">
-      ${escapeHTML(c[0])} kVA
-      <strong>${c[1]}</strong>
-     </div>`;
+      return `
+      <div class="wc-chip">
+       ${esc(c[0])} kVA
+       <strong>${c[1]}</strong>
+      </div>`;
 
-    }).join("")}
+     }).join("")}
 
    </div>
 
   </div>`;
 
- }).join("")
-
- :
-
- "No capacity pendency";
-
+ }).join("");
 
 }
 
 
-/* SEARCH */
+/* ================= SEARCH ================= */
 
 function searchRecords(){
 
- let q=norm($("searchInput").value);
+ let input=$("searchInput");
+
+ let q=norm(input.value);
 
  if(!q){
 
@@ -467,23 +503,24 @@ function searchRecords(){
   return;
  }
 
- let found=
-  ALL.filter(x=>x.__search.includes(q));
+ let found=ALL.filter(x=>
+  x.__search.includes(q)
+ );
 
  if(!found.length){
 
   $("results").innerHTML=
    `<div class="no-results">
-     No record found
-    </div>`;
+    No record found
+   </div>`;
 
   return;
  }
 
  $("results").innerHTML=
   `<div class="result-count">
-    ${found.length} records found
-   </div>`+
+   ${found.length} record(s) found
+  </div>`+
   found.map((x,i)=>
    buildCard(x,i+1)
   ).join("");
@@ -491,7 +528,7 @@ function searchRecords(){
 }
 
 
-/* ================= RESULT CARD ================= */
+/* ================= CARD ================= */
 
 function buildCard(x,no){
 
@@ -500,6 +537,9 @@ function buildCard(x,no){
 
  let status="";
 
+ /* IMPORTANT:
+    INSTALLATION ONLY WHEN REPLACEMENT DATE EXISTS
+ */
 
  if(replacement){
 
@@ -511,7 +551,7 @@ function buildCard(x,no){
    </strong>
 
    Replacement Date:
-   ${escapeHTML(replacement)}
+   ${esc(replacement)}
 
   </div>`;
 
@@ -528,15 +568,13 @@ function buildCard(x,no){
 
    Please Contact Driver for Installation
 
-   <div>
-    Issue Date: ${escapeHTML(issue)}
-   </div>
+   <div>Issue Date: ${esc(issue)}</div>
 
    ${clean(x[18])?
-    `<div>Driver: ${escapeHTML(x[18])}</div>`:""}
+    `<div>Driver: ${esc(x[18])}</div>`:""}
 
    ${clean(x[19])?
-    `<div>Mobile: ${escapeHTML(x[19])}</div>
+    `<div>Mobile: ${esc(x[19])}</div>
      ${driverButtons(x)}`:""}
 
   </div>`;
@@ -557,17 +595,15 @@ function buildCard(x,no){
  }
 
 
- /* ================= DAMAGE FREQUENCY ================= */
+ /* ================= REPEAT DAMAGE ================= */
 
  let loc=locationKey(x[7]);
  let cap=capacityKey(x[9]);
 
- let history=
-  ALL.filter(y=>
-   locationKey(y[7])===loc &&
-   capacityKey(y[9])===cap
-  );
-
+ let history=ALL.filter(y=>
+  locationKey(y[7])===loc &&
+  capacityKey(y[9])===cap
+ );
 
  history.sort(function(a,b){
 
@@ -580,7 +616,6 @@ function buildCard(x,no){
 
  let frequency="";
 
-
  if(history.length===1){
 
   frequency=`
@@ -591,35 +626,12 @@ function buildCard(x,no){
    </div>
 
    <div class="damage-subtitle">
-    This transformer has damaged only once
-    at the same place and same capacity.
-   </div>
-
-   <div class="history-item">
-
-    <div class="history-number">
-     1st Time
-    </div>
-
-    <div>
-     PR No: ${escapeHTML(x[12]||"-")}
-    </div>
-
-    <div>
-     PR Date: ${escapeHTML(x[13]||"-")}
-    </div>
-
-    <div>
-     Capacity: ${escapeHTML(x[9]||"-")} kVA
-    </div>
-
+    Only 1 damage at same place and same capacity
    </div>
 
   </div>`;
 
- }
-
- else{
+ }else{
 
   frequency=`
   <div class="damage-frequency">
@@ -647,15 +659,15 @@ function buildCard(x,no){
      </div>
 
      <div>
-      PR No: ${escapeHTML(y[12]||"-")}
+      PR No: ${esc(y[12]||"-")}
      </div>
 
      <div>
-      PR Date: ${escapeHTML(y[13]||"-")}
+      PR Date: ${esc(y[13]||"-")}
      </div>
 
      <div>
-      Capacity: ${escapeHTML(y[9]||"-")} kVA
+      Capacity: ${esc(y[9]||"-")} kVA
      </div>
 
     </div>`;
@@ -678,7 +690,6 @@ function buildCard(x,no){
   "TX Return Date","Observation DTC"
  ];
 
-
  let data="";
 
  names.forEach(function(name,i){
@@ -688,12 +699,10 @@ function buildCard(x,no){
   data+=`
   <div class="data-row">
 
-   <div class="data-label">
-    ${name}
-   </div>
+   <div class="data-label">${name}</div>
 
    <div class="data-value">
-    ${escapeHTML(x[i])}
+    ${esc(x[i])}
    </div>
 
   </div>`;
@@ -722,7 +731,7 @@ function buildCard(x,no){
 }
 
 
-/* DRIVER */
+/* ================= DRIVER ================= */
 
 function driverButtons(x){
 
@@ -740,7 +749,7 @@ Capacity: ${clean(x[9])||"-"} kVA
 Place: ${clean(x[7])||"-"}
 Workshop: ${clean(x[1])||"-"}
 
-The transformer has been issued from Workshop. Please arrange installation and confirm the installation status.
+The transformer has been issued from Workshop. Please arrange installation and confirm installation status.
 
 Thank you.`;
 
@@ -763,29 +772,50 @@ Thank you.`;
 }
 
 
-/* START */
+/* ================= START ================= */
 
 document.addEventListener("DOMContentLoaded",function(){
 
- $("searchBtn").onclick=searchRecords;
+ const input=$("searchInput");
 
- $("searchInput").oninput=function(){
+ /*
+  IMPORTANT:
+  Do NOT recreate/replace the input while typing.
+  This prevents Android Chrome from stopping after
+  the first digit.
+ */
 
-  clearTimeout(timer);
+ input.addEventListener("input",function(){
 
-  timer=setTimeout(
-   searchRecords,
-   60
-  );
+  clearTimeout(searchTimer);
 
- };
+  searchTimer=setTimeout(function(){
 
- $("searchInput").onkeydown=function(e){
-
-  if(e.key==="Enter")
    searchRecords();
 
- };
+  },120);
+
+ });
+
+
+ $("searchBtn").addEventListener("click",function(){
+
+  searchRecords();
+
+  input.focus();
+
+ });
+
+
+ input.addEventListener("keydown",function(e){
+
+  if(e.key==="Enter"){
+   e.preventDefault();
+   searchRecords();
+  }
+
+ });
+
 
  loadSheet();
 
